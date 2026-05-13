@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
+<div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(120,120,120,0.08),transparent_70%)] z-0" />
 const locations = [
   {
   name: "Winterfell",
@@ -129,13 +129,13 @@ export default function MapPage() {
   const [selectedLocation, setSelectedLocation] = useState(null);
 
   return (
-    <main className="bg-black min-h-screen text-white overflow-hidden">
+    <main className="bg-gradient-to-b from-black via-zinc-950 to-black min-h-screen text-white overflow-hidden">
 
       {/* HEADER */}
 
       <div className="fixed top-0 left-0 z-50 w-full bg-black/70 backdrop-blur-md border-b border-zinc-800 p-4 flex justify-between items-center">
 
-        <h1 className="text-3xl font-bold tracking-[0.2em] text-zinc-100">
+        <h1 cclassName="text-3xl font-black tracking-[0.3em] text-zinc-100 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
           GAME OF KINGS
         </h1>
 
@@ -163,34 +163,35 @@ export default function MapPage() {
           <button
             key={location.name}
             onClick={() => setSelectedLocation(location)}
-            className="absolute group"
+            className="absolute group hover:z-50 transition duration-300 hover:scale-125"
             style={{
               top: location.top,
               left: location.left,
               transform: "translate(-45%, -55%)",
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20 pointer-events-none" />
             }}
           >
             <div
   className={`
-    w-4 h-4 rounded-full border-2 border-white shadow-lg animate-pulse
+    relative w-4 h-4 rounded-full border border-white/80 shadow-lg animate-pulse
     ${
       location.region === "North"
-        ? "bg-cyan-400"
+        ? "bg-cyan-300 shadow-cyan-400/80"
         : location.region === "Riverlands"
-        ? "bg-blue-500"
+        ? "bg-blue-400 shadow-blue-500/80"
         : location.region === "Westerlands"
-        ? "bg-red-500"
+        ? "bg-red-500 shadow-red-500/80"
         : location.region === "Reach"
-        ? "bg-green-500"
+        ? "bg-green-500 shadow-green-500/80"
         : location.region === "Stormlands"
-        ? "bg-yellow-400"
+        ? "bg-yellow-400 shadow-yellow-400/80"
         : location.region === "Dorne"
-        ? "bg-orange-500"
+        ? "bg-orange-500 shadow-orange-500/80"
         : location.region === "Vale"
-        ? "bg-sky-300"
+        ? "bg-sky-300 shadow-sky-300/80"
         : location.region === "Iron Islands"
-        ? "bg-zinc-400"
-        : "bg-purple-500"
+        ? "bg-zinc-300 shadow-zinc-300/80"
+        : "bg-purple-400 shadow-purple-400/80"
     }
   `}
 />
