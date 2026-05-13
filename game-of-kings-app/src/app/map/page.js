@@ -200,7 +200,7 @@ const locations = [
       "https://static.wikia.nocookie.net/gameofthrones/images/5/52/Sunspear.jpg",
     description:
       "Capital of Dorne and seat of House Martell.",
-  },
+  }
 ];
 
 export default function MapPage() {
