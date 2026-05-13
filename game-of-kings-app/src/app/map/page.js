@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import MapCanvas from "@/components/MapCanvas";
 import RealmForum from "@/components/RealmForum";
 import RealmChronicle from "@/components/RealmChronicle";
+import CastlePopup from "@/components/CastlePopup";
 
 const sigils = [
   {
@@ -125,7 +126,16 @@ export default function MapPage() {
       />
 
       <RealmChronicle warLog={warLog} />
-
+<CastlePopup
+  selectedLocation={selectedLocation}
+  setSelectedLocation={setSelectedLocation}
+  ownedCastle={ownedCastle}
+  claimCastle={claimCastle}
+  recruitTroops={recruitTroops}
+  upgradeCastle={upgradeCastle}
+  formAlliance={formAlliance}
+  houseName={houseName}
+/>
     </main>
   );
 }
