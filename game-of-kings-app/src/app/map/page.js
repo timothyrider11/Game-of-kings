@@ -13,7 +13,86 @@ const locations = [
       "Ancient seat of House Stark and the capital of the North.",
   },
 
-  {
+  name: "House Reed",
+  top: "44.8%",
+  left: "44.5%",
+  image: "/houses/reed.png",
+  description: "Greywater Watch — rulers of the Neck."
+},
+
+{
+  name: "House Frey",
+  top: "55.2%",
+  left: "49.3%",
+  image: "/houses/frey.png",
+  description: "The Twins — bridge keepers of the Trident."
+},
+
+{
+  name: "House Mallister",
+  top: "53%",
+  left: "42%",
+  image: "/houses/mallister.png",
+  description: "Seagard — defenders against Ironborn raids."
+},
+
+{
+  name: "House Corbray",
+  top: "51%",
+  left: "68%",
+  image: "/houses/corbray.png",
+  description: "Ancient Vale house wielding Lady Forlorn."
+},
+
+{
+  name: "King's Landing",
+  top: "70.3%",
+  left: "61%",
+  image: "/locations/kingslanding.jpg",
+  description: "Capital of the Seven Kingdoms."
+},
+
+{
+  name: "House Greyjoy",
+  top: "62%",
+  left: "13%",
+  image: "/houses/greyjoy.png",
+  description: "Pyke — rulers of the Iron Islands."
+},
+
+{
+  name: "House Tarth",
+  top: "72%",
+  left: "79%",
+  image: "/houses/tarth.png",
+  description: "Evenfall Hall on the Sapphire Isle."
+},
+
+{
+  name: "House Fowler",
+  top: "91%",
+  left: "51%",
+  image: "/houses/fowler.png",
+  description: "Skyreach — wardens of the Prince's Pass."
+},
+
+{
+  name: "House Blackbar",
+  top: "88%",
+  left: "11%",
+  image: "/houses/blackbar.png",
+  description: "Lords of Bandallon in the Reach."
+},
+
+{
+  name: "House Tarly",
+  top: "83%",
+  left: "31%",
+  image: "/houses/tarly.png",
+  description: "Horn Hill — famed military house of the Reach."
+},
+
+{
     name: "Castle Black",
     top: "8%",
     left: "55%",
@@ -166,10 +245,10 @@ export default function MapPage() {
             style={{
               top: location.top,
               left: location.left,
-              transform: "translate(-50%, -50%)",
+              transform: "translate(-45%, -55%)",
             }}
           >
-            <div className="w-5 h-5 bg-red-600 rounded-full border-2 border-white shadow-lg animate-pulse" />
+            <div className="w-4 h-4 bg-red-600 rounded-full border-2 border-white shadow-lg animate-pulse" />
 
             <div className="absolute left-7 top-[-2px] whitespace-nowrap bg-black/80 px-3 py-1 rounded-md text-sm opacity-0 group-hover:opacity-100 transition">
               {location.name}
