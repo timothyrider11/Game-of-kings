@@ -8,6 +8,7 @@ import RealmForum from "@/components/RealmForum";
 import RealmChronicle from "@/components/RealmChronicle";
 import CastlePopup from "@/components/CastlePopup";
 import RealmStats from "@/components/RealmStats";
+import RealmAudio from "@/components/RealmAudio";
 
 const sigils = [
   {
@@ -144,7 +145,9 @@ export default function MapPage() {
   upgradeCastle={upgradeCastle}
   formAlliance={formAlliance}
   houseName={houseName}
-/>
+>
+  </CastlePopup><RealmAudio />
+
     </main>
   );
 }
