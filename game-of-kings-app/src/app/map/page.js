@@ -2,6 +2,38 @@
 
 import { useMemo, useState } from "react";
 
+const sigils = [
+  {
+    name: "Direwolf",
+    image:
+      "https://awoiaf.westeros.org/images/thumb/7/7a/House_Stark.svg/545px-House_Stark.svg.png",
+  },
+
+  {
+    name: "Lion",
+    image:
+      "https://awoiaf.westeros.org/images/thumb/c/c7/House_Lannister.svg/545px-House_Lannister.svg.png",
+  },
+
+  {
+    name: "Dragon",
+    image:
+      "https://awoiaf.westeros.org/images/thumb/9/9b/House_Targaryen.svg/545px-House_Targaryen.svg.png",
+  },
+
+  {
+    name: "Kraken",
+    image:
+      "https://awoiaf.westeros.org/images/thumb/5/5c/House_Greyjoy.svg/545px-House_Greyjoy.svg.png",
+  },
+
+  {
+    name: "Sun Spear",
+    image:
+      "https://awoiaf.westeros.org/images/thumb/7/7e/House_Martell.svg/545px-House_Martell.svg.png",
+  },
+];
+
 const defaultLocations = [
   {
     name: "Winterfell",
@@ -82,22 +114,6 @@ const defaultLocations = [
     description:
       "Ancient city ruled by House Hightower.",
   },
-
-  {
-    name: "Sunspear",
-    region: "Dorne",
-    ruler: "House Martell",
-    troops: 10500,
-    owner: "Dornish Realm",
-    status: "Controlled",
-    top: "95.4%",
-    left: "83.6%",
-    color: "orange",
-    image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/5/52/Sunspear.jpg",
-    description:
-      "Capital of Dorne and seat of House Martell.",
-  },
 ];
 
 export default function MapPage() {
@@ -110,9 +126,11 @@ export default function MapPage() {
 
   const [rulerName, setRulerName] = useState("Lord Timothy");
 
+  const [ownedCastle, setOwnedCastle] = useState(null);
+
   const [warLog, setWarLog] = useState([]);
 
-  const [ownedCastle, setOwnedCastle] = useState(null);
+  const [selectedSigil, setSelectedSigil] = useState(sigils[0]);
 
   /* CLAIM */
 
@@ -209,7 +227,7 @@ export default function MapPage() {
     ]);
   };
 
-  /* PLAYER STATS */
+  /* STATS */
 
   const playerTroops = useMemo(() => {
 
@@ -237,9 +255,6 @@ export default function MapPage() {
       case "green":
         return "bg-green-500 shadow-green-500/90";
 
-      case "orange":
-        return "bg-orange-500 shadow-orange-500/90";
-
       case "emerald":
         return "bg-emerald-400 shadow-emerald-400/90";
 
@@ -261,18 +276,29 @@ export default function MapPage() {
 
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 
-          <h1 className="text-3xl font-black tracking-[0.3em]">
-            GAME OF KINGS
-          </h1>
+          <div className="flex items-center gap-4">
+
+            <img
+              src={selectedSigil.image}
+              alt="Sigil"
+              className="w-14 h-14 object-contain"
+            />
+
+            <div>
+
+              <h1 className="text-3xl font-black tracking-[0.3em]">
+                GAME OF KINGS
+              </h1>
+
+              <p className="text-zinc-400 text-sm">
+                {houseName}
+              </p>
+
+            </div>
+
+          </div>
 
           <div className="hidden lg:flex gap-6 text-sm">
-
-            <div className="text-zinc-400">
-              House:
-              <span className="ml-2 text-emerald-400 font-semibold">
-                {houseName}
-              </span>
-            </div>
 
             <div className="text-zinc-400">
               Seat:
@@ -303,7 +329,7 @@ export default function MapPage() {
             Establish Your Noble House
           </h2>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
 
             <input
               value={houseName}
@@ -318,6 +344,49 @@ export default function MapPage() {
               placeholder="Ruler Name"
               className="bg-black border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-emerald-500"
             />
+
+          </div>
+
+          {/* SIGILS */}
+          <div>
+
+            <h3 className="text-lg font-bold mb-4">
+              Select Your Sigil
+            </h3>
+
+            <div className="flex flex-wrap gap-4">
+
+              {sigils.map((sigil) => (
+
+                <button
+                  key={sigil.name}
+                  onClick={() => setSelectedSigil(sigil)}
+                  className={`
+                    border rounded-2xl p-3 transition
+
+                    ${
+                      selectedSigil.name === sigil.name
+                        ? "border-emerald-400 bg-emerald-500/10"
+                        : "border-zinc-700 bg-black/40"
+                    }
+                  `}
+                >
+
+                  <img
+                    src={sigil.image}
+                    alt={sigil.name}
+                    className="w-20 h-20 object-contain"
+                  />
+
+                  <p className="text-sm mt-2">
+                    {sigil.name}
+                  </p>
+
+                </button>
+
+              ))}
+
+            </div>
 
           </div>
 
@@ -347,7 +416,6 @@ export default function MapPage() {
             }}
           >
 
-            {/* OUTER RING */}
             <div
               className={`
                 absolute inset-0 scale-[2.4] rounded-full blur-md opacity-70
@@ -355,7 +423,6 @@ export default function MapPage() {
               `}
             />
 
-            {/* INNER MARKER */}
             <div
               className={`
                 relative w-4 h-4 rounded-full border border-white shadow-2xl animate-pulse
@@ -363,7 +430,6 @@ export default function MapPage() {
               `}
             />
 
-            {/* LABEL */}
             <div className="absolute left-6 top-[-2px] whitespace-nowrap bg-black/90 border border-zinc-700 px-3 py-1 rounded-lg text-sm opacity-0 group-hover:opacity-100 transition">
 
               {location.name}
@@ -436,51 +502,6 @@ export default function MapPage() {
               <p className="text-zinc-300 leading-relaxed">
                 {selectedLocation.description}
               </p>
-
-              {/* STATS */}
-              <div className="grid grid-cols-2 gap-4">
-
-                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                  <p className="text-zinc-500 text-sm">
-                    Ruler
-                  </p>
-
-                  <p className="mt-1 font-semibold">
-                    {selectedLocation.ruler}
-                  </p>
-                </div>
-
-                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                  <p className="text-zinc-500 text-sm">
-                    Troops
-                  </p>
-
-                  <p className="mt-1 font-semibold">
-                    {selectedLocation.troops.toLocaleString()}
-                  </p>
-                </div>
-
-                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                  <p className="text-zinc-500 text-sm">
-                    Status
-                  </p>
-
-                  <p className="mt-1 font-semibold">
-                    {selectedLocation.status}
-                  </p>
-                </div>
-
-                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                  <p className="text-zinc-500 text-sm">
-                    Owner
-                  </p>
-
-                  <p className="mt-1 font-semibold">
-                    {selectedLocation.owner}
-                  </p>
-                </div>
-
-              </div>
 
               {/* ACTIONS */}
               <div className="grid grid-cols-3 gap-4">
