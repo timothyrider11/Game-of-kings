@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const sigils = [
   {
@@ -26,12 +26,6 @@ const sigils = [
     image:
       "https://awoiaf.westeros.org/images/thumb/5/5c/House_Greyjoy.svg/545px-House_Greyjoy.svg.png",
   },
-
-  {
-    name: "Sun Spear",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/7/7e/House_Martell.svg/545px-House_Martell.svg.png",
-  },
 ];
 
 const defaultLocations = [
@@ -41,6 +35,8 @@ const defaultLocations = [
     ruler: "House Stark",
     troops: 12400,
     owner: "Northern Realm",
+    level: 3,
+    income: 350,
     status: "Controlled",
     top: "25.2%",
     left: "50.1%",
@@ -48,23 +44,7 @@ const defaultLocations = [
     image:
       "https://static.wikia.nocookie.net/gameofthrones/images/3/39/Winterfell_Season_8.jpg",
     description:
-      "Ancient seat of House Stark and capital of the North.",
-  },
-
-  {
-    name: "King's Landing",
-    region: "Crownlands",
-    ruler: "The Iron Throne",
-    troops: 20000,
-    owner: "Crown Authority",
-    status: "Capital",
-    top: "69.7%",
-    left: "60.7%",
-    color: "yellow",
-    image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/5/5c/Kings_Landing.jpg",
-    description:
-      "Capital of the Seven Kingdoms.",
+      "Ancient seat of House Stark.",
   },
 
   {
@@ -73,6 +53,8 @@ const defaultLocations = [
     ruler: "Unclaimed",
     troops: 2500,
     owner: "None",
+    level: 1,
+    income: 150,
     status: "Claimable",
     top: "62.7%",
     left: "84.2%",
@@ -89,6 +71,8 @@ const defaultLocations = [
     ruler: "House Greyjoy",
     troops: 6700,
     owner: "Iron Fleet",
+    level: 2,
+    income: 260,
     status: "Controlled",
     top: "61.8%",
     left: "12.8%",
@@ -97,22 +81,6 @@ const defaultLocations = [
       "https://awoiaf.westeros.org/images/thumb/5/5c/House_Greyjoy.svg/500px-House_Greyjoy.svg.png",
     description:
       "Seat of House Greyjoy.",
-  },
-
-  {
-    name: "Oldtown",
-    region: "Reach",
-    ruler: "House Hightower",
-    troops: 9200,
-    owner: "Reach Dominion",
-    status: "Controlled",
-    top: "92.5%",
-    left: "21.9%",
-    color: "green",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/4/4f/Hightower.svg/500px-Hightower.svg.png",
-    description:
-      "Ancient city ruled by House Hightower.",
   },
 ];
 
@@ -131,6 +99,28 @@ export default function MapPage() {
   const [warLog, setWarLog] = useState([]);
 
   const [selectedSigil, setSelectedSigil] = useState(sigils[0]);
+
+  const [gold, setGold] = useState(1000);
+
+  /* PASSIVE GOLD */
+
+  useEffect(() => {
+
+    const interval = setInterval(() => {
+
+      const income = locations
+        .filter((location) => location.owner === houseName)
+        .reduce((sum, location) => sum + location.income, 0);
+
+      if (income > 0) {
+        setGold((prev) => prev + income);
+      }
+
+    }, 5000);
+
+    return () => clearInterval(interval);
+
+  }, [locations, houseName]);
 
   /* CLAIM */
 
@@ -172,27 +162,11 @@ export default function MapPage() {
     ]);
   };
 
-  /* SIEGE */
+  /* RECRUIT */
 
-  const attackCastle = () => {
+  const recruitTroops = () => {
 
-    if (ownedCastle) return;
-
-    const playerPower = Math.floor(Math.random() * 18000) + 5000;
-
-    const defenderPower = selectedLocation.troops;
-
-    const victory = playerPower >= defenderPower;
-
-    if (!victory) {
-
-      setWarLog((prev) => [
-        `${houseName} failed to conquer ${selectedLocation.name}.`,
-        ...prev,
-      ]);
-
-      return;
-    }
+    if (gold < 300) return;
 
     const updated = locations.map((location) => {
 
@@ -200,11 +174,7 @@ export default function MapPage() {
 
         return {
           ...location,
-          owner: houseName,
-          ruler: rulerName,
-          status: "Conquered",
-          troops: Math.max(3000, playerPower - 2000),
-          color: "emerald",
+          troops: location.troops + 1000,
         };
       }
 
@@ -213,16 +183,53 @@ export default function MapPage() {
 
     setLocations(updated);
 
-    setOwnedCastle(selectedLocation.name);
+    setGold((prev) => prev - 300);
 
-    const updatedLocation = updated.find(
-      (location) => location.name === selectedLocation.name
-    );
-
-    setSelectedLocation(updatedLocation);
+    setSelectedLocation({
+      ...selectedLocation,
+      troops: selectedLocation.troops + 1000,
+    });
 
     setWarLog((prev) => [
-      `${houseName} conquered ${selectedLocation.name}.`,
+      `${houseName} recruited 1,000 new soldiers.`,
+      ...prev,
+    ]);
+  };
+
+  /* UPGRADE */
+
+  const upgradeCastle = () => {
+
+    if (gold < 500) return;
+
+    const updated = locations.map((location) => {
+
+      if (location.name === selectedLocation.name) {
+
+        return {
+          ...location,
+          level: location.level + 1,
+          income: location.income + 100,
+          troops: location.troops + 500,
+        };
+      }
+
+      return location;
+    });
+
+    setLocations(updated);
+
+    setGold((prev) => prev - 500);
+
+    setSelectedLocation({
+      ...selectedLocation,
+      level: selectedLocation.level + 1,
+      income: selectedLocation.income + 100,
+      troops: selectedLocation.troops + 500,
+    });
+
+    setWarLog((prev) => [
+      `${selectedLocation.name} was upgraded to Level ${selectedLocation.level + 1}.`,
       ...prev,
     ]);
   };
@@ -246,14 +253,8 @@ export default function MapPage() {
       case "cyan":
         return "bg-cyan-400 shadow-cyan-400/90";
 
-      case "yellow":
-        return "bg-yellow-400 shadow-yellow-400/90";
-
       case "purple":
         return "bg-purple-500 shadow-purple-500/90";
-
-      case "green":
-        return "bg-green-500 shadow-green-500/90";
 
       case "emerald":
         return "bg-emerald-400 shadow-emerald-400/90";
@@ -300,18 +301,16 @@ export default function MapPage() {
 
           <div className="hidden lg:flex gap-6 text-sm">
 
-            <div className="text-zinc-400">
-              Seat:
-              <span className="ml-2 text-cyan-300 font-semibold">
-                {ownedCastle || "Unlanded"}
-              </span>
+            <div className="text-yellow-400 font-bold">
+              Gold: {gold.toLocaleString()}
             </div>
 
-            <div className="text-zinc-400">
-              Troops:
-              <span className="ml-2 text-red-400 font-semibold">
-                {playerTroops.toLocaleString()}
-              </span>
+            <div className="text-red-400 font-bold">
+              Troops: {playerTroops.toLocaleString()}
+            </div>
+
+            <div className="text-cyan-300 font-bold">
+              Seat: {ownedCastle || "Unlanded"}
             </div>
 
           </div>
@@ -348,45 +347,33 @@ export default function MapPage() {
           </div>
 
           {/* SIGILS */}
-          <div>
+          <div className="flex flex-wrap gap-4">
 
-            <h3 className="text-lg font-bold mb-4">
-              Select Your Sigil
-            </h3>
+            {sigils.map((sigil) => (
 
-            <div className="flex flex-wrap gap-4">
+              <button
+                key={sigil.name}
+                onClick={() => setSelectedSigil(sigil)}
+                className={`
+                  border rounded-2xl p-3 transition
 
-              {sigils.map((sigil) => (
+                  ${
+                    selectedSigil.name === sigil.name
+                      ? "border-emerald-400 bg-emerald-500/10"
+                      : "border-zinc-700 bg-black/40"
+                  }
+                `}
+              >
 
-                <button
-                  key={sigil.name}
-                  onClick={() => setSelectedSigil(sigil)}
-                  className={`
-                    border rounded-2xl p-3 transition
+                <img
+                  src={sigil.image}
+                  alt={sigil.name}
+                  className="w-20 h-20 object-contain"
+                />
 
-                    ${
-                      selectedSigil.name === sigil.name
-                        ? "border-emerald-400 bg-emerald-500/10"
-                        : "border-zinc-700 bg-black/40"
-                    }
-                  `}
-                >
+              </button>
 
-                  <img
-                    src={sigil.image}
-                    alt={sigil.name}
-                    className="w-20 h-20 object-contain"
-                  />
-
-                  <p className="text-sm mt-2">
-                    {sigil.name}
-                  </p>
-
-                </button>
-
-              ))}
-
-            </div>
+            ))}
 
           </div>
 
@@ -430,12 +417,6 @@ export default function MapPage() {
               `}
             />
 
-            <div className="absolute left-6 top-[-2px] whitespace-nowrap bg-black/90 border border-zinc-700 px-3 py-1 rounded-lg text-sm opacity-0 group-hover:opacity-100 transition">
-
-              {location.name}
-
-            </div>
-
           </button>
         ))}
 
@@ -451,12 +432,6 @@ export default function MapPage() {
           </h2>
 
           <div className="space-y-3 max-h-64 overflow-y-auto">
-
-            {warLog.length === 0 && (
-              <p className="text-zinc-500">
-                No realm events yet.
-              </p>
-            )}
 
             {warLog.map((entry, index) => (
               <div
@@ -493,37 +468,86 @@ export default function MapPage() {
                   {selectedLocation.name}
                 </h2>
 
-                <p className="text-zinc-400 mt-1">
+                <p className="text-zinc-400">
                   {selectedLocation.region}
                 </p>
 
               </div>
 
-              <p className="text-zinc-300 leading-relaxed">
-                {selectedLocation.description}
-              </p>
+              {/* STATS */}
+              <div className="grid grid-cols-2 gap-4">
+
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                  <p className="text-zinc-500 text-sm">
+                    Troops
+                  </p>
+
+                  <p className="mt-1 font-semibold">
+                    {selectedLocation.troops.toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                  <p className="text-zinc-500 text-sm">
+                    Castle Level
+                  </p>
+
+                  <p className="mt-1 font-semibold">
+                    {selectedLocation.level}
+                  </p>
+                </div>
+
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                  <p className="text-zinc-500 text-sm">
+                    Income
+                  </p>
+
+                  <p className="mt-1 font-semibold">
+                    {selectedLocation.income} Gold
+                  </p>
+                </div>
+
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                  <p className="text-zinc-500 text-sm">
+                    Owner
+                  </p>
+
+                  <p className="mt-1 font-semibold">
+                    {selectedLocation.owner}
+                  </p>
+                </div>
+
+              </div>
 
               {/* ACTIONS */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
 
-                {!ownedCastle &&
-                  selectedLocation.owner !== houseName && (
-                    <>
-                      <button
-                        onClick={claimCastle}
-                        className="bg-emerald-700 hover:bg-emerald-800 transition py-3 rounded-xl font-bold"
-                      >
-                        Claim
-                      </button>
+                {!ownedCastle && (
+                  <button
+                    onClick={claimCastle}
+                    className="bg-emerald-700 hover:bg-emerald-800 transition py-3 rounded-xl font-bold"
+                  >
+                    Claim Castle
+                  </button>
+                )}
 
-                      <button
-                        onClick={attackCastle}
-                        className="bg-red-700 hover:bg-red-800 transition py-3 rounded-xl font-bold"
-                      >
-                        Siege
-                      </button>
-                    </>
-                  )}
+                {selectedLocation.owner === houseName && (
+                  <>
+                    <button
+                      onClick={recruitTroops}
+                      className="bg-blue-700 hover:bg-blue-800 transition py-3 rounded-xl font-bold"
+                    >
+                      Recruit Troops
+                    </button>
+
+                    <button
+                      onClick={upgradeCastle}
+                      className="bg-yellow-600 hover:bg-yellow-700 transition py-3 rounded-xl font-bold"
+                    >
+                      Upgrade Castle
+                    </button>
+                  </>
+                )}
 
                 <button
                   onClick={() => setSelectedLocation(null)}
