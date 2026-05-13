@@ -7,6 +7,7 @@ import MapCanvas from "@/components/MapCanvas";
 import RealmForum from "@/components/RealmForum";
 import RealmChronicle from "@/components/RealmChronicle";
 import CastlePopup from "@/components/CastlePopup";
+import RealmStats from "@/components/RealmStats";
 
 const sigils = [
   {
@@ -116,7 +117,15 @@ export default function MapPage() {
         setSelectedLocation={setSelectedLocation}
         getMarkerClasses={getMarkerClasses}
       />
-
+<RealmStats
+  houseName={houseName}
+  playerTroops={playerTroops}
+  prestige={prestige}
+  gold={gold}
+  totalRealmPower={totalRealmPower}
+  ownedCastle={ownedCastle}
+  forumPoints={forumPoints}
+/>
       <RealmForum
         forumPoints={forumPoints}
         forumInput={forumInput}
