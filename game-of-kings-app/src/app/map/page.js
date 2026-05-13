@@ -77,20 +77,43 @@ const defaultLocations = [
     description:
       "Ancient city ruled by House Hightower.",
   },
+
+  {
+    name: "Sunspear",
+    region: "Dorne",
+    ruler: "House Martell",
+    troops: "10,500",
+    owner: "AI Realm",
+    status: "Controlled",
+    top: "95.4%",
+    left: "83.6%",
+    image:
+      "https://static.wikia.nocookie.net/gameofthrones/images/5/52/Sunspear.jpg",
+    description:
+      "Capital of Dorne and seat of House Martell.",
+  },
 ];
 
 export default function MapPage() {
+
   const [locations, setLocations] = useState(defaultLocations);
 
   const [selectedLocation, setSelectedLocation] = useState(null);
 
+  const [houseName, setHouseName] = useState("House Rider");
+
+  const [rulerName, setRulerName] = useState("Lord Timothy");
+
   const claimCastle = () => {
+
     const updated = locations.map((location) => {
+
       if (location.name === selectedLocation.name) {
+
         return {
           ...location,
-          owner: "Player Realm",
-          ruler: "Your House",
+          owner: houseName,
+          ruler: rulerName,
           status: "Claimed",
         };
       }
@@ -102,8 +125,8 @@ export default function MapPage() {
 
     setSelectedLocation({
       ...selectedLocation,
-      owner: "Player Realm",
-      ruler: "Your House",
+      owner: houseName,
+      ruler: rulerName,
       status: "Claimed",
     });
   };
@@ -123,15 +146,11 @@ export default function MapPage() {
           <div className="hidden md:flex gap-5 text-sm text-zinc-400">
 
             <div>
-              Holdings: <span className="text-green-400">5</span>
+              Realm: <span className="text-green-400">{houseName}</span>
             </div>
 
             <div>
-              Wars: <span className="text-red-400">2 Active</span>
-            </div>
-
-            <div>
-              Realm Power: <span className="text-yellow-300">Stable</span>
+              Ruler: <span className="text-yellow-300">{rulerName}</span>
             </div>
 
           </div>
@@ -140,8 +159,39 @@ export default function MapPage() {
 
       </div>
 
+      {/* HOUSE PANEL */}
+      <div className="max-w-7xl mx-auto pt-28 px-6">
+
+        <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 mb-8 backdrop-blur-md">
+
+          <h2 className="text-2xl font-black mb-5">
+            Create Your Noble House
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-4">
+
+            <input
+              value={houseName}
+              onChange={(e) => setHouseName(e.target.value)}
+              placeholder="House Name"
+              className="bg-black border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-red-500"
+            />
+
+            <input
+              value={rulerName}
+              onChange={(e) => setRulerName(e.target.value)}
+              placeholder="Ruler Name"
+              className="bg-black border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-red-500"
+            />
+
+          </div>
+
+        </div>
+
+      </div>
+
       {/* MAP */}
-      <div className="relative w-fit mx-auto pt-24 pb-20">
+      <div className="relative w-fit mx-auto pb-20">
 
         <img
           src="/LONG-MAP.png"
@@ -149,7 +199,7 @@ export default function MapPage() {
           className="block w-auto max-w-none h-auto brightness-110 contrast-125 saturate-110"
         />
 
-        {/* LOCATION MARKERS */}
+        {/* MARKERS */}
         {locations.map((location) => (
           <button
             key={location.name}
@@ -162,7 +212,6 @@ export default function MapPage() {
             }}
           >
 
-            {/* MARKER */}
             <div
               className={`
                 w-4 h-4 rounded-full border border-white shadow-lg animate-pulse
@@ -230,6 +279,7 @@ export default function MapPage() {
               <div className="grid grid-cols-2 gap-4">
 
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+
                   <p className="text-zinc-500 text-sm">
                     Ruler
                   </p>
@@ -237,9 +287,11 @@ export default function MapPage() {
                   <p className="mt-1 font-semibold">
                     {selectedLocation.ruler}
                   </p>
+
                 </div>
 
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+
                   <p className="text-zinc-500 text-sm">
                     Troops
                   </p>
@@ -247,9 +299,11 @@ export default function MapPage() {
                   <p className="mt-1 font-semibold">
                     {selectedLocation.troops}
                   </p>
+
                 </div>
 
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+
                   <p className="text-zinc-500 text-sm">
                     Status
                   </p>
@@ -257,9 +311,11 @@ export default function MapPage() {
                   <p className="mt-1 font-semibold">
                     {selectedLocation.status}
                   </p>
+
                 </div>
 
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+
                   <p className="text-zinc-500 text-sm">
                     Owner
                   </p>
@@ -267,6 +323,7 @@ export default function MapPage() {
                   <p className="mt-1 font-semibold">
                     {selectedLocation.owner}
                   </p>
+
                 </div>
 
               </div>
