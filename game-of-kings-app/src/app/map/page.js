@@ -48,7 +48,7 @@ export default function MapPage() {
       <div className="relative w-full h-screen overflow-auto">
 
         <img
-          src="https://images.ctfassets.net/swt2dsco9mfe/5mZ7Kj9Vb8fH0K2G4D7w8W/f8f67b6204fef79d80cb0e8bb8f7d9f8/westeros_map.jpg"
+          src="/westeros-map.jpg"
           alt="Westeros Map"
           className="min-w-[1400px] w-full h-auto opacity-80"
         />
