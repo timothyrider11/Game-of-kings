@@ -43,8 +43,7 @@ const defaultLocations = [
     color: "cyan",
     image:
       "https://static.wikia.nocookie.net/gameofthrones/images/3/39/Winterfell_Season_8.jpg",
-    description:
-      "Ancient seat of House Stark.",
+    description: "Ancient seat of House Stark.",
   },
 
   {
@@ -61,8 +60,7 @@ const defaultLocations = [
     color: "purple",
     image:
       "https://static.wikia.nocookie.net/gameofthrones/images/e/e7/Dragonstone.jpg",
-    description:
-      "Ancient island fortress of House Targaryen.",
+    description: "Ancient island fortress.",
   },
 
   {
@@ -79,8 +77,24 @@ const defaultLocations = [
     color: "zinc",
     image:
       "https://awoiaf.westeros.org/images/thumb/5/5c/House_Greyjoy.svg/500px-House_Greyjoy.svg.png",
-    description:
-      "Seat of House Greyjoy.",
+    description: "Seat of House Greyjoy.",
+  },
+
+  {
+    name: "Oldtown",
+    region: "Reach",
+    ruler: "House Hightower",
+    troops: 9200,
+    owner: "Reach Dominion",
+    level: 4,
+    income: 450,
+    status: "Controlled",
+    top: "92.5%",
+    left: "21.9%",
+    color: "green",
+    image:
+      "https://awoiaf.westeros.org/images/thumb/4/4f/Hightower.svg/500px-Hightower.svg.png",
+    description: "Ancient city of learning.",
   },
 ];
 
@@ -121,6 +135,58 @@ export default function MapPage() {
     return () => clearInterval(interval);
 
   }, [locations, houseName]);
+
+  /* AI WORLD EVENTS */
+
+  useEffect(() => {
+
+    const interval = setInterval(() => {
+
+      const randomCastle =
+        locations[Math.floor(Math.random() * locations.length)];
+
+      const events = [
+
+        `${randomCastle.owner} strengthened defenses at ${randomCastle.name}.`,
+
+        `${randomCastle.name} recruited additional soldiers.`,
+
+        `Rumors spread of conflict near ${randomCastle.name}.`,
+
+        `${randomCastle.owner} increased taxes in ${randomCastle.region}.`,
+
+      ];
+
+      const randomEvent =
+        events[Math.floor(Math.random() * events.length)];
+
+      setWarLog((prev) => [
+        randomEvent,
+        ...prev.slice(0, 24),
+      ]);
+
+      /* RANDOM TROOP GROWTH */
+
+      const updated = locations.map((location) => {
+
+        if (location.name === randomCastle.name) {
+
+          return {
+            ...location,
+            troops: location.troops + Math.floor(Math.random() * 400),
+          };
+        }
+
+        return location;
+      });
+
+      setLocations(updated);
+
+    }, 12000);
+
+    return () => clearInterval(interval);
+
+  }, [locations]);
 
   /* CLAIM */
 
@@ -191,7 +257,7 @@ export default function MapPage() {
     });
 
     setWarLog((prev) => [
-      `${houseName} recruited 1,000 new soldiers.`,
+      `${houseName} recruited 1,000 soldiers.`,
       ...prev,
     ]);
   };
@@ -229,7 +295,7 @@ export default function MapPage() {
     });
 
     setWarLog((prev) => [
-      `${selectedLocation.name} was upgraded to Level ${selectedLocation.level + 1}.`,
+      `${selectedLocation.name} advanced to Level ${selectedLocation.level + 1}.`,
       ...prev,
     ]);
   };
@@ -258,6 +324,9 @@ export default function MapPage() {
 
       case "emerald":
         return "bg-emerald-400 shadow-emerald-400/90";
+
+      case "green":
+        return "bg-green-500 shadow-green-500/90";
 
       case "zinc":
         return "bg-zinc-300 shadow-zinc-300/90";
@@ -346,7 +415,6 @@ export default function MapPage() {
 
           </div>
 
-          {/* SIGILS */}
           <div className="flex flex-wrap gap-4">
 
             {sigils.map((sigil) => (
@@ -390,7 +458,6 @@ export default function MapPage() {
           className="block w-auto max-w-none h-auto brightness-110 contrast-125 saturate-110"
         />
 
-        {/* MARKERS */}
         {locations.map((location) => (
           <button
             key={location.name}
@@ -422,7 +489,7 @@ export default function MapPage() {
 
       </div>
 
-      {/* WAR LOG */}
+      {/* CHRONICLE */}
       <div className="max-w-5xl mx-auto px-6 pb-16">
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
@@ -474,7 +541,6 @@ export default function MapPage() {
 
               </div>
 
-              {/* STATS */}
               <div className="grid grid-cols-2 gap-4">
 
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
@@ -497,29 +563,8 @@ export default function MapPage() {
                   </p>
                 </div>
 
-                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                  <p className="text-zinc-500 text-sm">
-                    Income
-                  </p>
-
-                  <p className="mt-1 font-semibold">
-                    {selectedLocation.income} Gold
-                  </p>
-                </div>
-
-                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                  <p className="text-zinc-500 text-sm">
-                    Owner
-                  </p>
-
-                  <p className="mt-1 font-semibold">
-                    {selectedLocation.owner}
-                  </p>
-                </div>
-
               </div>
 
-              {/* ACTIONS */}
               <div className="grid grid-cols-2 gap-4">
 
                 {!ownedCastle && (
@@ -537,14 +582,14 @@ export default function MapPage() {
                       onClick={recruitTroops}
                       className="bg-blue-700 hover:bg-blue-800 transition py-3 rounded-xl font-bold"
                     >
-                      Recruit Troops
+                      Recruit
                     </button>
 
                     <button
                       onClick={upgradeCastle}
                       className="bg-yellow-600 hover:bg-yellow-700 transition py-3 rounded-xl font-bold"
                     >
-                      Upgrade Castle
+                      Upgrade
                     </button>
                   </>
                 )}
