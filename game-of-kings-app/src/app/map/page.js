@@ -92,8 +92,8 @@ export default function MapPage() {
       </div>
 
       <div className="h-24" />
-
-      {/* MAP */}
+      
+{/* MAP */}
 
 <div className="w-full overflow-auto bg-black">
 
@@ -162,50 +162,6 @@ export default function MapPage() {
   </div>
 
 </div>
-
-        {locations.map((location) => (
-
-          <button
-            key={location.name}
-            onClick={() =>
-              setSelectedLocation(location)
-            }
-            className="absolute group"
-            style={{
-              top: location.top,
-              left: location.left,
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-
-            <div
-              className={`
-                absolute inset-0 scale-[2.5]
-                rounded-full blur-md opacity-80
-                ${getMarkerClasses(location.color)}
-              `}
-            />
-
-            <div
-              className={`
-                relative w-5 h-5 rounded-full
-                border-2 border-white animate-pulse
-                ${getMarkerClasses(location.color)}
-              `}
-            />
-
-            <div className="absolute left-7 top-[-2px] whitespace-nowrap bg-black/90 border border-zinc-700 px-3 py-1 rounded-lg text-sm opacity-0 group-hover:opacity-100 transition">
-
-              {location.name}
-
-            </div>
-
-          </button>
-
-        ))}
-
-      </div>
-
       {/* POPUP */}
 
       {selectedLocation && (
