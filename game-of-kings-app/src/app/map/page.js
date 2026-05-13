@@ -1,29 +1,55 @@
 const castles = [
-  { name: "Winterfell", top: "22%", left: "48%" },
-  { name: "Castle Black", top: "8%", left: "50%" },
-  { name: "White Harbor", top: "28%", left: "56%" },
-  { name: "The Dreadfort", top: "20%", left: "58%" },
-  { name: "Karhold", top: "14%", left: "66%" },
+  // THE NORTH
+  { name: "Castle Black", top: "6%", left: "49%" },
+  { name: "Winterfell", top: "21%", left: "48%" },
+  { name: "The Dreadfort", top: "19%", left: "56%" },
+  { name: "White Harbor", top: "29%", left: "56%" },
+  { name: "Karhold", top: "13%", left: "66%" },
+  { name: "Last Hearth", top: "16%", left: "61%" },
+  { name: "Deepwood Motte", top: "25%", left: "38%" },
+  { name: "Bear Island", top: "24%", left: "30%" },
+  { name: "Moat Cailin", top: "37%", left: "48%" },
 
-  { name: "Moat Cailin", top: "36%", left: "49%" },
-  { name: "The Twins", top: "48%", left: "45%" },
-  { name: "Riverrun", top: "54%", left: "43%" },
-  { name: "Harrenhal", top: "58%", left: "49%" },
-  { name: "The Eyrie", top: "49%", left: "58%" },
+  // RIVERLANDS
+  { name: "The Twins", top: "47%", left: "44%" },
+  { name: "Riverrun", top: "54%", left: "42%" },
+  { name: "Harrenhal", top: "58%", left: "48%" },
+  { name: "Seagard", top: "50%", left: "36%" },
 
-  { name: "Casterly Rock", top: "64%", left: "26%" },
-  { name: "Lannisport", top: "66%", left: "29%" },
-  { name: "Highgarden", top: "78%", left: "34%" },
-  { name: "Oldtown", top: "88%", left: "30%" },
+  // VALE
+  { name: "The Eyrie", top: "48%", left: "58%" },
+  { name: "Runestone", top: "46%", left: "63%" },
+  { name: "Gulltown", top: "52%", left: "66%" },
 
-  { name: "Storm's End", top: "74%", left: "62%" },
+  // WESTERLANDS
+  { name: "Casterly Rock", top: "64%", left: "25%" },
+  { name: "Lannisport", top: "66%", left: "28%" },
+  { name: "Castamere", top: "60%", left: "31%" },
+
+  // REACH
+  { name: "Highgarden", top: "78%", left: "35%" },
+  { name: "Oldtown", top: "89%", left: "31%" },
+  { name: "Horn Hill", top: "82%", left: "38%" },
+  { name: "Brightwater Keep", top: "80%", left: "28%" },
+
+  // CROWNLANDS
   { name: "King's Landing", top: "66%", left: "56%" },
   { name: "Dragonstone", top: "63%", left: "66%" },
+  { name: "Rosby", top: "63%", left: "54%" },
+  { name: "Duskendale", top: "61%", left: "58%" },
 
-  { name: "Sunspear", top: "92%", left: "62%" },
-  { name: "Yronwood", top: "86%", left: "54%" },
+  // STORMLANDS
+  { name: "Storm's End", top: "75%", left: "62%" },
+  { name: "Tarth", top: "77%", left: "69%" },
 
-  { name: "Pyke", top: "54%", left: "12%" },
+  // DORNE
+  { name: "Sunspear", top: "92%", left: "61%" },
+  { name: "Yronwood", top: "85%", left: "53%" },
+  { name: "Starfall", top: "90%", left: "44%" },
+
+  // IRON ISLANDS
+  { name: "Pyke", top: "54%", left: "11%" },
+  { name: "Harlaw", top: "56%", left: "14%" },
 ];
 
 export default function MapPage() {
