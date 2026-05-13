@@ -1,88 +1,171 @@
-export default function Home() {
+"use client";
+
+import Link from "next/link";
+
+const factions = [
+  {
+    name: "House Stark",
+    words: "Winter Is Coming",
+    image:
+      "https://awoiaf.westeros.org/images/thumb/7/7a/House_Stark.svg/545px-House_Stark.svg.png",
+  },
+
+  {
+    name: "House Lannister",
+    words: "Hear Me Roar",
+    image:
+      "https://awoiaf.westeros.org/images/thumb/c/c7/House_Lannister.svg/545px-House_Lannister.svg.png",
+  },
+
+  {
+    name: "House Targaryen",
+    words: "Fire and Blood",
+    image:
+      "https://awoiaf.westeros.org/images/thumb/9/9b/House_Targaryen.svg/545px-House_Targaryen.svg.png",
+  },
+
+  {
+    name: "House Greyjoy",
+    words: "We Do Not Sow",
+    image:
+      "https://awoiaf.westeros.org/images/thumb/5/5c/House_Greyjoy.svg/545px-House_Greyjoy.svg.png",
+  },
+];
+
+export default function HomePage() {
+
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="bg-black text-white overflow-hidden">
 
-      {/* HERO */}
-      <section className="relative flex flex-col items-center justify-center text-center px-6 py-32 bg-gradient-to-b from-black via-zinc-900 to-black">
+      {/* HERO SECTION */}
 
-        <h1 className="text-6xl md:text-8xl font-bold tracking-[0.3em] text-yellow-500 mb-6">
-          GAME OF KINGS
-        </h1>
+      <section className="relative h-screen flex items-center justify-center">
 
-        <p className="max-w-2xl text-zinc-300 text-lg md:text-2xl mb-8">
-          Claim your castle. Forge your house. Conquer the realm.
-        </p>
+        {/* BACKGROUND IMAGE */}
+        <img
+          src="/LONG-MAP.png"
+          alt="Westeros"
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+        />
 
-        <div className="flex gap-4 flex-wrap justify-center">
-          <button className="bg-yellow-600 hover:bg-yellow-500 text-black font-bold px-8 py-4 rounded-xl transition">
-            Enter the Realm
-          </button>
+        {/* DARK OVERLAY */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black" />
 
-          <button className="border border-yellow-600 hover:bg-yellow-700/20 text-yellow-500 px-8 py-4 rounded-xl transition">
-            View the Map
-          </button>
+        {/* CONTENT */}
+        <div className="relative z-10 text-center px-6">
+
+          <h1 className="text-6xl md:text-8xl font-black tracking-[0.3em] mb-6">
+
+            GAME OF KINGS
+
+          </h1>
+
+          <p className="text-zinc-300 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed mb-10">
+
+            Forge your noble house.
+            Claim legendary castles.
+            Build armies.
+            Form alliances.
+            Dominate the Seven Kingdoms.
+
+          </p>
+
+          {/* ENTER BUTTON */}
+          <Link href="/map">
+
+            <button className="bg-emerald-700 hover:bg-emerald-800 transition px-10 py-5 rounded-2xl text-xl font-black tracking-wide shadow-2xl hover:scale-105">
+
+              ENTER THE REALM
+
+            </button>
+
+          </Link>
+
         </div>
+
       </section>
 
-      {/* FEATURES */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-8 py-20 bg-zinc-950">
+      {/* FACTIONS */}
 
-        {[
-          {
-            title: "Claim Castles",
-            desc: "Begin your rise by taking control of a lesser stronghold.",
-          },
-          {
-            title: "Create Your House",
-            desc: "Forge your sigil, motto, banners and legacy.",
-          },
-          {
-            title: "Wage War",
-            desc: "Battle rival lords through strategy, alliances and conquest.",
-          },
-          {
-            title: "Earn Glory",
-            desc: "Win tournaments, discover relics and rise through the realm.",
-          },
-        ].map((item) => (
-          <div
-            key={item.title}
-            className="bg-black border border-yellow-700/30 rounded-2xl p-6 hover:border-yellow-500 transition"
-          >
-            <h2 className="text-2xl font-bold text-yellow-500 mb-4">
-              {item.title}
-            </h2>
+      <section className="max-w-7xl mx-auto px-6 py-24">
 
-            <p className="text-zinc-400">
-              {item.desc}
-            </p>
-          </div>
-        ))}
-      </section>
+        <div className="text-center mb-16">
 
-      {/* REALM NEWS */}
-      <section className="px-8 py-20 bg-black">
-        <h2 className="text-4xl font-bold text-center text-yellow-500 mb-12">
-          Realm News
-        </h2>
+          <h2 className="text-5xl font-black mb-5">
+            Great Houses of Westeros
+          </h2>
 
-        <div className="max-w-4xl mx-auto space-y-6">
+          <p className="text-zinc-400 text-lg">
+            Choose your alliances carefully.
+          </p>
 
-          {[
-            "House Blackmont has conquered Old Anchor.",
-            "The King has announced a grand tournament in King's Landing.",
-            "Rumors spread of Valyrian steel discovered beyond the Wall.",
-            "War banners rise in the Riverlands.",
-          ].map((news, i) => (
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+
+          {factions.map((faction) => (
+
             <div
-              key={i}
-              className="border border-zinc-800 bg-zinc-950 rounded-xl p-5"
+              key={faction.name}
+              className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center hover:border-emerald-500 transition hover:scale-105"
             >
-              <p className="text-zinc-300">{news}</p>
+
+              <img
+                src={faction.image}
+                alt={faction.name}
+                className="w-36 h-36 mx-auto object-contain mb-6"
+              />
+
+              <h3 className="text-2xl font-black mb-2">
+                {faction.name}
+              </h3>
+
+              <p className="text-zinc-400 italic">
+                "{faction.words}"
+              </p>
+
             </div>
+
           ))}
+
         </div>
+
       </section>
+
+      {/* LORE SECTION */}
+
+      <section className="relative py-32">
+
+        <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 to-black" />
+
+        <div className="relative max-w-5xl mx-auto px-6 text-center">
+
+          <h2 className="text-5xl font-black mb-10">
+            The Realm Awaits
+          </h2>
+
+          <p className="text-zinc-300 text-xl leading-relaxed">
+
+            Across Westeros, ancient rivalries awaken.
+            Noble houses rise and fall through war,
+            diplomacy, and ambition.
+
+            Build your kingdom from a single castle into
+            a legendary dynasty feared across the realm.
+
+          </p>
+
+        </div>
+
+      </section>
+
+      {/* FOOTER */}
+
+      <footer className="border-t border-zinc-900 py-10 text-center text-zinc-500">
+
+        GAME OF KINGS — Realm Strategy Simulator
+
+      </footer>
 
     </main>
   );
