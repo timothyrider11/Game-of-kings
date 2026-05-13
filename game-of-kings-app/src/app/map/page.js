@@ -119,7 +119,63 @@ export default function MapPage() {
     forumPoints * 100;
 
   const submitForumPost = () => {
+/* =========================================
+   CLAIM CASTLE
+========================================= */
 
+const claimCastle = () => {
+
+  if (!selectedLocation) return;
+
+  setOwnedCastle(selectedLocation.name);
+
+  setWarLog((prev) => [
+    `${houseName} claimed ${selectedLocation.name}.`,
+    ...prev,
+  ]);
+};
+
+/* =========================================
+   RECRUIT TROOPS
+========================================= */
+
+const recruitTroops = () => {
+
+  if (!selectedLocation) return;
+
+  setWarLog((prev) => [
+    `Troops recruited at ${selectedLocation.name}.`,
+    ...prev,
+  ]);
+};
+
+/* =========================================
+   UPGRADE CASTLE
+========================================= */
+
+const upgradeCastle = () => {
+
+  if (!selectedLocation) return;
+
+  setWarLog((prev) => [
+    `${selectedLocation.name} upgraded.`,
+    ...prev,
+  ]);
+};
+
+/* =========================================
+   FORM ALLIANCE
+========================================= */
+
+const formAlliance = () => {
+
+  if (!selectedLocation) return;
+
+  setWarLog((prev) => [
+    `${houseName} formed an alliance with ${selectedLocation.owner}.`,
+    ...prev,
+  ]);
+  
     if (!forumInput.trim()) return;
 
     setForumPosts((prev) => [
