@@ -215,7 +215,7 @@ export default function MapPage() {
               className="w-full h-64 object-cover"
             />
 
-            <div className="p-6 relative">>
+            <div className="p-6 relative">
               <div className="absolute inset-0 opacity-10 bg-center bg-contain bg-no-repeat pointer-events-none" />
 
               <h2 className="text-3xl font-bold mb-3">
