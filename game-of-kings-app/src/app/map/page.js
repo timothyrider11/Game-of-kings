@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const defaultLocations = [
   {
     name: "Winterfell",
     region: "North",
     ruler: "House Stark",
-    troops: "12,400",
+    troops: 12400,
     owner: "AI Realm",
     status: "Controlled",
     top: "25.2%",
@@ -22,7 +22,7 @@ const defaultLocations = [
     name: "King's Landing",
     region: "Crownlands",
     ruler: "The Iron Throne",
-    troops: "20,000",
+    troops: 20000,
     owner: "AI Realm",
     status: "Capital",
     top: "69.7%",
@@ -37,7 +37,7 @@ const defaultLocations = [
     name: "Dragonstone",
     region: "Crownlands",
     ruler: "Unclaimed",
-    troops: "2,500",
+    troops: 2500,
     owner: "None",
     status: "Claimable",
     top: "62.7%",
@@ -52,7 +52,7 @@ const defaultLocations = [
     name: "Pyke",
     region: "Iron Islands",
     ruler: "House Greyjoy",
-    troops: "6,700",
+    troops: 6700,
     owner: "AI Realm",
     status: "Controlled",
     top: "61.8%",
@@ -67,7 +67,7 @@ const defaultLocations = [
     name: "Oldtown",
     region: "Reach",
     ruler: "House Hightower",
-    troops: "9,200",
+    troops: 9200,
     owner: "AI Realm",
     status: "Controlled",
     top: "92.5%",
@@ -82,7 +82,7 @@ const defaultLocations = [
     name: "Sunspear",
     region: "Dorne",
     ruler: "House Martell",
-    troops: "10,500",
+    troops: 10500,
     owner: "AI Realm",
     status: "Controlled",
     top: "95.4%",
@@ -131,6 +131,29 @@ export default function MapPage() {
     });
   };
 
+  /* REALM STATS */
+
+  const playerCastles = useMemo(() => {
+    return locations.filter(
+      (location) => location.owner === houseName
+    ).length;
+  }, [locations, houseName]);
+
+  const playerTroops = useMemo(() => {
+    return locations
+      .filter((location) => location.owner === houseName)
+      .reduce((sum, location) => sum + location.troops, 0);
+  }, [locations, houseName]);
+
+  const powerRank = useMemo(() => {
+
+    if (playerTroops >= 40000) return "Empire";
+    if (playerTroops >= 25000) return "Dominant";
+    if (playerTroops >= 12000) return "Rising";
+    return "Minor House";
+
+  }, [playerTroops]);
+
   return (
     <main className="bg-black min-h-screen text-white overflow-hidden">
 
@@ -143,14 +166,34 @@ export default function MapPage() {
             GAME OF KINGS
           </h1>
 
-          <div className="hidden md:flex gap-5 text-sm text-zinc-400">
+          <div className="hidden lg:flex gap-6 text-sm">
 
-            <div>
-              Realm: <span className="text-green-400">{houseName}</span>
+            <div className="text-zinc-400">
+              Realm:
+              <span className="ml-2 text-green-400 font-semibold">
+                {houseName}
+              </span>
             </div>
 
-            <div>
-              Ruler: <span className="text-yellow-300">{rulerName}</span>
+            <div className="text-zinc-400">
+              Holdings:
+              <span className="ml-2 text-cyan-300 font-semibold">
+                {playerCastles}
+              </span>
+            </div>
+
+            <div className="text-zinc-400">
+              Troops:
+              <span className="ml-2 text-red-400 font-semibold">
+                {playerTroops.toLocaleString()}
+              </span>
+            </div>
+
+            <div className="text-zinc-400">
+              Rank:
+              <span className="ml-2 text-yellow-300 font-semibold">
+                {powerRank}
+              </span>
             </div>
 
           </div>
@@ -162,10 +205,10 @@ export default function MapPage() {
       {/* HOUSE PANEL */}
       <div className="max-w-7xl mx-auto pt-28 px-6">
 
-        <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 mb-8 backdrop-blur-md">
+        <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 mb-8">
 
           <h2 className="text-2xl font-black mb-5">
-            Create Your Noble House
+            Forge Your Noble House
           </h2>
 
           <div className="grid md:grid-cols-2 gap-4">
@@ -212,6 +255,7 @@ export default function MapPage() {
             }}
           >
 
+            {/* MARKER */}
             <div
               className={`
                 w-4 h-4 rounded-full border border-white shadow-lg animate-pulse
@@ -223,7 +267,7 @@ export default function MapPage() {
                     : location.status === "Claimable"
                     ? "bg-purple-500 shadow-purple-500/90"
 
-                    : location.status === "Claimed"
+                    : location.owner === houseName
                     ? "bg-green-400 shadow-green-400/90"
 
                     : "bg-red-500 shadow-red-500/80"
@@ -297,7 +341,7 @@ export default function MapPage() {
                   </p>
 
                   <p className="mt-1 font-semibold">
-                    {selectedLocation.troops}
+                    {selectedLocation.troops.toLocaleString()}
                   </p>
 
                 </div>
@@ -328,15 +372,15 @@ export default function MapPage() {
 
               </div>
 
-              {/* ACTION BUTTONS */}
+              {/* ACTIONS */}
               <div className="grid grid-cols-2 gap-4">
 
-                {selectedLocation.status !== "Claimed" && (
+                {selectedLocation.owner !== houseName && (
                   <button
                     onClick={claimCastle}
                     className="bg-green-700 hover:bg-green-800 transition py-3 rounded-xl font-bold"
                   >
-                    Claim Castle
+                    Claim Stronghold
                   </button>
                 )}
 
