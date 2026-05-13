@@ -43,6 +43,8 @@ export default function MapPage() {
 
   const [prestige] = useState(100);
 
+  const [ownedCastle, setOwnedCastle] = useState(null);
+
   const [forumPoints] = useState(0);
 
   const [forumInput, setForumInput] =
