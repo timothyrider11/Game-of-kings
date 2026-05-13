@@ -49,7 +49,7 @@ export default function MapPage() {
 
      
   <img
-  src="/westeros-map.jpg"
+  src="/westeros-map.png"
   alt="Westeros Map"
   className="min-w-[1400px] w-full h-auto opacity-80"
 />
