@@ -54,7 +54,7 @@ const castles = [
 
 export default function MapPage() {
   return (
-    <main className="min-w-[1400px] w-full h-auto opacity-90">
+    <main className="bg-black min-h-screen text-white overflow-hidden">
 
       {/* HEADER */}
       <div className="absolute z-20 w-full p-6 flex justify-between items-center bg-black/70 backdrop-blur-sm border-b border-zinc-800">
@@ -73,11 +73,10 @@ export default function MapPage() {
       {/* MAP */}
       <div className="relative w-full h-screen overflow-auto">
 
-     
-  <img
-  src="/westeros-map.png"
+     <img
+  src="/Westeros-map.png"
   alt="Westeros Map"
-  className="min-w-[1400px] w-full h-auto opacity-80"
+  className="min-w-[1400px] w-full h-auto opacity-90"
 />
 
         {/* CASTLES */}
