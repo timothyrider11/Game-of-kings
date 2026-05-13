@@ -28,8 +28,6 @@ export default function CastlePopup({
 
         <div className="p-6 space-y-6">
 
-          {/* HEADER */}
-
           <div>
 
             <h2 className="text-5xl font-black">
@@ -41,8 +39,6 @@ export default function CastlePopup({
             </p>
 
           </div>
-
-          {/* DESCRIPTION */}
 
           <p className="text-zinc-300 leading-relaxed text-lg">
 
@@ -98,30 +94,6 @@ export default function CastlePopup({
 
               <p className="text-xl font-bold mt-1">
                 {selectedLocation.income} Gold
-              </p>
-
-            </div>
-
-            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5">
-
-              <p className="text-zinc-500 text-sm">
-                Diplomacy
-              </p>
-
-              <p className="text-xl font-bold mt-1">
-                {selectedLocation.diplomacy}
-              </p>
-
-            </div>
-
-            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5">
-
-              <p className="text-zinc-500 text-sm">
-                Status
-              </p>
-
-              <p className="text-xl font-bold mt-1">
-                {selectedLocation.status}
               </p>
 
             </div>

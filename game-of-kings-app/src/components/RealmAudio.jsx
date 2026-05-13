@@ -8,10 +8,6 @@ export default function RealmAudio() {
 
   const [playing, setPlaying] = useState(false);
 
-  /* =========================
-     AUTO VOLUME
-  ========================= */
-
   useEffect(() => {
 
     if (audioRef.current) {
@@ -21,10 +17,6 @@ export default function RealmAudio() {
     }
 
   }, []);
-
-  /* =========================
-     TOGGLE MUSIC
-  ========================= */
 
   const toggleMusic = () => {
 
@@ -49,15 +41,11 @@ export default function RealmAudio() {
   return (
     <>
 
-      {/* AUDIO */}
-
       <audio
         ref={audioRef}
         loop
         src="/audio/realm-theme.mp3"
       />
-
-      {/* BUTTON */}
 
       <button
         onClick={toggleMusic}
