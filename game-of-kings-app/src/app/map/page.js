@@ -13,139 +13,50 @@ const locations = [
       "Ancient seat of House Stark and the capital of the North.",
   },
 
-  name: "House Reed",
-  top: "44.8%",
-  left: "44.5%",
-  image: "/houses/reed.png",
-  description: "Greywater Watch — rulers of the Neck."
-},
-
-{
-  name: "House Frey",
-  top: "55.2%",
-  left: "49.3%",
-  image: "/houses/frey.png",
-  description: "The Twins — bridge keepers of the Trident."
-},
-
-{
-  name: "House Mallister",
-  top: "53%",
-  left: "42%",
-  image: "/houses/mallister.png",
-  description: "Seagard — defenders against Ironborn raids."
-},
-
-{
-  name: "House Corbray",
-  top: "51%",
-  left: "68%",
-  image: "/houses/corbray.png",
-  description: "Ancient Vale house wielding Lady Forlorn."
-},
-
-{
-  name: "King's Landing",
-  top: "70.3%",
-  left: "61%",
-  image: "/locations/kingslanding.jpg",
-  description: "Capital of the Seven Kingdoms."
-},
-
-{
-  name: "House Greyjoy",
-  top: "62%",
-  left: "13%",
-  image: "/houses/greyjoy.png",
-  description: "Pyke — rulers of the Iron Islands."
-},
-
-{
-  name: "House Tarth",
-  top: "72%",
-  left: "79%",
-  image: "/houses/tarth.png",
-  description: "Evenfall Hall on the Sapphire Isle."
-},
-
-{
-  name: "House Fowler",
-  top: "91%",
-  left: "51%",
-  image: "/houses/fowler.png",
-  description: "Skyreach — wardens of the Prince's Pass."
-},
-
-{
-  name: "House Blackbar",
-  top: "88%",
-  left: "11%",
-  image: "/houses/blackbar.png",
-  description: "Lords of Bandallon in the Reach."
-},
-
-{
-  name: "House Tarly",
-  top: "83%",
-  left: "31%",
-  image: "/houses/tarly.png",
-  description: "Horn Hill — famed military house of the Reach."
-},
-
-{
-    name: "Castle Black",
-    top: "8%",
-    left: "55%",
+  {
+    name: "House Reed",
+    top: "44.8%",
+    left: "44.5%",
     image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/6/69/Castle_Black.jpg",
+      "https://awoiaf.westeros.org/images/thumb/7/70/House_Reed.svg/400px-House_Reed.svg.png",
     description:
-      "Primary headquarters of the Night’s Watch at the Wall.",
+      "Greywater Watch - rulers of the Neck.",
   },
 
   {
-    name: "White Harbor",
-    top: "40%",
-    left: "58%",
+    name: "House Frey",
+    top: "55.2%",
+    left: "49.3%",
     image:
-      "https://awoiaf.westeros.org/images/thumb/2/2d/White_Harbor.jpg/800px-White_Harbor.jpg",
+      "https://awoiaf.westeros.org/images/thumb/0/01/House_Frey.svg/400px-House_Frey.svg.png",
     description:
-      "Major northern port ruled by House Manderly.",
+      "The Twins - bridge keepers of the Trident.",
   },
 
   {
-    name: "The Eyrie",
-    top: "52%",
-    left: "73%",
+    name: "House Mallister",
+    top: "53%",
+    left: "42%",
     image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/f/f0/Eyrie_HBO.jpg",
+      "https://awoiaf.westeros.org/images/thumb/6/61/House_Mallister.svg/400px-House_Mallister.svg.png",
     description:
-      "Mountain fortress of House Arryn in the Vale.",
+      "Seagard - defenders against Ironborn raids.",
   },
 
   {
-    name: "Riverrun",
-    top: "60%",
-    left: "49%",
+    name: "House Corbray",
+    top: "51%",
+    left: "68%",
     image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/7/7b/Riverrun.jpg",
+      "https://awoiaf.westeros.org/images/thumb/7/7d/House_Corbray.svg/400px-House_Corbray.svg.png",
     description:
-      "Seat of House Tully in the Riverlands.",
-  },
-
-  {
-    name: "Casterly Rock",
-    top: "70%",
-    left: "21%",
-    image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/0/0e/Casterly_Rock.jpg",
-    description:
-      "Legendary fortress and homeland of House Lannister.",
+      "Ancient Vale house wielding Lady Forlorn.",
   },
 
   {
     name: "King's Landing",
-    top: "72%",
-    left: "64%",
+    top: "70.3%",
+    left: "61%",
     image:
       "https://static.wikia.nocookie.net/gameofthrones/images/5/5c/Kings_Landing.jpg",
     description:
@@ -153,54 +64,54 @@ const locations = [
   },
 
   {
-    name: "Dragonstone",
+    name: "House Greyjoy",
     top: "62%",
-    left: "86%",
+    left: "13%",
     image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/e/e7/Dragonstone.jpg",
+      "https://awoiaf.westeros.org/images/thumb/5/5c/House_Greyjoy.svg/400px-House_Greyjoy.svg.png",
     description:
-      "Ancient Targaryen island fortress.",
+      "Pyke - rulers of the Iron Islands.",
   },
 
   {
-    name: "Highgarden",
-    top: "84%",
-    left: "35%",
+    name: "House Tarth",
+    top: "72%",
+    left: "79%",
     image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/7/73/Highgarden.jpg",
+      "https://awoiaf.westeros.org/images/thumb/0/05/House_Tarth.svg/400px-House_Tarth.svg.png",
     description:
-      "Beautiful castle of House Tyrell in the Reach.",
+      "Evenfall Hall on the Sapphire Isle.",
   },
 
   {
-    name: "Oldtown",
-    top: "94%",
-    left: "22%",
+    name: "House Fowler",
+    top: "91%",
+    left: "51%",
     image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/0/09/Oldtown.jpg",
+      "https://awoiaf.westeros.org/images/thumb/7/70/House_Fowler.svg/400px-House_Fowler.svg.png",
     description:
-      "Oldest city in Westeros and home of the Citadel.",
+      "Skyreach - wardens of the Prince's Pass.",
   },
 
   {
-    name: "Storm's End",
-    top: "78%",
-    left: "82%",
+    name: "House Blackbar",
+    top: "88%",
+    left: "11%",
     image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/e/e7/Storms_End.jpg",
+      "https://awoiaf.westeros.org/images/thumb/b/b9/House_Blackbar.svg/400px-House_Blackbar.svg.png",
     description:
-      "Massive coastal fortress of House Baratheon.",
+      "Lords of Bandallon in the Reach.",
   },
 
   {
-    name: "Sunspear",
-    top: "96%",
-    left: "86%",
+    name: "House Tarly",
+    top: "83%",
+    left: "31%",
     image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/5/52/Sunspear.jpg",
+      "https://awoiaf.westeros.org/images/thumb/5/56/House_Tarly.svg/400px-House_Tarly.svg.png",
     description:
-      "Capital of Dorne and seat of House Martell.",
-  }
+      "Horn Hill - famed military house of the Reach.",
+  },
 ];
 
 export default function MapPage() {
