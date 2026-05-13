@@ -95,7 +95,7 @@ export default function MapPage() {
 
       {/* MAP */}
 
-      <div className="w-full overflow-auto bg-black">
+<div className="w-full overflow-auto bg-black">
 
   <div
     className="relative mx-auto"
@@ -105,12 +105,63 @@ export default function MapPage() {
     }}
   >
 
-        <img
-  src="/LONG-MAP.png"
-  alt="Westeros"
-  draggable={false}
-  className="absolute top-0 left-0 w-full h-full object-fill select-none"
-/>
+    <img
+      src="/LONG-MAP.png"
+      alt="Westeros"
+      draggable={false}
+      className="absolute top-0 left-0 w-full h-full object-fill select-none"
+    />
+
+    {locations.map((location) => (
+
+      <button
+        key={location.name}
+        onClick={() =>
+          setSelectedLocation(location)
+        }
+        className="absolute group"
+        style={{
+          top: location.top,
+          left: location.left,
+          transform: "translate(-50%, -50%)",
+        }}
+      >
+
+        {/* OUTER GLOW */}
+
+        <div
+          className={`
+            absolute inset-0 scale-[2.5]
+            rounded-full blur-md opacity-80
+            ${getMarkerClasses(location.color)}
+          `}
+        />
+
+        {/* MARKER */}
+
+        <div
+          className={`
+            relative w-5 h-5 rounded-full
+            border-2 border-white animate-pulse
+            ${getMarkerClasses(location.color)}
+          `}
+        />
+
+        {/* LABEL */}
+
+        <div className="absolute left-7 top-[-2px] whitespace-nowrap bg-black/90 border border-zinc-700 px-3 py-1 rounded-lg text-sm opacity-0 group-hover:opacity-100 transition">
+
+          {location.name}
+
+        </div>
+
+      </button>
+
+    ))}
+
+  </div>
+
+</div>
 
         {locations.map((location) => (
 
