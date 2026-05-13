@@ -23,3 +23,5 @@ View the Map
 </main>
 );
 }
+git add .
+git commit -m "Added Game of Kings homepage"
