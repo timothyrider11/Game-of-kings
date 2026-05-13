@@ -148,13 +148,13 @@ export default function MapPage() {
 
       {/* MAP */}
 
-      <div className="relative w-full flex justify-center pt-24 pb-20">
+      <div className="relative w-fit mx-auto pt-24 pb-20">
 
         <img
-          src="/LONG-MAP.png"
-          alt="Westeros Map"
-          className="w-full max-w-[1100px] h-auto select-none"
-        />
+  src="/LONG-MAP.png"
+  alt="Westeros Map"
+  className="block w-auto max-w-none h-auto select-none"
+/>
 
         {/* LOCATION MARKERS */}
 
