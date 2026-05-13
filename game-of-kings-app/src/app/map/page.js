@@ -5,7 +5,7 @@ export default function HomePage() {
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
 
       {/* BACKGROUND */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 -z-10">
 
         <img
           src="/LONG-MAP.png"
@@ -18,10 +18,10 @@ export default function HomePage() {
       </div>
 
       {/* ATMOSPHERE */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(120,120,120,0.06),transparent_70%)] pointer-events-none" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(120,120,120,0.06),transparent_70%)]" />
 
       {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 text-center">
+      <div className="relative z-20 flex flex-col items-center justify-center min-h-screen px-6 text-center">
 
         {/* TITLE */}
         <h1 className="text-6xl md:text-8xl font-black tracking-[0.35em] text-zinc-100 drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]">
@@ -40,20 +40,14 @@ export default function HomePage() {
         </p>
 
         {/* BUTTONS */}
-        <div className="mt-12 flex flex-col md:flex-row gap-5">
+        <div className="mt-12 flex flex-col md:flex-row gap-5 z-30">
 
           {/* ENTER REALM */}
           <Link
             href="/map"
-            className="group relative overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900/70 backdrop-blur-md px-10 py-5 text-xl font-bold tracking-wide transition hover:border-zinc-400 hover:scale-105"
+            className="relative z-40 rounded-2xl border border-zinc-700 bg-zinc-900/80 backdrop-blur-md px-10 py-5 text-xl font-bold tracking-wide transition hover:border-zinc-400 hover:bg-zinc-800 hover:scale-105 cursor-pointer"
           >
-
-            <span className="relative z-10">
-              Enter The Realm
-            </span>
-
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-r from-zinc-700/20 to-zinc-500/20" />
-
+            Enter The Realm
           </Link>
 
           {/* LORE BUTTON */}
