@@ -47,11 +47,12 @@ export default function MapPage() {
       {/* MAP */}
       <div className="relative w-full h-screen overflow-auto">
 
-        <img
-          src="/westeros-map.jpg"
-          alt="Westeros Map"
-          className="min-w-[1400px] w-full h-auto opacity-80"
-        />
+     
+  <img
+  src="/westeros-map.jpg"
+  alt="Westeros Map"
+  className="min-w-[1400px] w-full h-auto opacity-80"
+/>
 
         {/* CASTLES */}
         {castles.map((castle) => (
