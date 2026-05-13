@@ -82,22 +82,19 @@ export default function MapPage() {
 
         {/* CASTLES */}
         {castles.map((castle) => (
-          <button
-            key={castle.name}
-            className="absolute group"
-            style={{
-              top: castle.top,
-              left: castle.left,
-            }}
-          >
-            <div className="w-4 h-4 bg-red-700 rounded-full border-2 border-white shadow-lg group-hover:scale-150 transition" />
+  <button
+    key={castle.name}
+    className="absolute group"
+    style={{
+      top: castle.top,
+      left: castle.left,
+      transform: "translate(-50%, -50%)",
+    }}
+  >
+    <div className="w-4 h-4 bg-red-600 rounded-full border-2 border-white shadow-lg group-hover:scale-150 transition duration-200" />
 
-            <div className="absolute left-6 top-[-6px] whitespace-nowrap bg-black/80 px-3 py-1 rounded-md text-sm border border-zinc-700 opacity-0 group-hover:opacity-100 transition">
-              {castle.name}
-            </div>
-          </button>
-        ))}
-      </div>
-    </main>
-  );
-}
+    <div className="absolute left-6 top-[-6px] whitespace-nowrap bg-black/90 px-3 py-1 rounded-lg text-sm text-white opacity-0 group-hover:opacity-100 transition border border-zinc-700">
+      {castle.name}
+    </div>
+  </button>
+))}
