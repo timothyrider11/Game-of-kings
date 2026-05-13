@@ -1,13 +1,10 @@
-"use client";
-
-import { useState } from "react";
-
-const locations = [
+const defaultLocations = [
   {
     name: "Winterfell",
     region: "North",
     ruler: "House Stark",
     troops: "12,400",
+    owner: "AI Realm",
     status: "Controlled",
     top: "25.2%",
     left: "50.1%",
@@ -18,136 +15,11 @@ const locations = [
   },
 
   {
-    name: "Castle Black",
-    region: "North",
-    ruler: "Night's Watch",
-    troops: "4,800",
-    status: "Controlled",
-    top: "6.4%",
-    left: "54.2%",
-    image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/6/69/Castle_Black.jpg",
-    description:
-      "Primary stronghold of the Night's Watch.",
-  },
-
-  {
-    name: "White Harbor",
-    region: "North",
-    ruler: "House Manderly",
-    troops: "7,400",
-    status: "Controlled",
-    top: "37.5%",
-    left: "58.1%",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/2/2d/White_Harbor.jpg/800px-White_Harbor.jpg",
-    description:
-      "Major northern port ruled by House Manderly.",
-  },
-
-  {
-    name: "Greywater Watch",
-    region: "Neck",
-    ruler: "House Reed",
-    troops: "2,100",
-    status: "Hidden",
-    top: "45.1%",
-    left: "45.1%",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/7/70/House_Reed.svg/500px-House_Reed.svg.png",
-    description:
-      "Hidden moving fortress of House Reed.",
-  },
-
-  {
-    name: "The Twins",
-    region: "Riverlands",
-    ruler: "House Frey",
-    troops: "8,300",
-    status: "Controlled",
-    top: "54.4%",
-    left: "48.9%",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/0/01/House_Frey.svg/500px-House_Frey.svg.png",
-    description:
-      "Twin crossing fortress over the Green Fork.",
-  },
-
-  {
-    name: "Seagard",
-    region: "Riverlands",
-    ruler: "House Mallister",
-    troops: "5,900",
-    status: "Controlled",
-    top: "52.4%",
-    left: "41.7%",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/6/61/House_Mallister.svg/500px-House_Mallister.svg.png",
-    description:
-      "Stronghold guarding the western coast.",
-  },
-
-  {
-    name: "The Eyrie",
-    region: "Vale",
-    ruler: "House Arryn",
-    troops: "7,200",
-    status: "Controlled",
-    top: "50.4%",
-    left: "68.7%",
-    image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/f/f0/Eyrie_HBO.jpg",
-    description:
-      "Mountain fortress of House Arryn.",
-  },
-
-  {
-    name: "Heart's Home",
-    region: "Vale",
-    ruler: "House Corbray",
-    troops: "3,600",
-    status: "Controlled",
-    top: "49.1%",
-    left: "72.2%",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/7/7d/House_Corbray.svg/500px-House_Corbray.svg.png",
-    description:
-      "Seat of House Corbray.",
-  },
-
-  {
-    name: "Casterly Rock",
-    region: "Westerlands",
-    ruler: "House Lannister",
-    troops: "15,000",
-    status: "Controlled",
-    top: "69.3%",
-    left: "19.8%",
-    image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/0/0e/Casterly_Rock.jpg",
-    description:
-      "Legendary fortress of House Lannister.",
-  },
-
-  {
-    name: "Pyke",
-    region: "Iron Islands",
-    ruler: "House Greyjoy",
-    troops: "6,700",
-    status: "Controlled",
-    top: "61.8%",
-    left: "12.8%",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/5/5c/House_Greyjoy.svg/500px-House_Greyjoy.svg.png",
-    description:
-      "Seat of House Greyjoy.",
-  },
-
-  {
     name: "King's Landing",
     region: "Crownlands",
     ruler: "The Iron Throne",
     troops: "20,000",
+    owner: "AI Realm",
     status: "Capital",
     top: "69.7%",
     left: "60.7%",
@@ -162,6 +34,7 @@ const locations = [
     region: "Crownlands",
     ruler: "Unclaimed",
     troops: "2,500",
+    owner: "None",
     status: "Claimable",
     top: "62.7%",
     left: "84.2%",
@@ -172,17 +45,18 @@ const locations = [
   },
 
   {
-    name: "Horn Hill",
-    region: "Reach",
-    ruler: "House Tarly",
-    troops: "5,800",
+    name: "Pyke",
+    region: "Iron Islands",
+    ruler: "House Greyjoy",
+    troops: "6,700",
+    owner: "AI Realm",
     status: "Controlled",
-    top: "82.8%",
-    left: "30.8%",
+    top: "61.8%",
+    left: "12.8%",
     image:
-      "https://awoiaf.westeros.org/images/thumb/5/56/House_Tarly.svg/500px-House_Tarly.svg.png",
+      "https://awoiaf.westeros.org/images/thumb/5/5c/House_Greyjoy.svg/500px-House_Greyjoy.svg.png",
     description:
-      "Military stronghold of House Tarly.",
+      "Seat of House Greyjoy.",
   },
 
   {
@@ -190,6 +64,7 @@ const locations = [
     region: "Reach",
     ruler: "House Hightower",
     troops: "9,200",
+    owner: "AI Realm",
     status: "Controlled",
     top: "92.5%",
     left: "21.9%",
@@ -198,76 +73,79 @@ const locations = [
     description:
       "Ancient city ruled by House Hightower.",
   },
-
-  {
-    name: "Evenfall Hall",
-    region: "Stormlands",
-    ruler: "House Tarth",
-    troops: "3,900",
-    status: "Controlled",
-    top: "72.1%",
-    left: "78.8%",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/0/05/House_Tarth.svg/500px-House_Tarth.svg.png",
-    description:
-      "Seat of House Tarth on the Sapphire Isle.",
-  },
-
-  {
-    name: "Skyreach",
-    region: "Dorne",
-    ruler: "House Fowler",
-    troops: "4,200",
-    status: "Controlled",
-    top: "90.7%",
-    left: "50.8%",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/7/70/House_Fowler.svg/500px-House_Fowler.svg.png",
-    description:
-      "Mountain fortress guarding the Prince's Pass.",
-  },
-
-  {
-    name: "Sunspear",
-    region: "Dorne",
-    ruler: "House Martell",
-    troops: "10,500",
-    status: "Controlled",
-    top: "95.4%",
-    left: "83.6%",
-    image:
-      "https://static.wikia.nocookie.net/gameofthrones/images/5/52/Sunspear.jpg",
-    description:
-      "Capital of Dorne and seat of House Martell.",
-  },
 ];
 
 export default function MapPage() {
+  const [locations, setLocations] = useState(defaultLocations);
+
   const [selectedLocation, setSelectedLocation] = useState(null);
+
+  const claimCastle = () => {
+    const updated = locations.map((location) => {
+      if (location.name === selectedLocation.name) {
+        return {
+          ...location,
+          owner: "Player Realm",
+          ruler: "Your House",
+          status: "Claimed",
+        };
+      }
+
+      return location;
+    });
+
+    setLocations(updated);
+
+    setSelectedLocation({
+      ...selectedLocation,
+      owner: "Player Realm",
+      ruler: "Your House",
+      status: "Claimed",
+    });
+  };
 
   return (
     <main className="bg-black min-h-screen text-white overflow-hidden">
 
       {/* HEADER */}
-      <div className="fixed top-0 left-0 z-50 w-full bg-black/80 border-b border-zinc-800 p-4 backdrop-blur-md">
+      <div className="fixed top-0 left-0 z-50 w-full bg-black/80 border-b border-zinc-800 backdrop-blur-md">
 
-        <h1 className="text-3xl font-black tracking-[0.25em] text-center">
-          GAME OF KINGS
-        </h1>
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+
+          <h1 className="text-3xl font-black tracking-[0.3em]">
+            GAME OF KINGS
+          </h1>
+
+          <div className="hidden md:flex gap-5 text-sm text-zinc-400">
+
+            <div>
+              Holdings: <span className="text-green-400">5</span>
+            </div>
+
+            <div>
+              Wars: <span className="text-red-400">2 Active</span>
+            </div>
+
+            <div>
+              Realm Power: <span className="text-yellow-300">Stable</span>
+            </div>
+
+          </div>
+
+        </div>
 
       </div>
 
-      {/* MAP CONTAINER */}
+      {/* MAP */}
       <div className="relative w-fit mx-auto pt-24 pb-20">
 
-        {/* MAP IMAGE */}
         <img
           src="/LONG-MAP.png"
-          alt="Westeros Map"
+          alt="Westeros"
           className="block w-auto max-w-none h-auto brightness-110 contrast-125 saturate-110"
         />
 
-        {/* MARKERS */}
+        {/* LOCATION MARKERS */}
         {locations.map((location) => (
           <button
             key={location.name}
@@ -280,24 +158,21 @@ export default function MapPage() {
             }}
           >
 
-            {/* GLOWING MARKER */}
+            {/* MARKER */}
             <div
               className={`
                 w-4 h-4 rounded-full border border-white shadow-lg animate-pulse
 
                 ${
-                  location.region === "North"
-                    ? "bg-cyan-300 shadow-cyan-400/80"
-                    : location.region === "Riverlands"
-                    ? "bg-blue-500 shadow-blue-500/80"
-                    : location.region === "Iron Islands"
-                    ? "bg-zinc-300 shadow-zinc-300/80"
-                    : location.region === "Vale"
-                    ? "bg-sky-300 shadow-sky-300/80"
-                    : location.region === "Reach"
-                    ? "bg-green-500 shadow-green-500/80"
-                    : location.region === "Dorne"
-                    ? "bg-orange-500 shadow-orange-500/80"
+                  location.status === "Capital"
+                    ? "bg-yellow-400 shadow-yellow-400/90"
+
+                    : location.status === "Claimable"
+                    ? "bg-purple-500 shadow-purple-500/90"
+
+                    : location.status === "Claimed"
+                    ? "bg-green-400 shadow-green-400/90"
+
                     : "bg-red-500 shadow-red-500/80"
                 }
               `}
@@ -319,7 +194,7 @@ export default function MapPage() {
       {selectedLocation && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
 
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden max-w-lg w-full shadow-2xl">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden max-w-xl w-full shadow-2xl">
 
             {/* IMAGE */}
             <img
@@ -329,27 +204,89 @@ export default function MapPage() {
             />
 
             {/* CONTENT */}
-            <div className="p-6">
+            <div className="p-6 space-y-5">
 
-              <h2 className="text-4xl font-black mb-2">
-                {selectedLocation.name}
-              </h2>
+              <div>
 
-              <p className="text-zinc-400 mb-4">
-                {selectedLocation.region}
-              </p>
+                <h2 className="text-4xl font-black">
+                  {selectedLocation.name}
+                </h2>
+
+                <p className="text-zinc-400 mt-1">
+                  {selectedLocation.region}
+                </p>
+
+              </div>
 
               <p className="text-zinc-300 leading-relaxed">
                 {selectedLocation.description}
               </p>
 
-              {/* CLOSE BUTTON */}
-              <button
-                onClick={() => setSelectedLocation(null)}
-                className="mt-6 w-full bg-red-700 hover:bg-red-800 transition py-3 rounded-xl font-bold"
-              >
-                Close
-              </button>
+              {/* STATS */}
+              <div className="grid grid-cols-2 gap-4">
+
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                  <p className="text-zinc-500 text-sm">
+                    Ruler
+                  </p>
+
+                  <p className="mt-1 font-semibold">
+                    {selectedLocation.ruler}
+                  </p>
+                </div>
+
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                  <p className="text-zinc-500 text-sm">
+                    Troops
+                  </p>
+
+                  <p className="mt-1 font-semibold">
+                    {selectedLocation.troops}
+                  </p>
+                </div>
+
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                  <p className="text-zinc-500 text-sm">
+                    Status
+                  </p>
+
+                  <p className="mt-1 font-semibold">
+                    {selectedLocation.status}
+                  </p>
+                </div>
+
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                  <p className="text-zinc-500 text-sm">
+                    Owner
+                  </p>
+
+                  <p className="mt-1 font-semibold">
+                    {selectedLocation.owner}
+                  </p>
+                </div>
+
+              </div>
+
+              {/* ACTION BUTTONS */}
+              <div className="grid grid-cols-2 gap-4">
+
+                {selectedLocation.status !== "Claimed" && (
+                  <button
+                    onClick={claimCastle}
+                    className="bg-green-700 hover:bg-green-800 transition py-3 rounded-xl font-bold"
+                  >
+                    Claim Castle
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setSelectedLocation(null)}
+                  className="bg-zinc-800 hover:bg-zinc-700 transition py-3 rounded-xl font-bold"
+                >
+                  Close
+                </button>
+
+              </div>
 
             </div>
 
