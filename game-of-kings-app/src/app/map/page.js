@@ -1,25 +1,25 @@
 const castles = [
-  // THE NORTH
-  { name: "Castle Black", top: "6%", left: "49%" },
+  // THE WALL / NORTH
+  { name: "Castle Black", top: "7%", left: "49%" },
   { name: "Winterfell", top: "21%", left: "48%" },
-  { name: "The Dreadfort", top: "19%", left: "56%" },
-  { name: "White Harbor", top: "29%", left: "56%" },
-  { name: "Karhold", top: "13%", left: "66%" },
-  { name: "Last Hearth", top: "16%", left: "61%" },
-  { name: "Deepwood Motte", top: "25%", left: "38%" },
-  { name: "Bear Island", top: "24%", left: "30%" },
-  { name: "Moat Cailin", top: "37%", left: "48%" },
+  { name: "White Harbor", top: "31%", left: "56%" },
+  { name: "The Dreadfort", top: "20%", left: "56%" },
+  { name: "Karhold", top: "15%", left: "65%" },
+  { name: "Last Hearth", top: "16%", left: "59%" },
+  { name: "Deepwood Motte", top: "24%", left: "37%" },
+  { name: "Bear Island", top: "23%", left: "28%" },
+  { name: "Moat Cailin", top: "38%", left: "48%" },
 
   // RIVERLANDS
   { name: "The Twins", top: "47%", left: "44%" },
-  { name: "Riverrun", top: "54%", left: "42%" },
-  { name: "Harrenhal", top: "58%", left: "48%" },
+  { name: "Riverrun", top: "55%", left: "42%" },
+  { name: "Harrenhal", top: "58%", left: "49%" },
   { name: "Seagard", top: "50%", left: "36%" },
 
   // VALE
-  { name: "The Eyrie", top: "48%", left: "58%" },
-  { name: "Runestone", top: "46%", left: "63%" },
-  { name: "Gulltown", top: "52%", left: "66%" },
+  { name: "The Eyrie", top: "47%", left: "59%" },
+  { name: "Runestone", top: "46%", left: "64%" },
+  { name: "Gulltown", top: "52%", left: "67%" },
 
   // WESTERLANDS
   { name: "Casterly Rock", top: "64%", left: "25%" },
@@ -27,25 +27,25 @@ const castles = [
   { name: "Castamere", top: "60%", left: "31%" },
 
   // REACH
-  { name: "Highgarden", top: "78%", left: "35%" },
-  { name: "Oldtown", top: "89%", left: "31%" },
+  { name: "Highgarden", top: "78%", left: "34%" },
+  { name: "Oldtown", top: "89%", left: "30%" },
   { name: "Horn Hill", top: "82%", left: "38%" },
   { name: "Brightwater Keep", top: "80%", left: "28%" },
 
   // CROWNLANDS
   { name: "King's Landing", top: "66%", left: "56%" },
   { name: "Dragonstone", top: "63%", left: "66%" },
-  { name: "Rosby", top: "63%", left: "54%" },
-  { name: "Duskendale", top: "61%", left: "58%" },
+  { name: "Rosby", top: "64%", left: "54%" },
+  { name: "Duskendale", top: "62%", left: "58%" },
 
   // STORMLANDS
-  { name: "Storm's End", top: "75%", left: "62%" },
-  { name: "Tarth", top: "77%", left: "69%" },
+  { name: "Storm's End", top: "75%", left: "63%" },
+  { name: "Tarth", top: "77%", left: "70%" },
 
   // DORNE
-  { name: "Sunspear", top: "92%", left: "61%" },
+  { name: "Sunspear", top: "92%", left: "62%" },
   { name: "Yronwood", top: "85%", left: "53%" },
-  { name: "Starfall", top: "90%", left: "44%" },
+  { name: "Starfall", top: "89%", left: "44%" },
 
   // IRON ISLANDS
   { name: "Pyke", top: "54%", left: "11%" },
@@ -54,7 +54,7 @@ const castles = [
 
 export default function MapPage() {
   return (
-    <main className="bg-black min-h-screen text-white overflow-hidden">
+    <main className="min-w-[1400px] w-full h-auto opacity-90">
 
       {/* HEADER */}
       <div className="absolute z-20 w-full p-6 flex justify-between items-center bg-black/70 backdrop-blur-sm border-b border-zinc-800">
