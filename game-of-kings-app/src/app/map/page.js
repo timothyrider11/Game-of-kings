@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function HomePage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
@@ -41,7 +43,7 @@ export default function HomePage() {
         <div className="mt-12 flex flex-col md:flex-row gap-5">
 
           {/* ENTER REALM */}
-          <a
+          <Link
             href="/map"
             className="group relative overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900/70 backdrop-blur-md px-10 py-5 text-xl font-bold tracking-wide transition hover:border-zinc-400 hover:scale-105"
           >
@@ -52,7 +54,7 @@ export default function HomePage() {
 
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-r from-zinc-700/20 to-zinc-500/20" />
 
-          </a>
+          </Link>
 
           {/* LORE BUTTON */}
           <button
