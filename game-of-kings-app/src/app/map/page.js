@@ -4,7 +4,8 @@ import { useState } from "react";
 
 const locations = [
   {
-    name: "Winterfell",
+  name: "Winterfell",
+  region: "North",
     top: "26%",
     left: "50%",
     image:
@@ -15,6 +16,7 @@ const locations = [
 
   {
     name: "House Reed",
+    region: "Riverlands",
     top: "44.8%",
     left: "44.5%",
     image:
@@ -25,6 +27,7 @@ const locations = [
 
   {
     name: "House Frey",
+    region: "Riverlands",
     top: "55.2%",
     left: "49.3%",
     image:
@@ -35,6 +38,7 @@ const locations = [
 
   {
     name: "House Mallister",
+    region: "Riverlands",
     top: "53%",
     left: "42%",
     image:
@@ -45,6 +49,7 @@ const locations = [
 
   {
     name: "House Corbray",
+    region: "Riverlands",
     top: "51%",
     left: "68%",
     image:
@@ -55,6 +60,7 @@ const locations = [
 
   {
     name: "King's Landing",
+    region: "Crownlands",
     top: "70.3%",
     left: "61%",
     image:
@@ -65,6 +71,7 @@ const locations = [
 
   {
     name: "House Greyjoy",
+    region: "Iron Islands",
     top: "62%",
     left: "13%",
     image:
@@ -75,6 +82,7 @@ const locations = [
 
   {
     name: "House Tarth",
+    region: "Stormlands",
     top: "72%",
     left: "79%",
     image:
@@ -85,6 +93,7 @@ const locations = [
 
   {
     name: "House Fowler",
+    region: "Dorne",
     top: "91%",
     left: "51%",
     image:
@@ -95,6 +104,7 @@ const locations = [
 
   {
     name: "House Blackbar",
+    region: "Reach",
     top: "88%",
     left: "11%",
     image:
@@ -105,6 +115,7 @@ const locations = [
 
   {
     name: "House Tarly",
+    region: "Reach",
     top: "83%",
     left: "31%",
     image:
@@ -143,7 +154,7 @@ export default function MapPage() {
         <img
   src="/LONG-MAP.png"
   alt="Westeros Map"
-  className="block w-auto max-w-none h-auto select-none"
+  className="block w-auto max-w-none h-auto select-none transition duration-700 hover:scale-[1.01]"
 />
 
         {/* LOCATION MARKERS */}
@@ -159,7 +170,30 @@ export default function MapPage() {
               transform: "translate(-45%, -55%)",
             }}
           >
-            <div className="w-4 h-4 bg-red-600 rounded-full border-2 border-white shadow-lg animate-pulse" />
+            <div
+  className={`
+    w-4 h-4 rounded-full border-2 border-white shadow-lg animate-pulse
+    ${
+      location.region === "North"
+        ? "bg-cyan-400"
+        : location.region === "Riverlands"
+        ? "bg-blue-500"
+        : location.region === "Westerlands"
+        ? "bg-red-500"
+        : location.region === "Reach"
+        ? "bg-green-500"
+        : location.region === "Stormlands"
+        ? "bg-yellow-400"
+        : location.region === "Dorne"
+        ? "bg-orange-500"
+        : location.region === "Vale"
+        ? "bg-sky-300"
+        : location.region === "Iron Islands"
+        ? "bg-zinc-400"
+        : "bg-purple-500"
+    }
+  `}
+/>
 
             <div className="absolute left-7 top-[-2px] whitespace-nowrap bg-black/80 px-3 py-1 rounded-md text-sm opacity-0 group-hover:opacity-100 transition">
               {location.name}
@@ -173,7 +207,7 @@ export default function MapPage() {
       {selectedLocation && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
 
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden max-w-md w-full shadow-2xl">
+          <div className="bg-gradient-to-b from-zinc-900 to-black border border-zinc-700 rounded-2xl overflow-hidden max-w-md w-full shadow-2xl shadow-black/80">
 
             <img
               src={selectedLocation.image}
@@ -181,7 +215,8 @@ export default function MapPage() {
               className="w-full h-64 object-cover"
             />
 
-            <div className="p-6">
+            <div className="p-6 relative">>
+              <div className="absolute inset-0 opacity-10 bg-center bg-contain bg-no-repeat pointer-events-none" />
 
               <h2 className="text-3xl font-bold mb-3">
                 {selectedLocation.name}
