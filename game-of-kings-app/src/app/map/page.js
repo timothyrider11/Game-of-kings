@@ -104,6 +104,10 @@ export default function MapPage() {
 
   const [rulerName, setRulerName] = useState("Lord Timothy");
 
+  const [warLog, setWarLog] = useState([]);
+
+  /* CLAIM CASTLE */
+
   const claimCastle = () => {
 
     const updated = locations.map((location) => {
@@ -129,6 +133,55 @@ export default function MapPage() {
       ruler: rulerName,
       status: "Claimed",
     });
+
+    setWarLog((prev) => [
+      `${houseName} peacefully claimed ${selectedLocation.name}.`,
+      ...prev,
+    ]);
+  };
+
+  /* ATTACK CASTLE */
+
+  const attackCastle = () => {
+
+    const playerPower = Math.floor(Math.random() * 18000) + 5000;
+
+    const defenderPower = selectedLocation.troops;
+
+    const victory = playerPower >= defenderPower;
+
+    const updated = locations.map((location) => {
+
+      if (location.name === selectedLocation.name) {
+
+        return {
+          ...location,
+          owner: victory ? houseName : location.owner,
+          ruler: victory ? rulerName : location.ruler,
+          status: victory ? "Conquered" : location.status,
+          troops: victory
+            ? Math.max(3000, playerPower - 2000)
+            : location.troops,
+        };
+      }
+
+      return location;
+    });
+
+    setLocations(updated);
+
+    const updatedLocation = updated.find(
+      (location) => location.name === selectedLocation.name
+    );
+
+    setSelectedLocation(updatedLocation);
+
+    setWarLog((prev) => [
+      victory
+        ? `${houseName} conquered ${selectedLocation.name} with ${playerPower.toLocaleString()} troops.`
+        : `${houseName} failed to conquer ${selectedLocation.name}.`,
+      ...prev,
+    ]);
   };
 
   /* REALM STATS */
@@ -255,7 +308,6 @@ export default function MapPage() {
             }}
           >
 
-            {/* MARKER */}
             <div
               className={`
                 w-4 h-4 rounded-full border border-white shadow-lg animate-pulse
@@ -263,9 +315,6 @@ export default function MapPage() {
                 ${
                   location.status === "Capital"
                     ? "bg-yellow-400 shadow-yellow-400/90"
-
-                    : location.status === "Claimable"
-                    ? "bg-purple-500 shadow-purple-500/90"
 
                     : location.owner === houseName
                     ? "bg-green-400 shadow-green-400/90"
@@ -275,7 +324,6 @@ export default function MapPage() {
               `}
             />
 
-            {/* LABEL */}
             <div className="absolute left-6 top-[-2px] whitespace-nowrap bg-black/90 border border-zinc-700 px-3 py-1 rounded-lg text-sm opacity-0 group-hover:opacity-100 transition">
 
               {location.name}
@@ -287,20 +335,50 @@ export default function MapPage() {
 
       </div>
 
+      {/* WAR LOG */}
+      <div className="max-w-5xl mx-auto px-6 pb-16">
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+
+          <h2 className="text-2xl font-black mb-4">
+            Realm War Chronicle
+          </h2>
+
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+
+            {warLog.length === 0 && (
+              <p className="text-zinc-500">
+                No wars fought yet.
+              </p>
+            )}
+
+            {warLog.map((entry, index) => (
+              <div
+                key={index}
+                className="border border-zinc-800 bg-black/50 rounded-xl p-3 text-zinc-300"
+              >
+                {entry}
+              </div>
+            ))}
+
+          </div>
+
+        </div>
+
+      </div>
+
       {/* POPUP */}
       {selectedLocation && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
 
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden max-w-xl w-full shadow-2xl">
 
-            {/* IMAGE */}
             <img
               src={selectedLocation.image}
               alt={selectedLocation.name}
               className="w-full h-72 object-cover"
             />
 
-            {/* CONTENT */}
             <div className="p-6 space-y-5">
 
               <div>
@@ -373,14 +451,23 @@ export default function MapPage() {
               </div>
 
               {/* ACTIONS */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
 
                 {selectedLocation.owner !== houseName && (
                   <button
                     onClick={claimCastle}
                     className="bg-green-700 hover:bg-green-800 transition py-3 rounded-xl font-bold"
                   >
-                    Claim Stronghold
+                    Claim
+                  </button>
+                )}
+
+                {selectedLocation.owner !== houseName && (
+                  <button
+                    onClick={attackCastle}
+                    className="bg-red-700 hover:bg-red-800 transition py-3 rounded-xl font-bold"
+                  >
+                    Siege
                   </button>
                 )}
 
