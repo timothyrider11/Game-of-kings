@@ -8,10 +8,11 @@ const defaultLocations = [
     region: "North",
     ruler: "House Stark",
     troops: 12400,
-    owner: "AI Realm",
+    owner: "Northern Realm",
     status: "Controlled",
     top: "25.2%",
     left: "50.1%",
+    color: "cyan",
     image:
       "https://static.wikia.nocookie.net/gameofthrones/images/3/39/Winterfell_Season_8.jpg",
     description:
@@ -23,10 +24,11 @@ const defaultLocations = [
     region: "Crownlands",
     ruler: "The Iron Throne",
     troops: 20000,
-    owner: "AI Realm",
+    owner: "Crown Authority",
     status: "Capital",
     top: "69.7%",
     left: "60.7%",
+    color: "yellow",
     image:
       "https://static.wikia.nocookie.net/gameofthrones/images/5/5c/Kings_Landing.jpg",
     description:
@@ -42,6 +44,7 @@ const defaultLocations = [
     status: "Claimable",
     top: "62.7%",
     left: "84.2%",
+    color: "purple",
     image:
       "https://static.wikia.nocookie.net/gameofthrones/images/e/e7/Dragonstone.jpg",
     description:
@@ -53,10 +56,11 @@ const defaultLocations = [
     region: "Iron Islands",
     ruler: "House Greyjoy",
     troops: 6700,
-    owner: "AI Realm",
+    owner: "Iron Fleet",
     status: "Controlled",
     top: "61.8%",
     left: "12.8%",
+    color: "zinc",
     image:
       "https://awoiaf.westeros.org/images/thumb/5/5c/House_Greyjoy.svg/500px-House_Greyjoy.svg.png",
     description:
@@ -68,10 +72,11 @@ const defaultLocations = [
     region: "Reach",
     ruler: "House Hightower",
     troops: 9200,
-    owner: "AI Realm",
+    owner: "Reach Dominion",
     status: "Controlled",
     top: "92.5%",
     left: "21.9%",
+    color: "green",
     image:
       "https://awoiaf.westeros.org/images/thumb/4/4f/Hightower.svg/500px-Hightower.svg.png",
     description:
@@ -83,10 +88,11 @@ const defaultLocations = [
     region: "Dorne",
     ruler: "House Martell",
     troops: 10500,
-    owner: "AI Realm",
+    owner: "Dornish Realm",
     status: "Controlled",
     top: "95.4%",
     left: "83.6%",
+    color: "orange",
     image:
       "https://static.wikia.nocookie.net/gameofthrones/images/5/52/Sunspear.jpg",
     description:
@@ -106,7 +112,7 @@ export default function MapPage() {
 
   const [warLog, setWarLog] = useState([]);
 
-  /* CLAIM CASTLE */
+  /* CLAIM */
 
   const claimCastle = () => {
 
@@ -119,6 +125,7 @@ export default function MapPage() {
           owner: houseName,
           ruler: rulerName,
           status: "Claimed",
+          color: "emerald",
         };
       }
 
@@ -132,6 +139,7 @@ export default function MapPage() {
       owner: houseName,
       ruler: rulerName,
       status: "Claimed",
+      color: "emerald",
     });
 
     setWarLog((prev) => [
@@ -140,7 +148,7 @@ export default function MapPage() {
     ]);
   };
 
-  /* ATTACK CASTLE */
+  /* SIEGE */
 
   const attackCastle = () => {
 
@@ -162,6 +170,7 @@ export default function MapPage() {
           troops: victory
             ? Math.max(3000, playerPower - 2000)
             : location.troops,
+          color: victory ? "emerald" : location.color,
         };
       }
 
@@ -178,13 +187,13 @@ export default function MapPage() {
 
     setWarLog((prev) => [
       victory
-        ? `${houseName} conquered ${selectedLocation.name} with ${playerPower.toLocaleString()} troops.`
+        ? `${houseName} conquered ${selectedLocation.name}.`
         : `${houseName} failed to conquer ${selectedLocation.name}.`,
       ...prev,
     ]);
   };
 
-  /* REALM STATS */
+  /* STATS */
 
   const playerCastles = useMemo(() => {
     return locations.filter(
@@ -207,6 +216,40 @@ export default function MapPage() {
 
   }, [playerTroops]);
 
+  /* MARKER COLORS */
+
+  const getMarkerClasses = (color) => {
+
+    switch (color) {
+
+      case "cyan":
+        return "bg-cyan-400 shadow-cyan-400/90";
+
+      case "yellow":
+        return "bg-yellow-400 shadow-yellow-400/90";
+
+      case "purple":
+        return "bg-purple-500 shadow-purple-500/90";
+
+      case "green":
+        return "bg-green-500 shadow-green-500/90";
+
+      case "orange":
+        return "bg-orange-500 shadow-orange-500/90";
+
+      case "emerald":
+        return "bg-emerald-400 shadow-emerald-400/90";
+
+      case "zinc":
+        return "bg-zinc-300 shadow-zinc-300/90";
+
+      default:
+        return "bg-red-500 shadow-red-500/90";
+
+    }
+
+  };
+
   return (
     <main className="bg-black min-h-screen text-white overflow-hidden">
 
@@ -223,7 +266,7 @@ export default function MapPage() {
 
             <div className="text-zinc-400">
               Realm:
-              <span className="ml-2 text-green-400 font-semibold">
+              <span className="ml-2 text-emerald-400 font-semibold">
                 {houseName}
               </span>
             </div>
@@ -270,14 +313,14 @@ export default function MapPage() {
               value={houseName}
               onChange={(e) => setHouseName(e.target.value)}
               placeholder="House Name"
-              className="bg-black border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-red-500"
+              className="bg-black border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-emerald-500"
             />
 
             <input
               value={rulerName}
               onChange={(e) => setRulerName(e.target.value)}
               placeholder="Ruler Name"
-              className="bg-black border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-red-500"
+              className="bg-black border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-emerald-500"
             />
 
           </div>
@@ -308,22 +351,23 @@ export default function MapPage() {
             }}
           >
 
+            {/* OUTER FACTION RING */}
             <div
               className={`
-                w-4 h-4 rounded-full border border-white shadow-lg animate-pulse
-
-                ${
-                  location.status === "Capital"
-                    ? "bg-yellow-400 shadow-yellow-400/90"
-
-                    : location.owner === houseName
-                    ? "bg-green-400 shadow-green-400/90"
-
-                    : "bg-red-500 shadow-red-500/80"
-                }
+                absolute inset-0 scale-[2.4] rounded-full blur-md opacity-70
+                ${getMarkerClasses(location.color)}
               `}
             />
 
+            {/* INNER MARKER */}
+            <div
+              className={`
+                relative w-4 h-4 rounded-full border border-white shadow-2xl animate-pulse
+                ${getMarkerClasses(location.color)}
+              `}
+            />
+
+            {/* LABEL */}
             <div className="absolute left-6 top-[-2px] whitespace-nowrap bg-black/90 border border-zinc-700 px-3 py-1 rounded-lg text-sm opacity-0 group-hover:opacity-100 transition">
 
               {location.name}
@@ -456,7 +500,7 @@ export default function MapPage() {
                 {selectedLocation.owner !== houseName && (
                   <button
                     onClick={claimCastle}
-                    className="bg-green-700 hover:bg-green-800 transition py-3 rounded-xl font-bold"
+                    className="bg-emerald-700 hover:bg-emerald-800 transition py-3 rounded-xl font-bold"
                   >
                     Claim
                   </button>
