@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-<div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(120,120,120,0.08),transparent_70%)] z-0" />
+
 const locations = [
   {
-  name: "Winterfell",
-  region: "North",
+    name: "Winterfell",
+    region: "North",
     top: "26%",
     left: "50%",
     image:
@@ -49,7 +49,7 @@ const locations = [
 
   {
     name: "House Corbray",
-    region: "Riverlands",
+    region: "Vale",
     top: "51%",
     left: "68%",
     image:
@@ -131,11 +131,13 @@ export default function MapPage() {
   return (
     <main className="bg-gradient-to-b from-black via-zinc-950 to-black min-h-screen text-white overflow-hidden">
 
-      {/* HEADER */}
+      {/* ATMOSPHERE */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(120,120,120,0.08),transparent_70%)] z-0" />
 
+      {/* HEADER */}
       <div className="fixed top-0 left-0 z-50 w-full bg-black/70 backdrop-blur-md border-b border-zinc-800 p-4 flex justify-between items-center">
 
-        <h1 cclassName="text-3xl font-black tracking-[0.3em] text-zinc-100 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+        <h1 className="text-3xl font-black tracking-[0.3em] text-zinc-100 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
           GAME OF KINGS
         </h1>
 
@@ -148,17 +150,18 @@ export default function MapPage() {
       </div>
 
       {/* MAP */}
-
       <div className="relative w-fit mx-auto pt-24 pb-20">
 
         <img
-  src="/LONG-MAP.png"
-  alt="Westeros Map"
-  className="block w-auto max-w-none h-auto select-none transition duration-700 hover:scale-[1.01]"
-/>
+          src="/LONG-MAP.png"
+          alt="Westeros Map"
+          className="block w-auto max-w-none h-auto select-none transition duration-700 hover:scale-[1.01] brightness-110 contrast-125 saturate-110"
+        />
+
+        {/* SHADOW OVERLAY */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20 pointer-events-none" />
 
         {/* LOCATION MARKERS */}
-
         {locations.map((location) => (
           <button
             key={location.name}
@@ -168,43 +171,43 @@ export default function MapPage() {
               top: location.top,
               left: location.left,
               transform: "translate(-45%, -55%)",
-              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20 pointer-events-none" />
             }}
           >
+
             <div
-  className={`
-    relative w-4 h-4 rounded-full border border-white/80 shadow-lg animate-pulse
-    ${
-      location.region === "North"
-        ? "bg-cyan-300 shadow-cyan-400/80"
-        : location.region === "Riverlands"
-        ? "bg-blue-400 shadow-blue-500/80"
-        : location.region === "Westerlands"
-        ? "bg-red-500 shadow-red-500/80"
-        : location.region === "Reach"
-        ? "bg-green-500 shadow-green-500/80"
-        : location.region === "Stormlands"
-        ? "bg-yellow-400 shadow-yellow-400/80"
-        : location.region === "Dorne"
-        ? "bg-orange-500 shadow-orange-500/80"
-        : location.region === "Vale"
-        ? "bg-sky-300 shadow-sky-300/80"
-        : location.region === "Iron Islands"
-        ? "bg-zinc-300 shadow-zinc-300/80"
-        : "bg-purple-400 shadow-purple-400/80"
-    }
-  `}
-/>
+              className={`
+                relative w-4 h-4 rounded-full border border-white/80 shadow-lg animate-pulse
+                ${
+                  location.region === "North"
+                    ? "bg-cyan-300 shadow-cyan-400/80"
+                    : location.region === "Riverlands"
+                    ? "bg-blue-400 shadow-blue-500/80"
+                    : location.region === "Westerlands"
+                    ? "bg-red-500 shadow-red-500/80"
+                    : location.region === "Reach"
+                    ? "bg-green-500 shadow-green-500/80"
+                    : location.region === "Stormlands"
+                    ? "bg-yellow-400 shadow-yellow-400/80"
+                    : location.region === "Dorne"
+                    ? "bg-orange-500 shadow-orange-500/80"
+                    : location.region === "Vale"
+                    ? "bg-sky-300 shadow-sky-300/80"
+                    : location.region === "Iron Islands"
+                    ? "bg-zinc-300 shadow-zinc-300/80"
+                    : "bg-purple-400 shadow-purple-400/80"
+                }
+              `}
+            />
 
             <div className="absolute left-7 top-[-2px] whitespace-nowrap bg-black/80 px-3 py-1 rounded-md text-sm opacity-0 group-hover:opacity-100 transition">
               {location.name}
             </div>
+
           </button>
         ))}
       </div>
 
       {/* POPUP CARD */}
-
       {selectedLocation && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
 
@@ -217,6 +220,7 @@ export default function MapPage() {
             />
 
             <div className="p-6 relative">
+
               <div className="absolute inset-0 opacity-10 bg-center bg-contain bg-no-repeat pointer-events-none" />
 
               <h2 className="text-3xl font-bold mb-3">
@@ -233,6 +237,7 @@ export default function MapPage() {
               >
                 Close
               </button>
+
             </div>
           </div>
         </div>
