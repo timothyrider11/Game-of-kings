@@ -95,13 +95,22 @@ export default function MapPage() {
 
       {/* MAP */}
 
-      <div className="relative w-full h-[85vh] overflow-auto">
+      <div className="w-full overflow-auto bg-black">
+
+  <div
+    className="relative mx-auto"
+    style={{
+      width: "1800px",
+      height: "2600px",
+    }}
+  >
 
         <img
-          src="/LONG-MAP.png"
-          alt="Westeros"
-          className="w-[1800px] max-w-none"
-        />
+  src="/LONG-MAP.png"
+  alt="Westeros"
+  draggable={false}
+  className="absolute top-0 left-0 w-full h-full object-fill select-none"
+/>
 
         {locations.map((location) => (
 
