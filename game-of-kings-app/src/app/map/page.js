@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import HouseCreation from "@/components/HouseCreation";
 
 const sigils = {
@@ -11,6 +11,12 @@ const sigils = {
 };
 
 export default function MapPage() {
+
+  const [gold, setGold] = useState(1000);
+  const [troops, setTroops] = useState(500);
+  const [prestige, setPrestige] = useState(0);
+  const [castleLevel, setCastleLevel] = useState(1);
+
   const [playerHouse, setPlayerHouse] =
     useState(null);
 
@@ -70,8 +76,25 @@ export default function MapPage() {
     },
   ];
 
+  useEffect(() => {
+
+    if (!ownedCastle) return;
+
+    const interval = setInterval(() => {
+
+      setGold((g) => g + 100);
+      setTroops((t) => t + 50);
+
+    }, 60000);
+
+    return () => clearInterval(interval);
+
+  }, [ownedCastle]);
+
   const getMarkerClasses = (color) => {
+
     switch (color) {
+
       case "cyan":
         return "bg-cyan-400 shadow-cyan-400/90";
 
@@ -96,11 +119,23 @@ export default function MapPage() {
   };
 
   const claimCastle = () => {
+
     if (!selectedLocation) return;
 
     if (ownedCastle) return;
 
     setOwnedCastle(selectedLocation.name);
+
+    setPrestige((p) => p + 50);
+  };
+
+  const upgradeCastle = () => {
+
+    if (gold < 500) return;
+
+    setGold((g) => g - 500);
+    setCastleLevel((l) => l + 1);
+    setPrestige((p) => p + 25);
   };
 
   if (!playerHouse) {
@@ -145,14 +180,26 @@ export default function MapPage() {
 
           </div>
 
-          <div className="text-right">
+          <div className="text-right space-y-1">
+
+            <p className="font-bold text-yellow-400">
+              Gold: {gold}
+            </p>
+
+            <p className="font-bold text-cyan-400">
+              Troops: {troops}
+            </p>
+
+            <p className="font-bold text-purple-400">
+              Prestige: {prestige}
+            </p>
 
             <p className="font-bold text-emerald-400">
+              Castle: {ownedCastle || "None"}
+            </p>
 
-              Castle:
-              {" "}
-              {ownedCastle || "None"}
-
+            <p className="font-bold text-orange-400">
+              Level: {castleLevel}
             </p>
 
           </div>
@@ -241,9 +288,7 @@ export default function MapPage() {
               <div className="flex items-center justify-between mb-4">
 
                 <h2 className="text-3xl font-black">
-
                   {selectedLocation.name}
-
                 </h2>
 
                 <button
@@ -258,20 +303,25 @@ export default function MapPage() {
               </div>
 
               <p className="text-zinc-400 mb-4">
-
-                Owner:
-                {" "}
-                {selectedLocation.owner}
-
+                Owner: {selectedLocation.owner}
               </p>
 
-              {ownedCastle ===
-              selectedLocation.name ? (
+              {ownedCastle === selectedLocation.name ? (
 
-                <div className="bg-emerald-900 border border-emerald-500 rounded-xl p-4">
+                <div className="space-y-4">
 
-                  Claimed by House{" "}
-                  {playerHouse.houseName}
+                  <div className="bg-emerald-900 border border-emerald-500 rounded-xl p-4">
+
+                    Claimed by House {playerHouse.houseName}
+
+                  </div>
+
+                  <button
+                    onClick={upgradeCastle}
+                    className="bg-yellow-700 hover:bg-yellow-800 px-6 py-3 rounded-xl font-bold"
+                  >
+                    Upgrade Castle (500 Gold)
+                  </button>
 
                 </div>
 
@@ -287,9 +337,7 @@ export default function MapPage() {
               ) : (
 
                 <p className="text-zinc-500">
-
                   You already control a castle.
-
                 </p>
 
               )}
