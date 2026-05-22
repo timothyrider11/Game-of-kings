@@ -11,65 +11,67 @@ const sigils = {
 };
 
 export default function MapPage() {
-
-  const locations = [
-    {
-      name: "Winterfell",
-      top: "25%",
-      left: "50%",
-      color: "cyan",
-      owner: "House Stark",
-    },
-    {
-      name: "King's Landing",
-      top: "69%",
-      left: "60%",
-      color: "yellow",
-      owner: "Iron Throne",
-    },
-    {
-      name: "Pyke",
-      top: "61%",
-      left: "13%",
-      color: "zinc",
-      owner: "House Greyjoy",
-    },
-    {
-      name: "The Eyrie",
-      top: "54%",
-      left: "74%",
-      color: "purple",
-      owner: "House Arryn",
-    },
-    {
-      name: "Highgarden",
-      top: "84%",
-      left: "32%",
-      color: "green",
-      owner: "House Tyrell",
-    },
-    {
-      name: "Sunspear",
-      top: "94%",
-      left: "88%",
-      color: "orange",
-      owner: "House Martell",
-    },
-  ];
-
-  const [selectedLocation, setSelectedLocation] =
-    useState(null);
-
   const [playerHouse, setPlayerHouse] =
     useState(null);
 
   const [ownedCastle, setOwnedCastle] =
     useState(null);
 
+  const [selectedLocation, setSelectedLocation] =
+    useState(null);
+
+  const locations = [
+    {
+      name: "Winterfell",
+      owner: "House Stark",
+      top: "25%",
+      left: "50%",
+      color: "cyan",
+    },
+
+    {
+      name: "King's Landing",
+      owner: "Iron Throne",
+      top: "69%",
+      left: "60%",
+      color: "yellow",
+    },
+
+    {
+      name: "Pyke",
+      owner: "House Greyjoy",
+      top: "61%",
+      left: "13%",
+      color: "zinc",
+    },
+
+    {
+      name: "The Eyrie",
+      owner: "House Arryn",
+      top: "54%",
+      left: "74%",
+      color: "purple",
+    },
+
+    {
+      name: "Highgarden",
+      owner: "House Tyrell",
+      top: "84%",
+      left: "32%",
+      color: "green",
+    },
+
+    {
+      name: "Sunspear",
+      owner: "House Martell",
+      top: "94%",
+      left: "88%",
+      color: "orange",
+    },
+  ];
+
   const getMarkerClasses = (color) => {
-
     switch (color) {
-
       case "cyan":
         return "bg-cyan-400 shadow-cyan-400/90";
 
@@ -94,7 +96,6 @@ export default function MapPage() {
   };
 
   const claimCastle = () => {
-
     if (!selectedLocation) return;
 
     if (ownedCastle) return;
@@ -113,19 +114,19 @@ export default function MapPage() {
   }
 
   return (
-    <main className="bg-black min-h-screen overflow-hidden text-white">
+    <main className="bg-black min-h-screen text-white">
 
       {/* HEADER */}
 
       <div className="fixed top-0 left-0 z-50 w-full bg-black/90 border-b border-zinc-800 px-6 py-4">
 
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
 
           <div>
 
             <h1 className="text-3xl font-black">
 
-              {sigils[playerHouse.sigil.name]}{" "}
+              {sigils[playerHouse.sigil?.name] || "⚔️"}{" "}
               Lord {playerHouse.lordName}
 
             </h1>
@@ -138,7 +139,7 @@ export default function MapPage() {
 
             <p className="italic text-zinc-500">
 
-              "{playerHouse.words}"
+              "{playerHouse.motto}"
 
             </p>
 
@@ -146,7 +147,7 @@ export default function MapPage() {
 
           <div className="text-right">
 
-            <p className="text-emerald-400 font-bold">
+            <p className="font-bold text-emerald-400">
 
               Castle:
               {" "}
@@ -160,7 +161,7 @@ export default function MapPage() {
 
       </div>
 
-      <div className="h-32" />
+      <div className="h-28" />
 
       {/* MAP */}
 
@@ -192,7 +193,8 @@ export default function MapPage() {
               style={{
                 top: location.top,
                 left: location.left,
-                transform: "translate(-50%, -50%)",
+                transform:
+                  "translate(-50%, -50%)",
               }}
             >
 
@@ -230,16 +232,18 @@ export default function MapPage() {
 
       {selectedLocation && (
 
-        <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-6">
+        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-6">
 
-          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl w-full max-w-xl overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl w-full max-w-xl">
 
             <div className="p-6">
 
               <div className="flex items-center justify-between mb-4">
 
                 <h2 className="text-3xl font-black">
+
                   {selectedLocation.name}
+
                 </h2>
 
                 <button
@@ -254,14 +258,20 @@ export default function MapPage() {
               </div>
 
               <p className="text-zinc-400 mb-4">
-                Owner: {selectedLocation.owner}
+
+                Owner:
+                {" "}
+                {selectedLocation.owner}
+
               </p>
 
-              {ownedCastle === selectedLocation.name ? (
+              {ownedCastle ===
+              selectedLocation.name ? (
 
-                <div className="bg-emerald-900 border border-emerald-600 rounded-xl p-4">
+                <div className="bg-emerald-900 border border-emerald-500 rounded-xl p-4">
 
-                  Claimed by House {playerHouse.houseName}
+                  Claimed by House{" "}
+                  {playerHouse.houseName}
 
                 </div>
 
@@ -276,9 +286,11 @@ export default function MapPage() {
 
               ) : (
 
-                <div className="text-zinc-500">
+                <p className="text-zinc-500">
+
                   You already control a castle.
-                </div>
+
+                </p>
 
               )}
 
