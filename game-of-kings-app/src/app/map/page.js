@@ -1,63 +1,116 @@
 "use client";
 
+import { useState } from "react";
+
 export default function MapPage() {
-  function handleMapClick(e) {
-    const rect = e.currentTarget.getBoundingClientRect();
+  const [coords, setCoords] = useState(null);
 
-    const left =
-      ((e.clientX - rect.left) / rect.width) * 100;
+  const handleClick = (e) => {
+    const rect = e.target.getBoundingClientRect();
 
-    const top =
-      ((e.clientY - rect.top) / rect.height) * 100;
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    alert(
-      `top: "${top.toFixed(
-        2
-      )}%"\nleft: "${left.toFixed(2)}%"`
-    );
+    setCoords({
+      x: x.toFixed(2),
+      y: y.toFixed(2),
+    });
 
-    console.log(
-      `top: "${top.toFixed(
-        2
-      )}%", left: "${left.toFixed(2)}%"`
-    );
-  }
+    console.log({
+      x: x.toFixed(2),
+      y: y.toFixed(2),
+    });
+  };
 
   return (
-    <main className="bg-black min-h-screen">
+    <main
+      style={{
+        minHeight: "100vh",
+        background:
+          "linear-gradient(to bottom, #f4e8c1, #e6d2a2)",
+        color: "#111",
+        padding: "20px",
+      }}
+    >
+      <h1
+        style={{
+          textAlign: "center",
+          fontSize: "48px",
+          marginBottom: "10px",
+          fontWeight: "bold",
+          letterSpacing: "2px",
+        }}
+      >
+        👑 GAME OF KINGS 👑
+      </h1>
 
-      <div className="fixed top-0 left-0 z-50 w-full bg-black/90 border-b border-zinc-800 px-6 py-4">
-        <h1 className="text-3xl font-black text-white">
-          GAME OF KINGS
-        </h1>
+      <p
+        style={{
+          textAlign: "center",
+          marginBottom: "20px",
+        }}
+      >
+        Click a castle location to record coordinates
+      </p>
 
-        <p className="text-zinc-400 text-sm">
-          Click anywhere on the map to get coordinates
-        </p>
-      </div>
-
-      <div className="h-24" />
-
-      <div className="w-full overflow-auto bg-black">
-
+      {coords && (
         <div
-          className="relative mx-auto"
           style={{
-            width: "1800px",
-            height: "2600px",
+            textAlign: "center",
+            background: "#fff8dc",
+            padding: "12px",
+            borderRadius: "8px",
+            marginBottom: "20px",
+            border: "2px solid #7a5c2e",
+            maxWidth: "400px",
+            marginLeft: "auto",
+            marginRight: "auto",
           }}
-          onClick={handleMapClick}
         >
-          <img
-            src="/LONG-MAP.png"
-            alt="Westeros"
-            draggable={false}
-            className="absolute top-0 left-0 w-full h-full object-fill select-none"
-          />
+          X: {coords.x}% | Y: {coords.y}%
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "flex-start",
+          gap: "40px",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "80px",
+            marginTop: "200px",
+          }}
+        >
+          ⚔️
         </div>
 
-      </div>
+        <img
+          src="/LONG-MAP.png"
+          alt="Westeros Map"
+          onClick={handleClick}
+          style={{
+            width: "100%",
+            maxWidth: "900px",
+            border: "8px solid #5b3d1a",
+            borderRadius: "12px",
+            cursor: "crosshair",
+            boxShadow: "0 0 25px rgba(0,0,0,0.4)",
+          }}
+        />
 
+        <div
+          style={{
+            fontSize: "80px",
+            marginTop: "200px",
+          }}
+        >
+          ⚔️
+        </div>
+      </div>
     </main>
   );
 }
