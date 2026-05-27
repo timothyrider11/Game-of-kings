@@ -3,26 +3,26 @@
 import { useState } from "react";
 
 const sigils = [
-  {
-    name: "Wolf",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/7/7a/House_Stark.svg/545px-House_Stark.svg.png",
-  },
-  {
-    name: "Lion",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/c/c7/House_Lannister.svg/545px-House_Lannister.svg.png",
-  },
-  {
-    name: "Dragon",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/9/9b/House_Targaryen.svg/545px-House_Targaryen.svg.png",
-  },
-  {
-    name: "Kraken",
-    image:
-      "https://awoiaf.westeros.org/images/thumb/5/5c/House_Greyjoy.svg/545px-House_Greyjoy.svg.png",
-  },
+  { name: "Wolf", emoji: "🐺" },
+  { name: "Lion", emoji: "🦁" },
+  { name: "Dragon", emoji: "🐉" },
+  { name: "Kraken", emoji: "🐙" },
+  { name: "Falcon", emoji: "🦅" },
+  { name: "Bear", emoji: "🐻" },
+  { name: "Raven", emoji: "🐦" },
+  { name: "Stag", emoji: "🦌" },
+  { name: "Direwolf", emoji: "🐺" },
+  { name: "Griffin", emoji: "🦅" },
+  { name: "Phoenix", emoji: "🔥" },
+  { name: "Hydra", emoji: "🐍" },
+  { name: "Wyvern", emoji: "🐉" },
+  { name: "Boar", emoji: "🐗" },
+  { name: "Fox", emoji: "🦊" },
+  { name: "Owl", emoji: "🦉" },
+  { name: "Eagle", emoji: "🦅" },
+  { name: "Bull", emoji: "🐂" },
+  { name: "Horse", emoji: "🐎" },
+  { name: "Leviathan", emoji: "🌊" },
 ];
 
 export default function HouseCreation({
@@ -41,15 +41,37 @@ export default function HouseCreation({
     useState(sigils[0]);
 
   return (
-    <div className="fixed inset-0 bg-black z-[999] flex items-center justify-center p-6">
-
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 w-full max-w-3xl">
-
-        <h2 className="text-4xl font-black text-center mb-8">
-          Create Your Noble House
+    <div
+      className="
+        fixed inset-0 z-[999]
+        flex items-center justify-center
+        bg-black/90
+        p-6
+      "
+    >
+      <div
+        className="
+          w-full max-w-4xl
+          rounded-3xl
+          border-4 border-amber-900
+          bg-amber-100
+          p-8
+          text-black
+          shadow-2xl
+        "
+      >
+        <h2
+          className="
+            text-5xl
+            font-black
+            text-center
+            mb-8
+          "
+        >
+          👑 Found Your Noble House 👑
         </h2>
 
-        <div className="space-y-5">
+        <div className="space-y-4">
 
           <input
             value={lordName}
@@ -57,7 +79,15 @@ export default function HouseCreation({
               setLordName(e.target.value)
             }
             placeholder="Lord Name"
-            className="w-full bg-black border border-zinc-700 rounded-xl px-4 py-3"
+            className="
+              w-full
+              rounded-xl
+              border-2 border-amber-900
+              bg-white
+              text-black
+              px-4 py-3
+              text-lg
+            "
           />
 
           <input
@@ -66,7 +96,15 @@ export default function HouseCreation({
               setHouseName(e.target.value)
             }
             placeholder="House Name"
-            className="w-full bg-black border border-zinc-700 rounded-xl px-4 py-3"
+            className="
+              w-full
+              rounded-xl
+              border-2 border-amber-900
+              bg-white
+              text-black
+              px-4 py-3
+              text-lg
+            "
           />
 
           <input
@@ -75,45 +113,112 @@ export default function HouseCreation({
               setMotto(e.target.value)
             }
             placeholder="House Words"
-            className="w-full bg-black border border-zinc-700 rounded-xl px-4 py-3"
+            className="
+              w-full
+              rounded-xl
+              border-2 border-amber-900
+              bg-white
+              text-black
+              px-4 py-3
+              text-lg
+            "
           />
 
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+        <div className="mt-8 text-center">
 
+          <div
+            className="
+              w-36 h-36
+              mx-auto
+              rounded-full
+              border-4 border-red-900
+              bg-red-700
+              flex items-center justify-center
+              text-6xl
+              shadow-xl
+            "
+          >
+            {selectedSigil.emoji}
+          </div>
+
+          <h3
+            className="
+              text-3xl
+              font-black
+              mt-4
+            "
+          >
+            House {houseName || "Unknown"}
+          </h3>
+
+          <p
+            className="
+              italic
+              text-lg
+              mt-2
+            "
+          >
+            "{motto || "Our Words"}"
+          </p>
+
+        </div>
+
+        <h3
+          className="
+            text-2xl
+            font-bold
+            text-center
+            mt-10 mb-6
+          "
+        >
+          Choose Your Sigil
+        </h3>
+
+        <div
+          className="
+            grid
+            grid-cols-2
+            md:grid-cols-4
+            lg:grid-cols-5
+            gap-4
+          "
+        >
           {sigils.map((sigil) => (
-
             <button
               key={sigil.name}
               onClick={() =>
                 setSelectedSigil(sigil)
               }
               className={`
-                border rounded-2xl p-4
+                rounded-2xl
+                border-2
+                p-4
+                transition
 
                 ${
-                  selectedSigil.name === sigil.name
-                    ? "border-emerald-500"
-                    : "border-zinc-700"
+                  selectedSigil.name ===
+                  sigil.name
+                    ? "border-red-700 bg-red-100"
+                    : "border-amber-900 bg-white"
                 }
               `}
             >
+              <div className="text-5xl">
+                {sigil.emoji}
+              </div>
 
-              <img
-                src={sigil.image}
-                alt={sigil.name}
-                className="w-24 h-24 mx-auto object-contain"
-              />
-
-              <p className="mt-2 font-bold">
+              <p
+                className="
+                  mt-2
+                  font-bold
+                "
+              >
                 {sigil.name}
               </p>
-
             </button>
-
           ))}
-
         </div>
 
         <button
@@ -125,13 +230,21 @@ export default function HouseCreation({
               sigil: selectedSigil,
             })
           }
-          className="w-full mt-8 bg-emerald-700 hover:bg-emerald-800 py-4 rounded-2xl font-black text-xl"
+          className="
+            w-full
+            mt-8
+            bg-red-800
+            hover:bg-red-900
+            text-white
+            py-4
+            rounded-2xl
+            text-xl
+            font-black
+          "
         >
-          Enter the Realm
+          Enter The Realm
         </button>
-
       </div>
-
     </div>
   );
 }
