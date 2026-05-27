@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-const STORAGE_KEY = "gok_game_state";
+const STORAGE_KEY = "game_of_kings_realm";
+const REALM_VERSION = 2;
+const OFFLINE_TURN_MINUTES = 5;
 
 const STARTING_CASTLES = [
   {
@@ -11,7 +13,7 @@ const STARTING_CASTLES = [
     left: "42%",
     top: "32%",
     region: "The North",
-    troops: 100,
+    troops: 125,
     defense: 3,
     income: 35,
     owner: null,
@@ -23,9 +25,9 @@ const STARTING_CASTLES = [
     left: "56%",
     top: "70%",
     region: "Crownlands",
-    troops: 120,
+    troops: 140,
     defense: 2,
-    income: 50,
+    income: 55,
     owner: null,
     neighbors: ["riverrun", "highgarden", "sunspear"],
   },
@@ -35,7 +37,7 @@ const STARTING_CASTLES = [
     left: "29%",
     top: "81%",
     region: "The Reach",
-    troops: 110,
+    troops: 115,
     defense: 2,
     income: 45,
     owner: null,
@@ -47,7 +49,7 @@ const STARTING_CASTLES = [
     left: "72%",
     top: "89%",
     region: "Dorne",
-    troops: 95,
+    troops: 100,
     defense: 3,
     income: 30,
     owner: null,
@@ -59,7 +61,7 @@ const STARTING_CASTLES = [
     left: "39%",
     top: "61%",
     region: "Riverlands",
-    troops: 90,
+    troops: 95,
     defense: 2,
     income: 35,
     owner: null,
@@ -71,7 +73,7 @@ const STARTING_CASTLES = [
     left: "24%",
     top: "68%",
     region: "Westerlands",
-    troops: 115,
+    troops: 120,
     defense: 4,
     income: 55,
     owner: null,
@@ -83,7 +85,7 @@ const STARTING_CASTLES = [
     left: "19%",
     top: "52%",
     region: "Iron Islands",
-    troops: 80,
+    troops: 85,
     defense: 2,
     income: 25,
     owner: null,
@@ -91,69 +93,43 @@ const STARTING_CASTLES = [
   },
 ];
 
-const ANIMALS = [
-  "Wolf",
-  "Lion",
-  "Dragon",
-  "Kraken",
-  "Stag",
-  "Falcon",
-  "Bear",
-  "Raven",
-  "Direwolf",
-  "Griffin",
-  "Phoenix",
-  "Hydra",
-  "Wyvern",
-  "Manticore",
-  "Basilisk",
-  "Boar",
-  "Fox",
-  "Owl",
-  "Hawk",
-  "Eagle",
-  "Serpent",
-  "Bull",
-  "Horse",
-  "Ram",
-  "Elk",
-  "Crow",
-  "Leviathan",
-  "Shadow Cat",
-  "Mammoth",
+const SIGILS = [
+  { name: "Wolf", color: "#64748b" },
+  { name: "Lion", color: "#b45309" },
+  { name: "Dragon", color: "#991b1b" },
+  { name: "Kraken", color: "#164e63" },
+  { name: "Stag", color: "#78350f" },
+  { name: "Falcon", color: "#1d4ed8" },
+  { name: "Bear", color: "#57534e" },
+  { name: "Raven", color: "#312e81" },
+  { name: "Serpent", color: "#15803d" },
+  { name: "Horse", color: "#a16207" },
+  { name: "Ram", color: "#78716c" },
+  { name: "Elk", color: "#4d7c0f" },
 ];
 
-const HOUSE_COLORS = {
-  Wolf: "#64748b",
-  Lion: "#b45309",
-  Dragon: "#991b1b",
-  Kraken: "#164e63",
-  Stag: "#78350f",
-  Falcon: "#1d4ed8",
-  Bear: "#57534e",
-  Raven: "#312e81",
-  Direwolf: "#475569",
-  Griffin: "#92400e",
-  Phoenix: "#c2410c",
-  Hydra: "#166534",
-  Wyvern: "#7f1d1d",
-  Manticore: "#9f1239",
-  Basilisk: "#365314",
-  Boar: "#713f12",
-  Fox: "#ea580c",
-  Owl: "#44403c",
-  Hawk: "#0369a1",
-  Eagle: "#1e3a8a",
-  Serpent: "#15803d",
-  Bull: "#854d0e",
-  Horse: "#a16207",
-  Ram: "#78716c",
-  Elk: "#4d7c0f",
-  Crow: "#18181b",
-  Leviathan: "#0e7490",
-  "Shadow Cat": "#3f3f46",
-  Mammoth: "#6b7280",
-};
+const TURN_PHASES = [
+  {
+    id: "council",
+    name: "Council",
+    description: "Review your realm and choose where to focus this turn.",
+  },
+  {
+    id: "muster",
+    name: "Muster",
+    description: "Spend gold to recruit troops at castles you control.",
+  },
+  {
+    id: "war",
+    name: "War",
+    description: "Attack neighboring castles from your controlled strongholds.",
+  },
+  {
+    id: "revenue",
+    name: "Revenue",
+    description: "Collect income and advance to the next turn.",
+  },
+];
 
 function rollDie() {
   return Math.floor(Math.random() * 6) + 1;
@@ -164,22 +140,20 @@ function resolveBattle(attackingTroops, defendingTroops, defenseBonus) {
   const defenseRoll = rollDie() + Math.floor(defendingTroops / 25) + defenseBonus;
 
   if (attackRoll > defenseRoll) {
-    const defenderLosses = Math.min(defendingTroops, 25 + (attackRoll - defenseRoll) * 5);
     return {
       winner: "attacker",
       attackRoll,
       defenseRoll,
       attackerLosses: 10,
-      defenderLosses,
+      defenderLosses: Math.min(defendingTroops, 30 + (attackRoll - defenseRoll) * 5),
     };
   }
 
-  const attackerLosses = Math.min(attackingTroops, 20 + (defenseRoll - attackRoll) * 5);
   return {
     winner: "defender",
     attackRoll,
     defenseRoll,
-    attackerLosses,
+    attackerLosses: Math.min(attackingTroops, 20 + (defenseRoll - attackRoll) * 5),
     defenderLosses: 5,
   };
 }
@@ -189,26 +163,27 @@ export default function MapPage() {
   const [selectedCastleId, setSelectedCastleId] = useState(null);
   const [castleToClaimId, setCastleToClaimId] = useState(null);
   const [showHouseCreator, setShowHouseCreator] = useState(false);
-
   const [houseName, setHouseName] = useState("");
   const [houseMotto, setHouseMotto] = useState("");
-  const [houseAnimal, setHouseAnimal] = useState("Wolf");
-
+  const [houseSigil, setHouseSigil] = useState(SIGILS[0]);
   const [castles, setCastles] = useState(STARTING_CASTLES);
-  const [claimedCastleId, setClaimedCastleId] = useState(null);
   const [gold, setGold] = useState(100);
   const [turn, setTurn] = useState(1);
+  const [phase, setPhase] = useState("council");
   const [battleLog, setBattleLog] = useState([]);
+  const [lastSyncedAt, setLastSyncedAt] = useState(null);
+  const [syncMessage, setSyncMessage] = useState("");
 
   const selectedCastle = castles.find((castle) => castle.id === selectedCastleId);
-  const claimedCastle = castles.find((castle) => castle.id === claimedCastleId);
   const castleToClaim = castles.find((castle) => castle.id === castleToClaimId);
-  const houseColor = HOUSE_COLORS[houseAnimal] || "#8b0000";
+  const currentPhase = TURN_PHASES.find((turnPhase) => turnPhase.id === phase) || TURN_PHASES[0];
 
   const playerCastles = useMemo(
     () => castles.filter((castle) => castle.owner === "player"),
     [castles]
   );
+
+  const playerHasCastle = playerCastles.length > 0;
 
   const availableTargets = useMemo(() => {
     if (!selectedCastle || selectedCastle.owner !== "player") return [];
@@ -220,22 +195,33 @@ export default function MapPage() {
   }, [castles, selectedCastle]);
 
   useEffect(() => {
-    const savedGame = localStorage.getItem(STORAGE_KEY);
+    const storedRealm = localStorage.getItem(STORAGE_KEY);
 
-    if (savedGame) {
+    if (storedRealm) {
       try {
-        const data = JSON.parse(savedGame);
+        const data = JSON.parse(storedRealm);
 
         setHouseName(data.houseName || "");
         setHouseMotto(data.houseMotto || "");
-        setHouseAnimal(data.houseAnimal || "Wolf");
-        setClaimedCastleId(data.claimedCastleId || null);
+        setHouseSigil(data.houseSigil || SIGILS[0]);
         setGold(data.gold ?? 100);
         setTurn(data.turn ?? 1);
-        setBattleLog(data.battleLog || []);
+        setPhase(data.phase || "council");
+        setSelectedCastleId(data.selectedCastleId || null);
+        setCastleToClaimId(data.castleToClaimId || null);
+        setShowHouseCreator(data.showHouseCreator || false);
+        setLastSyncedAt(data.syncedAt || data.savedAt || null);
 
         if (Array.isArray(data.castles)) {
-          setCastles(data.castles);
+          const offlineResult = calculateOfflineProgress(data);
+
+          setCastles(offlineResult.castles);
+          setGold(offlineResult.gold);
+          setTurn(offlineResult.turn);
+          setBattleLog(offlineResult.battleLog);
+          setSyncMessage(offlineResult.message);
+        } else {
+          setBattleLog(data.battleLog || []);
         }
       } catch {
         localStorage.removeItem(STORAGE_KEY);
@@ -248,75 +234,129 @@ export default function MapPage() {
   useEffect(() => {
     if (!hasLoaded) return;
 
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        houseName,
-        houseMotto,
-        houseAnimal,
-        claimedCastleId,
-        gold,
-        turn,
-        castles,
-        battleLog,
-      })
-    );
+    syncRealm("Realm synced");
   }, [
     hasLoaded,
     houseName,
     houseMotto,
-    houseAnimal,
-    claimedCastleId,
+    houseSigil,
     gold,
     turn,
+    phase,
     castles,
     battleLog,
+    selectedCastleId,
+    castleToClaimId,
+    showHouseCreator,
   ]);
 
+  function createRealmSnapshot() {
+    return {
+      version: REALM_VERSION,
+      syncedAt: new Date().toISOString(),
+      houseName,
+      houseMotto,
+      houseSigil,
+      gold,
+      turn,
+      phase,
+      castles,
+      battleLog,
+      selectedCastleId,
+      castleToClaimId,
+      showHouseCreator,
+    };
+  }
+
+  function calculateOfflineProgress(data) {
+    const syncedAt = data.syncedAt || data.savedAt;
+    const existingCastles = Array.isArray(data.castles) ? data.castles : STARTING_CASTLES;
+    const storedPlayerCastles = existingCastles.filter((castle) => castle.owner === "player");
+    const minutesAway = syncedAt
+      ? Math.floor((Date.now() - new Date(syncedAt).getTime()) / 60000)
+      : 0;
+    const offlineTurns = storedPlayerCastles.length
+      ? Math.min(12, Math.floor(minutesAway / OFFLINE_TURN_MINUTES))
+      : 0;
+
+    if (offlineTurns <= 0) {
+      return {
+        castles: existingCastles,
+        gold: data.gold ?? 100,
+        turn: data.turn ?? 1,
+        battleLog: data.battleLog || [],
+        message: "Realm restored",
+      };
+    }
+
+    const income = storedPlayerCastles.reduce((total, castle) => total + castle.income, 0);
+    const offlineGold = income * offlineTurns;
+
+    return {
+      castles: existingCastles.map((castle) =>
+        castle.owner === "player"
+          ? { ...castle, troops: castle.troops + offlineTurns * 5 }
+          : castle
+      ),
+      gold: (data.gold ?? 100) + offlineGold,
+      turn: (data.turn ?? 1) + offlineTurns,
+      battleLog: [
+        `Your realm kept moving while you were away: ${offlineTurns} turns passed, ${offlineGold} gold collected, and garrisons grew.`,
+        ...(data.battleLog || []),
+      ].slice(0, 7),
+      message: `${offlineTurns} realm turns resolved`,
+    };
+  }
+
+  function syncRealm(message = "Realm synced") {
+    const realmSnapshot = createRealmSnapshot();
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(realmSnapshot));
+    setLastSyncedAt(realmSnapshot.syncedAt);
+    setSyncMessage(message);
+  }
+
   function addLog(message) {
-    setBattleLog((currentLog) => [message, ...currentLog].slice(0, 6));
+    setBattleLog((currentLog) => [message, ...currentLog].slice(0, 7));
   }
 
   function claimCastle() {
     if (!castleToClaim || !houseName.trim()) return;
 
-    setClaimedCastleId(castleToClaim.id);
     setCastles((currentCastles) =>
       currentCastles.map((castle) =>
         castle.id === castleToClaim.id
-          ? { ...castle, owner: "player", troops: Math.max(castle.troops, 125) }
+          ? { ...castle, owner: "player", troops: Math.max(castle.troops, 140) }
           : castle
       )
     );
     addLog(`House ${houseName} claimed ${castleToClaim.name}.`);
+    setPhase("muster");
     setCastleToClaimId(null);
     setShowHouseCreator(false);
   }
 
   function recruitTroops(castleId) {
-    const recruitCost = 25;
+    if (phase !== "muster" || gold < 25) return;
 
-    if (gold < recruitCost) return;
-
-    setGold((currentGold) => currentGold - recruitCost);
+    setGold((currentGold) => currentGold - 25);
     setCastles((currentCastles) =>
       currentCastles.map((castle) =>
         castle.id === castleId ? { ...castle, troops: castle.troops + 25 } : castle
       )
     );
-    addLog("25 troops recruited.");
+    addLog("25 troops joined your banners.");
   }
 
   function attackCastle(targetCastleId) {
-    if (!selectedCastle || selectedCastle.owner !== "player") return;
+    if (phase !== "war" || !selectedCastle || selectedCastle.owner !== "player") return;
 
-    const attackingTroops = selectedCastle.troops;
     const targetCastle = castles.find((castle) => castle.id === targetCastleId);
 
-    if (!targetCastle || attackingTroops < 30) return;
+    if (!targetCastle || selectedCastle.troops < 30) return;
 
     const result = resolveBattle(
-      attackingTroops,
+      selectedCastle.troops,
       targetCastle.troops,
       targetCastle.defense
     );
@@ -357,17 +397,30 @@ export default function MapPage() {
       );
     } else {
       addLog(
-        `${selectedCastle.name} failed against ${targetCastle.name}: ${result.attackRoll}-${result.defenseRoll}. Attackers lost ${result.attackerLosses}.`
+        `${selectedCastle.name} was repelled by ${targetCastle.name}: ${result.attackRoll}-${result.defenseRoll}. Attackers lost ${result.attackerLosses}.`
       );
     }
   }
 
   function endTurn() {
+    if (phase !== "revenue") return;
+
     const income = playerCastles.reduce((total, castle) => total + castle.income, 0);
 
     setGold((currentGold) => currentGold + income);
     setTurn((currentTurn) => currentTurn + 1);
-    addLog(`Turn ended. Your realm collected ${income} gold.`);
+    setPhase("council");
+    addLog(`Turn ${turn} ended. Your realm collected ${income} gold.`);
+  }
+
+  function advancePhase() {
+    if (!playerHasCastle) return;
+
+    const currentIndex = TURN_PHASES.findIndex((turnPhase) => turnPhase.id === phase);
+    const nextPhase = TURN_PHASES[currentIndex + 1] || TURN_PHASES[0];
+
+    setPhase(nextPhase.id);
+    addLog(`${nextPhase.name} phase begins.`);
   }
 
   function resetGame() {
@@ -377,300 +430,336 @@ export default function MapPage() {
     setShowHouseCreator(false);
     setHouseName("");
     setHouseMotto("");
-    setHouseAnimal("Wolf");
+    setHouseSigil(SIGILS[0]);
     setCastles(STARTING_CASTLES);
-    setClaimedCastleId(null);
     setGold(100);
     setTurn(1);
+    setPhase("council");
     setBattleLog([]);
+    setLastSyncedAt(null);
+    setSyncMessage("Realm reset");
+  }
+
+  function formatSyncTime(value) {
+    if (!value) return "Waiting for sync";
+
+    return new Date(value).toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(to bottom,#efe3bd,#d2b577)",
-        color: "#1f1205",
-        padding: "20px",
-      }}
-    >
-      <h1
-        style={{
-          textAlign: "center",
-          fontSize: "44px",
-          margin: "0 0 10px",
-        }}
-      >
-        GAME OF KINGS
-      </h1>
+    <main className="min-h-screen bg-stone-950 text-stone-100">
+      <section className="border-b border-stone-800 bg-stone-950/95 px-4 py-4">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.28em] text-amber-400">
+              Realm Command
+            </p>
+            <h1 className="text-3xl font-black md:text-5xl">Game of Kings</h1>
+          </div>
 
-      <section
-        style={{
-          maxWidth: "1000px",
-          margin: "0 auto 16px",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-          gap: "10px",
-        }}
-      >
-        <StatCard label="Turn" value={turn} />
-        <StatCard label="Gold" value={gold} />
-        <StatCard label="Castles" value={playerCastles.length} />
-        <StatCard label="House" value={houseName ? `House ${houseName}` : "Unfounded"} />
+          <div className="grid grid-cols-4 gap-2 text-center md:min-w-[520px]">
+            <Stat label="Turn" value={turn} />
+            <Stat label="Phase" value={currentPhase.name} />
+            <Stat label="Gold" value={gold} />
+            <Stat label="Castles" value={playerCastles.length} />
+          </div>
+        </div>
       </section>
 
-      {claimedCastle && (
-        <div
-          style={{
-            maxWidth: "1000px",
-            margin: "0 auto 18px",
-            padding: "14px",
-            background: "#f8efd0",
-            border: "3px solid #6b4a22",
-            borderRadius: "8px",
-            textAlign: "center",
-            fontWeight: "bold",
-          }}
-        >
-          House {houseName || "Unknown"} rules from {claimedCastle.name}
-          {houseMotto ? ` - "${houseMotto}"` : ""}
+      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="overflow-hidden rounded-lg border border-stone-700 bg-black shadow-2xl">
+          <div className="relative mx-auto max-w-5xl">
+            <img
+              src="/LONG-MAP.png"
+              alt="Westeros map"
+              className="block w-full select-none"
+              draggable={false}
+            />
+
+            {castles.map((castle) => {
+              const owned = castle.owner === "player";
+              const canAttack =
+                selectedCastle?.owner === "player" &&
+                selectedCastle.neighbors.includes(castle.id) &&
+                !owned;
+
+              return (
+                <button
+                  key={castle.id}
+                  onClick={() => setSelectedCastleId(castle.id)}
+                  title={castle.name}
+                  className={`absolute flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-xs font-black shadow-lg transition hover:scale-110 ${
+                    owned
+                      ? "border-amber-200 text-white"
+                      : canAttack
+                        ? "border-red-300 bg-red-800 text-white"
+                        : "border-stone-200 bg-stone-900 text-stone-100"
+                  }`}
+                  style={{
+                    left: castle.left,
+                    top: castle.top,
+                    backgroundColor: owned ? houseSigil.color : undefined,
+                  }}
+                >
+                  {owned ? "YOU" : castle.troops}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      )}
 
-      <div
-        style={{
-          position: "relative",
-          maxWidth: "1000px",
-          margin: "0 auto",
-        }}
-      >
-        <img
-          src="/LONG-MAP.png"
-          alt="Westeros"
-          style={{
-            width: "100%",
-            border: "8px solid #5b3d1a",
-            borderRadius: "8px",
-            display: "block",
-          }}
-        />
+        <aside className="space-y-4">
+          <Panel>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-400">
+              Realm Sync
+            </p>
+            <h2 className="mt-2 text-2xl font-black">Live Realm</h2>
+            <p className="mt-2 text-sm leading-6 text-stone-300">
+              Your realm persists automatically. If you leave and return, time keeps moving and
+              your castles collect income.
+            </p>
+            <p className="mt-3 text-sm text-stone-400">
+              Last sync: {formatSyncTime(lastSyncedAt)}
+            </p>
+            {syncMessage && (
+              <p className="mt-1 text-xs font-bold text-emerald-300">{syncMessage}</p>
+            )}
+            <button
+              onClick={() => syncRealm("Realm synced now")}
+              className="mt-4 w-full rounded-lg bg-emerald-700 px-4 py-3 font-black transition hover:bg-emerald-600"
+            >
+              Sync Now
+            </button>
+          </Panel>
 
-        {castles.map((castle) => (
-          <button
-            key={castle.id}
-            onClick={() => setSelectedCastleId(castle.id)}
-            title={castle.name}
-            style={{
-              position: "absolute",
-              left: castle.left,
-              top: castle.top,
-              transform: "translate(-50%, -50%)",
-              width: "42px",
-              height: "42px",
-              border: castle.owner === "player" ? "3px solid #fef3c7" : "3px solid #3f2a12",
-              background: castle.owner === "player" ? houseColor : "#5b3d1a",
-              color: "white",
-              borderRadius: "50%",
-              cursor: "pointer",
-              fontWeight: "bold",
-              boxShadow: "0 3px 10px rgba(0,0,0,.45)",
-            }}
-          >
-            {castle.owner === "player" ? "Y" : castle.troops}
-          </button>
-        ))}
-      </div>
+          <Panel>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-400">
+              Turn Phase
+            </p>
+            <h2 className="mt-2 text-2xl font-black">{currentPhase.name}</h2>
+            <p className="mt-2 text-sm leading-6 text-stone-300">{currentPhase.description}</p>
 
-      <section
-        style={{
-          maxWidth: "1000px",
-          margin: "16px auto 0",
-          display: "grid",
-          gridTemplateColumns: "minmax(0,2fr) minmax(260px,1fr)",
-          gap: "14px",
-        }}
-      >
-        <div
-          style={{
-            background: "#f8efd0",
-            border: "3px solid #6b4a22",
-            borderRadius: "8px",
-            padding: "16px",
-          }}
-        >
-          <h2 style={{ margin: "0 0 10px", fontSize: "22px" }}>War Chronicle</h2>
-          {battleLog.length === 0 ? (
-            <p style={{ margin: 0 }}>Claim a castle to begin your reign.</p>
-          ) : (
-            battleLog.map((entry) => (
-              <p key={entry} style={{ margin: "0 0 8px" }}>
-                {entry}
+            <div className="mt-4 grid grid-cols-4 gap-2">
+              {TURN_PHASES.map((turnPhase) => (
+                <div
+                  key={turnPhase.id}
+                  className={`h-2 rounded-full ${
+                    turnPhase.id === phase ? "bg-amber-400" : "bg-stone-700"
+                  }`}
+                  title={turnPhase.name}
+                />
+              ))}
+            </div>
+
+            {phase !== "revenue" ? (
+              <button
+                onClick={advancePhase}
+                disabled={!playerHasCastle}
+                className="mt-4 w-full rounded-lg bg-stone-100 px-5 py-3 font-black text-stone-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+              >
+                Advance Phase
+              </button>
+            ) : (
+              <button
+                onClick={endTurn}
+                disabled={!playerHasCastle}
+                className="mt-4 w-full rounded-lg bg-amber-600 px-5 py-3 font-black text-black transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+              >
+                Collect Income / Next Turn
+              </button>
+            )}
+          </Panel>
+
+          <Panel>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-400">
+              Your House
+            </p>
+            {playerHasCastle ? (
+              <>
+                <h2 className="mt-2 text-2xl font-black">House {houseName}</h2>
+                <p className="mt-1 text-stone-300">{houseMotto || "No words declared."}</p>
+                <div className="mt-4 flex items-center gap-3">
+                  <span
+                    className="h-10 w-10 rounded-full border border-amber-200"
+                    style={{ backgroundColor: houseSigil.color }}
+                  />
+                  <span className="font-bold">{houseSigil.name}</span>
+                </div>
+              </>
+            ) : (
+              <p className="mt-3 text-stone-300">
+                Choose one unclaimed castle to found your noble house.
               </p>
-            ))
-          )}
-        </div>
+            )}
+          </Panel>
 
-        <div
-          style={{
-            background: "#f8efd0",
-            border: "3px solid #6b4a22",
-            borderRadius: "8px",
-            padding: "16px",
-          }}
-        >
+          <Panel>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-xl font-black">War Chronicle</h2>
+              <button
+                onClick={resetGame}
+                className="rounded-md border border-stone-700 px-3 py-2 text-xs font-bold text-stone-300 hover:bg-stone-800"
+              >
+                Reset
+              </button>
+            </div>
+            <div className="mt-4 space-y-3">
+              {battleLog.length === 0 ? (
+                <p className="text-stone-400">No ravens have arrived yet.</p>
+              ) : (
+                battleLog.map((entry) => (
+                  <p key={entry} className="rounded-md bg-stone-950 p-3 text-sm text-stone-300">
+                    {entry}
+                  </p>
+                ))
+              )}
+            </div>
+          </Panel>
+
           <button
             onClick={endTurn}
-            disabled={!claimedCastleId}
-            style={primaryButtonStyle(!claimedCastleId)}
+            disabled={!playerHasCastle || phase !== "revenue"}
+            className="w-full rounded-lg bg-amber-600 px-5 py-4 font-black text-black transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
           >
             End Turn / Collect Income
           </button>
-          <button onClick={resetGame} style={secondaryButtonStyle}>
-            Reset Game
-          </button>
-        </div>
+        </aside>
       </section>
 
       {selectedCastle && (
-        <Modal zIndex={1000}>
-          <h2 style={{ textAlign: "center", marginTop: 0 }}>{selectedCastle.name}</h2>
+        <Modal>
+          <h2 className="text-center text-3xl font-black">{selectedCastle.name}</h2>
+          <p className="mt-1 text-center text-stone-400">{selectedCastle.region}</p>
 
-          <p>
-            <strong>Region:</strong> {selectedCastle.region}
-          </p>
-          <p>
-            <strong>Owner:</strong>{" "}
-            {selectedCastle.owner === "player"
-              ? `House ${houseName || "Unknown"}`
-              : "Unclaimed"}
-          </p>
-          <p>
-            <strong>Troops:</strong> {selectedCastle.troops}
-          </p>
-          <p>
-            <strong>Defense:</strong> +{selectedCastle.defense}
-          </p>
-          <p>
-            <strong>Income:</strong> {selectedCastle.income} gold per turn
-          </p>
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <Info label="Owner" value={selectedCastle.owner === "player" ? `House ${houseName}` : "Unclaimed"} />
+            <Info label="Troops" value={selectedCastle.troops} />
+            <Info label="Defense" value={`+${selectedCastle.defense}`} />
+            <Info label="Income" value={`${selectedCastle.income} gold`} />
+          </div>
 
           {selectedCastle.owner === "player" && (
-            <>
+            <div className="mt-6 space-y-3">
               <button
                 onClick={() => recruitTroops(selectedCastle.id)}
-                disabled={gold < 25}
-                style={primaryButtonStyle(gold < 25)}
+                disabled={phase !== "muster" || gold < 25}
+                className="w-full rounded-lg bg-red-700 px-5 py-4 font-black transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
               >
                 Recruit 25 Troops - 25 Gold
               </button>
+              {phase !== "muster" && (
+                <p className="text-sm font-bold text-stone-400">
+                  Recruiting opens during the Muster phase.
+                </p>
+              )}
 
               {availableTargets.length > 0 && (
-                <div style={{ marginTop: "14px" }}>
-                  <h3 style={{ margin: "0 0 8px" }}>Attack Nearby Castles</h3>
-                  {availableTargets.map((target) => (
-                    <button
-                      key={target.id}
-                      onClick={() => attackCastle(target.id)}
-                      disabled={selectedCastle.troops < 30}
-                      style={secondaryButtonStyle}
-                    >
-                      Attack {target.name} ({target.troops} troops)
-                    </button>
-                  ))}
+                <div>
+                  <h3 className="mb-3 font-black text-amber-300">Attack Nearby Castles</h3>
+                  <div className="space-y-2">
+                    {availableTargets.map((target) => (
+                      <button
+                        key={target.id}
+                        onClick={() => attackCastle(target.id)}
+                        disabled={phase !== "war" || selectedCastle.troops < 30}
+                        className="w-full rounded-lg border border-red-800 bg-stone-950 px-4 py-3 text-left font-bold transition hover:bg-red-950 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Attack {target.name} ({target.troops} troops)
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
-            </>
+              {phase !== "war" && (
+                <p className="text-sm font-bold text-stone-400">
+                  Attacks open during the War phase.
+                </p>
+              )}
+            </div>
           )}
 
-          {!claimedCastleId && selectedCastle.owner !== "player" && (
+          {!playerHasCastle && selectedCastle.owner !== "player" && (
             <button
               onClick={() => {
                 setCastleToClaimId(selectedCastle.id);
                 setSelectedCastleId(null);
                 setShowHouseCreator(true);
               }}
-              style={primaryButtonStyle(false)}
+              className="mt-6 w-full rounded-lg bg-emerald-700 px-5 py-4 font-black transition hover:bg-emerald-600"
             >
               Claim Castle
             </button>
           )}
 
-          {claimedCastleId && selectedCastle.owner !== "player" && (
-            <p style={{ fontWeight: "bold" }}>
+          {playerHasCastle && selectedCastle.owner !== "player" && (
+            <p className="mt-6 rounded-lg bg-stone-950 p-4 font-bold text-stone-300">
               Select one of your neighboring castles to attack this location.
             </p>
           )}
 
-          <button onClick={() => setSelectedCastleId(null)} style={secondaryButtonStyle}>
+          <button
+            onClick={() => setSelectedCastleId(null)}
+            className="mt-3 w-full rounded-lg bg-stone-800 px-5 py-4 font-black transition hover:bg-stone-700"
+          >
             Close
           </button>
         </Modal>
       )}
 
       {showHouseCreator && (
-        <Modal zIndex={2000}>
-          <h2 style={{ textAlign: "center", marginTop: 0 }}>Found Your Noble House</h2>
+        <Modal>
+          <h2 className="text-center text-3xl font-black">Found Your Noble House</h2>
 
-          <input
-            placeholder="House Name"
-            value={houseName}
-            onChange={(event) => setHouseName(event.target.value)}
-            style={inputStyle}
-          />
+          <div className="mt-6 space-y-3">
+            <input
+              placeholder="House Name"
+              value={houseName}
+              onChange={(event) => setHouseName(event.target.value)}
+              className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-stone-100 outline-none focus:border-amber-400"
+            />
+            <input
+              placeholder="House Words"
+              value={houseMotto}
+              onChange={(event) => setHouseMotto(event.target.value)}
+              className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-stone-100 outline-none focus:border-amber-400"
+            />
+          </div>
 
-          <input
-            placeholder="House Motto"
-            value={houseMotto}
-            onChange={(event) => setHouseMotto(event.target.value)}
-            style={inputStyle}
-          />
-
-          <select
-            value={houseAnimal}
-            onChange={(event) => setHouseAnimal(event.target.value)}
-            style={inputStyle}
-          >
-            {ANIMALS.map((animal) => (
-              <option key={animal} value={animal}>
-                {animal}
-              </option>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {SIGILS.map((sigil) => (
+              <button
+                key={sigil.name}
+                onClick={() => setHouseSigil(sigil)}
+                className={`rounded-lg border p-3 text-sm font-bold transition ${
+                  houseSigil.name === sigil.name
+                    ? "border-amber-300 bg-stone-700"
+                    : "border-stone-700 bg-stone-950 hover:bg-stone-800"
+                }`}
+              >
+                <span
+                  className="mx-auto mb-2 block h-8 w-8 rounded-full"
+                  style={{ backgroundColor: sigil.color }}
+                />
+                {sigil.name}
+              </button>
             ))}
-          </select>
+          </div>
 
-          <div
-            style={{
-              textAlign: "center",
-              marginBottom: "20px",
-            }}
-          >
-            <div
-              style={{
-                width: "140px",
-                height: "140px",
-                borderRadius: "50%",
-                background: `radial-gradient(circle,#fff7ed,${houseColor})`,
-                margin: "0 auto 10px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontWeight: "bold",
-                textAlign: "center",
-                padding: "12px",
-              }}
-            >
-              {houseAnimal}
-            </div>
-
-            <h3 style={{ margin: "0 0 4px" }}>House {houseName || "Unknown"}</h3>
-            <p style={{ margin: 0 }}>"{houseMotto || "Our Words"}"</p>
-            {castleToClaim && <p>Seat: {castleToClaim.name}</p>}
+          <div className="mt-5 rounded-lg bg-stone-950 p-4 text-center">
+            <p className="font-black">House {houseName || "Unknown"}</p>
+            <p className="text-stone-400">"{houseMotto || "Our Words"}"</p>
+            {castleToClaim && <p className="mt-2 text-amber-300">Seat: {castleToClaim.name}</p>}
           </div>
 
           <button
             onClick={claimCastle}
             disabled={!houseName.trim()}
-            style={primaryButtonStyle(!houseName.trim())}
+            className="mt-5 w-full rounded-lg bg-emerald-700 px-5 py-4 font-black transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
           >
             Create House
           </button>
@@ -680,7 +769,7 @@ export default function MapPage() {
               setCastleToClaimId(null);
               setShowHouseCreator(false);
             }}
-            style={secondaryButtonStyle}
+            className="mt-3 w-full rounded-lg bg-stone-800 px-5 py-4 font-black transition hover:bg-stone-700"
           >
             Cancel
           </button>
@@ -690,88 +779,38 @@ export default function MapPage() {
   );
 }
 
-function StatCard({ label, value }) {
+function Stat({ label, value }) {
   return (
-    <div
-      style={{
-        background: "#f8efd0",
-        border: "3px solid #6b4a22",
-        borderRadius: "8px",
-        padding: "12px",
-      }}
-    >
-      <div style={{ fontSize: "13px", fontWeight: "bold", opacity: 0.7 }}>{label}</div>
-      <div style={{ fontSize: "22px", fontWeight: "bold" }}>{value}</div>
+    <div className="rounded-lg border border-stone-700 bg-stone-900 px-3 py-2">
+      <p className="text-xs font-bold uppercase tracking-wider text-stone-400">{label}</p>
+      <p className="text-xl font-black text-stone-100">{value}</p>
     </div>
   );
 }
 
-function Modal({ children, zIndex }) {
+function Panel({ children }) {
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,.78)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex,
-        padding: "18px",
-      }}
-    >
-      <div
-        style={{
-          width: "min(720px,100%)",
-          maxHeight: "90vh",
-          overflow: "auto",
-          background: "linear-gradient(180deg,#e7d6a7,#caa96a)",
-          border: "6px solid #6b4a22",
-          borderRadius: "12px",
-          padding: "28px",
-          color: "#1f1205",
-        }}
-      >
+    <div className="rounded-lg border border-stone-700 bg-stone-900 p-5 shadow-xl">
+      {children}
+    </div>
+  );
+}
+
+function Info({ label, value }) {
+  return (
+    <div className="rounded-lg border border-stone-800 bg-stone-950 p-4">
+      <p className="text-xs font-bold uppercase tracking-wider text-stone-500">{label}</p>
+      <p className="mt-1 text-lg font-black">{value}</p>
+    </div>
+  );
+}
+
+function Modal({ children }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg border border-stone-700 bg-stone-900 p-6 text-stone-100 shadow-2xl">
         {children}
       </div>
     </div>
   );
 }
-
-function primaryButtonStyle(disabled) {
-  return {
-    width: "100%",
-    padding: "14px",
-    background: disabled ? "#8b7355" : "#8b0000",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    marginBottom: "10px",
-    cursor: disabled ? "not-allowed" : "pointer",
-    fontWeight: "bold",
-  };
-}
-
-const secondaryButtonStyle = {
-  width: "100%",
-  padding: "14px",
-  background: "#333",
-  color: "white",
-  border: "none",
-  borderRadius: "8px",
-  marginBottom: "10px",
-  cursor: "pointer",
-  fontWeight: "bold",
-};
-
-const inputStyle = {
-  width: "100%",
-  padding: "14px",
-  marginBottom: "15px",
-  background: "#f8efd0",
-  color: "#111",
-  border: "3px solid #6b4a22",
-  borderRadius: "8px",
-  fontSize: "16px",
-  boxSizing: "border-box",
-};
