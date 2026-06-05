@@ -160,7 +160,7 @@ export default function HouseCreation({
               mt-2
             "
           >
-            "{motto || "Our Words"}"
+            &quot;{motto || "Our Words"}&quot;
           </p>
 
         </div>

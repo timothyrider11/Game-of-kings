@@ -4,6 +4,11 @@ import { supabase } from "../../lib/supabase";
 
 export default function TestPage() {
   async function saveTest() {
+    if (!supabase) {
+      alert("Supabase is not configured yet.");
+      return;
+    }
+
     const { data, error } = await supabase
       .from("players")
       .insert([
