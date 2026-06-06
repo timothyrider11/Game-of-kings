@@ -827,6 +827,13 @@ function createDefaultGalleries() {
   );
 }
 
+function getCastleImages(castleId, uploadedGalleries = {}) {
+  return galleryTypes.flatMap(([type]) => [
+    ...(localCastleGalleries[castleId]?.[type] || []),
+    ...(uploadedGalleries[castleId]?.[type] || []),
+  ]);
+}
+
 function formatTime(value) {
   return new Date(value).toLocaleString([], {
     month: "short",
@@ -861,6 +868,7 @@ export default function MapPage() {
   const [zoom, setZoom] = useState(1);
   const [activeTab, setActiveTab] = useState("realm");
   const [selectedCastleId, setSelectedCastleId] = useState("winterfell");
+  const [castlePopupOpen, setCastlePopupOpen] = useState(false);
   const [hoveredCastleId, setHoveredCastleId] = useState(null);
   const [galleryType, setGalleryType] = useState("exterior");
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -923,6 +931,10 @@ export default function MapPage() {
     ...(localCastleGalleries[selectedCastle.id]?.[galleryType] || []),
     ...(galleries[selectedCastle.id]?.[galleryType] || []),
   ];
+  const selectedCastleImages = useMemo(
+    () => getCastleImages(selectedCastle.id, galleries),
+    [selectedCastle.id, galleries]
+  );
   const canClaim = playerCastleIds.length === 0 && selectedState.owner !== "player";
   const economyPerHour = playerCastles.reduce(
     (total, castle) => total + castle.wealth * 18 + Math.floor(castle.population / 2000),
@@ -1538,7 +1550,6 @@ export default function MapPage() {
 
                 {castles.map((castle) => {
                   const state = castleState[castle.id] || { troops: castle.militaryStrength };
-                  const selected = castle.id === selectedCastle.id;
                   const hovered = castle.id === hoveredCastleId;
                   const owned = state.owner === "player";
 
@@ -1550,6 +1561,7 @@ export default function MapPage() {
                         setSelectedCastleId(castle.id);
                         setActiveTab("realm");
                         setGalleryIndex(0);
+                        setCastlePopupOpen(true);
                       }}
                       onMouseEnter={() => setHoveredCastleId(castle.id)}
                       onMouseLeave={() => setHoveredCastleId(null)}
@@ -1563,7 +1575,7 @@ export default function MapPage() {
                     >
                       <span
                         className={`block h-4 w-4 rounded-full transition ${
-                          selected || hovered
+                          hovered
                             ? "border-2 border-amber-300 bg-amber-300/25 shadow-[0_0_14px_rgba(251,191,36,0.85)]"
                             : owned
                               ? "border-2 border-emerald-300 bg-emerald-300/20"
@@ -1776,6 +1788,23 @@ export default function MapPage() {
         </aside>
       </section>
 
+      {castlePopupOpen && (
+        <CastlePopup
+          castle={selectedCastle}
+          state={selectedState}
+          houseName={houseName}
+          images={selectedCastleImages}
+          canClaim={canClaim}
+          onClaim={claimCastle}
+          onClose={() => setCastlePopupOpen(false)}
+          onFullscreen={setFullscreenImage}
+          onOpenGallery={() => {
+            setCastlePopupOpen(false);
+            setActiveTab("realm");
+          }}
+        />
+      )}
+
       {fullscreenImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4">
           <button
@@ -1788,6 +1817,86 @@ export default function MapPage() {
         </div>
       )}
     </main>
+  );
+}
+
+function CastlePopup({ castle, state, houseName, images, canClaim, onClaim, onClose, onFullscreen, onOpenGallery }) {
+  const heroImage = images[0];
+  const owner = state.owner === "player" ? `House ${houseName || "Unknown"}` : castle.house;
+  const currentLord = state.owner === "player" ? houseName || "Player Lord" : castle.lord;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center sm:p-5">
+      <section className="max-h-[92vh] w-full max-w-4xl overflow-auto rounded-lg border border-amber-300/40 bg-[#11100d] shadow-2xl shadow-black">
+        <div className="relative min-h-64 border-b border-stone-800 bg-black sm:min-h-80">
+          {heroImage ? (
+            <button onClick={() => onFullscreen(heroImage)} className="block h-full min-h-64 w-full sm:min-h-80">
+              <img src={heroImage.src} alt={heroImage.name} className="h-full min-h-64 w-full object-cover sm:min-h-80" />
+            </button>
+          ) : (
+            <div className="flex min-h-64 items-center justify-center bg-[radial-gradient(circle_at_50%_20%,rgba(251,191,36,0.22),transparent_34%),linear-gradient(135deg,#17130d,#050505)] p-8 text-center sm:min-h-80">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-amber-300">Castle Archive</p>
+                <h2 className="mt-3 text-3xl font-black text-stone-100">{castle.name}</h2>
+                <p className="mt-3 text-sm leading-6 text-stone-400">No castle image has been added yet.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-5">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">{castle.region}</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-5xl">{castle.name}</h2>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="absolute right-3 top-3 rounded-md bg-black/80 px-4 py-2 text-sm font-black text-stone-100 transition hover:bg-stone-100 hover:text-stone-950"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-stone-500">Lore</p>
+            <p className="mt-3 text-base leading-7 text-stone-300">{castle.summary}</p>
+            <p className="mt-4 text-sm leading-6 text-stone-500">
+              This location is part of the living realm: claims, wars, upgrades, gallery uploads, and house activity are timestamped as the world keeps moving.
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {canClaim && (
+                <button
+                  onClick={() => {
+                    onClaim();
+                    onClose();
+                  }}
+                  disabled={!houseName.trim()}
+                  className="min-h-11 rounded-md bg-emerald-700 px-5 py-3 text-sm font-black transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+                >
+                  Claim Castle
+                </button>
+              )}
+              <button
+                onClick={onOpenGallery}
+                className="min-h-11 rounded-md bg-amber-400 px-5 py-3 text-sm font-black text-stone-950 transition hover:bg-amber-300"
+              >
+                View Gallery
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Info label="House Name" value={owner} />
+            <Info label="Current Lord" value={currentLord} />
+            <Info label="Military" value={state.troops.toLocaleString()} />
+            <Info label="Population" value={castle.population.toLocaleString()} />
+            <Info label="Wealth" value={`${castle.wealth}/10`} />
+            <Info label="Power Score" value={scoreCastle(castle, state).toLocaleString()} />
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
 
