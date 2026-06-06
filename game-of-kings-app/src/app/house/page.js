@@ -8,70 +8,78 @@ import { useEffect, useMemo, useState } from "react";
 const STORAGE_KEY = "game_of_kings_living_realm";
 
 const tinctures = [
-  ["Iron Black", "#070807"],
-  ["Night Charcoal", "#151716"],
-  ["Aged Steel", "#68716f"],
-  ["Muted Silver", "#b7b3a8"],
-  ["Dim Parchment", "#a99d86"],
-  ["Blood Red", "#5e1114"],
-  ["Dried Maroon", "#3a0d12"],
-  ["Deep Umber", "#4a3728"],
-  ["Forest Shadow", "#153529"],
-  ["Moss Green", "#46523a"],
-  ["Sea Iron", "#183c42"],
-  ["Storm Blue", "#263848"],
-  ["Ash Violet", "#3c3346"],
-  ["Old Bone", "#d1c7b5"],
-  ["Soot Brown", "#241b16"],
-  ["Candle Gold", "#8a6d3b"],
+  ["Iron Black", "#070807", "A hard black field for grim, old houses."],
+  ["Night Charcoal", "#151716", "Soft black leather and smoke."],
+  ["Aged Steel", "#68716f", "Cold metal, practical and noble."],
+  ["Muted Silver", "#b7b3a8", "Moonlit steel and worn plate."],
+  ["Dim Parchment", "#a99d86", "Old maps, vows, and dusty halls."],
+  ["Blood Red", "#5e1114", "War banners, old grudges, and ambition."],
+  ["Dried Maroon", "#3a0d12", "Darker blood, more secretive."],
+  ["Deep Umber", "#4a3728", "Wood, earth, and fortress halls."],
+  ["Forest Shadow", "#153529", "Woods, scouts, and patient strength."],
+  ["Moss Green", "#46523a", "Ancient growth and quiet survival."],
+  ["Sea Iron", "#183c42", "Coasts, ships, and storm-water."],
+  ["Storm Blue", "#263848", "Rain, banners, and northern skies."],
+  ["Ash Violet", "#3c3346", "Mystery, old bloodlines, and court secrets."],
+  ["Old Bone", "#d1c7b5", "Relics, vows, and ancient claims."],
+  ["Soot Brown", "#241b16", "Forge smoke and burned timber."],
+  ["Candle Gold", "#8a6d3b", "Wealth without looking bright or modern."],
 ];
 
 const fieldLayouts = [
-  ["plain", "Plain Field"],
-  ["per-pale", "Split Vertical"],
-  ["per-fess", "Split Horizontal"],
-  ["quartered", "Quartered"],
-  ["bend", "Diagonal Bend"],
-  ["bend-sinister", "Reverse Bend"],
-  ["cross", "Iron Cross"],
-  ["saltire", "Saltire"],
-  ["chevron", "Chevron"],
-  ["pale", "Center Pale"],
-  ["fess", "Center Fess"],
-  ["chief", "Chief"],
-  ["base", "Base"],
-  ["bordure", "Bordure"],
+  ["plain", "Plain Field", "A single proud house color."],
+  ["per-pale", "Split Vertical", "Two bloodlines or two loyalties."],
+  ["per-fess", "Split Horizontal", "A house divided by land and sky."],
+  ["quartered", "Quartered", "Alliance, marriage, or conquest."],
+  ["bend", "Diagonal Bend", "A road, blade, river, or oath."],
+  ["bend-sinister", "Reverse Bend", "A rival claim or hidden branch."],
+  ["cross", "Iron Cross", "Duty, faith, and command."],
+  ["saltire", "Saltire", "Crossed roads, crossed swords."],
+  ["chevron", "Chevron", "A roof, mountain, or defensive wall."],
+  ["pale", "Center Pale", "A central banner stripe."],
+  ["fess", "Center Fess", "A strong belt across the shield."],
+  ["chief", "Chief", "A ruling color above the house field."],
+  ["base", "Base", "A foundation color below the house field."],
+  ["bordure", "Bordure", "A bordered house mark for cadet branches."],
+  ["orle", "Inner Orle", "A smaller frame inside the shield."],
+  ["gyronny", "Gyronny", "Radiating wedges for a dramatic house."],
 ];
 
 const shieldShapes = [
-  ["heater", "Heater"],
-  ["kite", "Kite"],
-  ["round", "Round"],
-  ["banner", "Banner"],
-  ["tower", "Tower"],
+  ["heater", "Heater", "Classic knightly shield."],
+  ["kite", "Kite", "Long war shield for older houses."],
+  ["round", "Round", "Ancient island or hill clan feel."],
+  ["banner", "Banner", "A hanging war banner."],
+  ["tower", "Tower", "Fortress-shaped house mark."],
+  ["royal", "Royal", "Highborn ceremonial shield."],
+  ["pointed", "Pointed", "Aggressive tournament shield."],
 ];
 
 const charges = [
-  ["wolf", "Wolf"],
-  ["lion", "Lion"],
-  ["dragon", "Dragon"],
-  ["kraken", "Kraken"],
-  ["stag", "Stag"],
-  ["falcon", "Falcon"],
-  ["raven", "Raven"],
-  ["bear", "Bear"],
-  ["horse", "Horse"],
-  ["serpent", "Serpent"],
-  ["boar", "Boar"],
-  ["rose", "Rose"],
-  ["sun", "Sun"],
-  ["moon", "Moon"],
-  ["tower", "Tower"],
-  ["sword", "Sword"],
-  ["crown", "Crown"],
-  ["ship", "Ship"],
-  ["tree", "Weirwood"],
-  ["star", "Star"],
+  ["wolf", "Wolf", "Loyal, cold, watchful, and dangerous in packs."],
+  ["lion", "Lion", "Pride, command, wealth, and open power."],
+  ["dragon", "Dragon", "Fire, conquest, old magic, and royal ambition."],
+  ["kraken", "Kraken", "Sea raids, deep grudges, and coastal terror."],
+  ["stag", "Stag", "Storm kings, endurance, and lawful rule."],
+  ["falcon", "Falcon", "Mountain sight, precision, and noble distance."],
+  ["raven", "Raven", "Secrets, messages, omens, and memory."],
+  ["bear", "Bear", "Raw strength, patience, and brutal defense."],
+  ["horse", "Horse", "Speed, cavalry, open roads, and messengers."],
+  ["serpent", "Serpent", "Cunning, poison, survival, and hidden strikes."],
+  ["boar", "Boar", "Ferocity, stubborn charges, and hard survival."],
+  ["rose", "Rose", "Courtly beauty, wealth, and soft power."],
+  ["sun", "Sun", "Desert pride, warmth, and royal confidence."],
+  ["moon", "Moon", "Night vows, mystery, and quiet influence."],
+  ["tower", "Tower", "Stone, siegecraft, and a house built to last."],
+  ["sword", "Sword", "Warrior vows, justice, and martial honor."],
+  ["crown", "Crown", "Kingship, elections, prestige, and ambition."],
+  ["ship", "Ship", "Trade, raids, fleets, and sea roads."],
+  ["tree", "Weirwood", "Old gods, memory, roots, and northern mystery."],
+  ["star", "Star", "Destiny, rare bloodlines, and legendary claims."],
+  ["axe", "Axe", "Raids, executions, and hard northern justice."],
+  ["chalice", "Chalice", "Faith, feasts, poison, or old ceremony."],
+  ["key", "Key", "Gatekeepers, secrets, and castle authority."],
+  ["flame", "Flame", "Zeal, danger, and restless ambition."],
 ];
 
 const defaultSigil = {
@@ -86,8 +94,13 @@ const defaultSigil = {
   chargeX: 50,
   chargeY: 50,
   chargeRotate: 0,
+  chargeStretch: 100,
   border: "#68716f",
 };
+
+function getById(list, id) {
+  return list.find(([itemId]) => itemId === id) || list[0];
+}
 
 function getFieldBackground(sigil) {
   const primary = sigil.color;
@@ -109,11 +122,9 @@ function getFieldBackground(sigil) {
     chief: `linear-gradient(180deg, ${accent} 0 30%, ${primary} 30% 100%)`,
     base: `linear-gradient(180deg, ${primary} 0 70%, ${accent} 70% 100%)`,
     bordure: `radial-gradient(closest-side, ${primary} 72%, transparent 73%), ${accent}`,
+    orle: `radial-gradient(closest-side, ${primary} 60%, transparent 61% 67%, ${primary} 68%), ${accent}`,
+    gyronny: `conic-gradient(from 45deg, ${primary} 0 12.5%, ${secondary} 12.5% 25%, ${primary} 25% 37.5%, ${secondary} 37.5% 50%, ${primary} 50% 62.5%, ${secondary} 62.5% 75%, ${primary} 75% 87.5%, ${secondary} 87.5% 100%)`,
   };
-
-  if (sigil.field === "quartered") {
-    return `linear-gradient(90deg, ${primary} 0 50%, ${secondary} 50% 100%)`;
-  }
 
   return fields[sigil.field] || primary;
 }
@@ -125,6 +136,8 @@ function getShieldClip(shape) {
     round: "ellipse(44% 48% at 50% 45%)",
     banner: "polygon(8% 0, 92% 0, 92% 100%, 50% 82%, 8% 100%)",
     tower: "polygon(8% 8%, 18% 8%, 18% 0, 32% 0, 32% 8%, 44% 8%, 44% 0, 56% 0, 56% 8%, 68% 8%, 68% 0, 82% 0, 82% 8%, 92% 8%, 92% 100%, 8% 100%)",
+    royal: "polygon(50% 0, 90% 8%, 96% 28%, 88% 76%, 50% 100%, 12% 76%, 4% 28%, 10% 8%)",
+    pointed: "polygon(50% 0, 97% 18%, 80% 82%, 50% 100%, 20% 82%, 3% 18%)",
   };
 
   return shapes[shape] || shapes.heater;
@@ -134,7 +147,7 @@ function updateSigilValue(setSigil, key, value) {
   setSigil((sigil) => ({
     ...sigil,
     [key]: value,
-    name: key === "charge" ? charges.find(([id]) => id === value)?.[1] || sigil.name : sigil.name,
+    name: key === "charge" ? getById(charges, value)[1] : sigil.name,
   }));
 }
 
@@ -145,6 +158,8 @@ export default function HouseFounderPage() {
   const [savedMessage, setSavedMessage] = useState("");
 
   const background = useMemo(() => getFieldBackground(sigil), [sigil]);
+  const selectedCharge = getById(charges, sigil.charge);
+  const selectedField = getById(fieldLayouts, sigil.field);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -172,7 +187,7 @@ export default function HouseFounderPage() {
   function saveHouse() {
     const stored = localStorage.getItem(STORAGE_KEY);
     const current = stored ? JSON.parse(stored) : {};
-    const chargeName = charges.find(([id]) => id === sigil.charge)?.[1] || sigil.name;
+    const chargeName = getById(charges, sigil.charge)[1];
 
     localStorage.setItem(
       STORAGE_KEY,
@@ -183,6 +198,8 @@ export default function HouseFounderPage() {
         houseSigil: {
           ...sigil,
           name: chargeName,
+          description: selectedCharge[2],
+          fieldDescription: selectedField[2],
         },
       })
     );
@@ -214,7 +231,7 @@ export default function HouseFounderPage() {
             Forge your house.
           </h1>
           <p className="gok-copy relative z-10 mt-4 max-w-full text-sm leading-6">
-            Build a custom sigil with shield fields, colors, emblem objects, size, position, and rotation.
+            Build a custom sigil with shield fields, colors, emblem objects, size, position, stretch, and rotation.
             This is the mark players will remember when your house enters the realm.
           </p>
 
@@ -231,6 +248,13 @@ export default function HouseFounderPage() {
               placeholder="House words"
               className="min-h-12 w-full border border-[var(--gok-line)] bg-black/70 px-4 py-3 outline-none focus:border-[var(--gok-line-strong)]"
             />
+          </div>
+
+          <div className="relative z-10 mt-5 border border-[var(--gok-line)] bg-black/35 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gok-dim)]">Selected Meaning</p>
+            <h2 className="mt-2 text-xl font-normal text-[var(--gok-silver)]">{selectedCharge[1]}</h2>
+            <p className="mt-2 text-sm leading-6 text-[rgba(210,205,194,0.62)]">{selectedCharge[2]}</p>
+            <p className="mt-3 text-sm leading-6 text-[rgba(210,205,194,0.48)]">{selectedField[2]}</p>
           </div>
 
           <button
@@ -270,24 +294,16 @@ export default function HouseFounderPage() {
 
             <div className="min-w-0 space-y-6">
               <ControlBlock title="Shield Fields">
-                <OptionGrid
-                  options={fieldLayouts}
-                  value={sigil.field}
-                  onChange={(value) => updateSigilValue(setSigil, "field", value)}
-                />
+                <OptionGrid options={fieldLayouts} value={sigil.field} onChange={(value) => updateSigilValue(setSigil, "field", value)} />
               </ControlBlock>
 
               <ControlBlock title="Shield Shape">
-                <OptionGrid
-                  options={shieldShapes}
-                  value={sigil.shield}
-                  onChange={(value) => updateSigilValue(setSigil, "shield", value)}
-                />
+                <OptionGrid options={shieldShapes} value={sigil.shield} onChange={(value) => updateSigilValue(setSigil, "shield", value)} />
               </ControlBlock>
 
               <ControlBlock title="Emblem Objects">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">
-                  {charges.map(([id, label]) => (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+                  {charges.map(([id, label, description]) => (
                     <button
                       key={id}
                       onClick={() => updateSigilValue(setSigil, "charge", id)}
@@ -296,8 +312,9 @@ export default function HouseFounderPage() {
                           ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
                           : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
                       }`}
+                      title={description}
                     >
-                      <span className="mx-auto mb-2 block h-9 w-9">
+                      <span className="mx-auto mb-2 block h-10 w-10">
                         <ChargeIcon type={id} color="currentColor" />
                       </span>
                       {label}
@@ -313,13 +330,20 @@ export default function HouseFounderPage() {
                 <ColorPicker title="Emblem Color" selected={sigil.border} onPick={(value) => updateSigilValue(setSigil, "border", value)} />
               </div>
 
-              <ControlBlock title="Object Size And Placement">
+              <ControlBlock title="Custom Placement">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <RangeControl label="Size" value={sigil.chargeSize} min="28" max="88" onChange={(value) => updateSigilValue(setSigil, "chargeSize", value)} />
-                  <RangeControl label="Left / Right" value={sigil.chargeX} min="20" max="80" onChange={(value) => updateSigilValue(setSigil, "chargeX", value)} />
-                  <RangeControl label="Up / Down" value={sigil.chargeY} min="22" max="78" onChange={(value) => updateSigilValue(setSigil, "chargeY", value)} />
-                  <RangeControl label="Rotation" value={sigil.chargeRotate} min="-35" max="35" onChange={(value) => updateSigilValue(setSigil, "chargeRotate", value)} />
+                  <RangeControl label="Size" value={sigil.chargeSize} min="24" max="96" onChange={(value) => updateSigilValue(setSigil, "chargeSize", value)} />
+                  <RangeControl label="Width Stretch" value={sigil.chargeStretch} min="65" max="140" onChange={(value) => updateSigilValue(setSigil, "chargeStretch", value)} />
+                  <RangeControl label="Left / Right" value={sigil.chargeX} min="12" max="88" onChange={(value) => updateSigilValue(setSigil, "chargeX", value)} />
+                  <RangeControl label="Up / Down" value={sigil.chargeY} min="14" max="86" onChange={(value) => updateSigilValue(setSigil, "chargeY", value)} />
+                  <RangeControl label="Rotation" value={sigil.chargeRotate} min="-60" max="60" onChange={(value) => updateSigilValue(setSigil, "chargeRotate", value)} />
                 </div>
+                <button
+                  onClick={() => setSigil((current) => ({ ...current, chargeSize: 58, chargeX: 50, chargeY: 50, chargeRotate: 0, chargeStretch: 100 }))}
+                  className="gok-btn mt-4 px-4 py-2 text-xs"
+                >
+                  Center Object
+                </button>
               </ControlBlock>
             </div>
           </div>
@@ -344,14 +368,6 @@ function SigilPreview({ sigil, background }) {
             boxShadow: "inset 0 0 42px rgba(0,0,0,.78), 0 26px 60px rgba(0,0,0,.7)",
           }}
         >
-          {sigil.field === "quartered" && (
-            <div className="absolute inset-0 grid grid-cols-2">
-              <div style={{ backgroundColor: sigil.color }} />
-              <div style={{ backgroundColor: sigil.secondary }} />
-              <div style={{ backgroundColor: sigil.secondary }} />
-              <div style={{ backgroundColor: sigil.color }} />
-            </div>
-          )}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.14),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.28))]" />
           <div
             className="absolute"
@@ -359,7 +375,7 @@ function SigilPreview({ sigil, background }) {
               left: `${sigil.chargeX}%`,
               top: `${sigil.chargeY}%`,
               width: `${sigil.chargeSize}%`,
-              transform: `translate(-50%, -50%) rotate(${sigil.chargeRotate}deg)`,
+              transform: `translate(-50%, -50%) rotate(${sigil.chargeRotate}deg) scaleX(${sigil.chargeStretch / 100})`,
               filter: "drop-shadow(0 8px 10px rgba(0,0,0,.82))",
             }}
           >
@@ -383,10 +399,11 @@ function ControlBlock({ title, children }) {
 function OptionGrid({ options, value, onChange }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      {options.map(([id, label]) => (
+      {options.map(([id, label, description]) => (
         <button
           key={id}
           onClick={() => onChange(id)}
+          title={description}
           className={`min-h-11 border px-3 py-2 text-sm font-bold transition ${
             value === id
               ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
@@ -404,13 +421,13 @@ function ColorPicker({ title, selected, onPick }) {
   return (
     <ControlBlock title={title}>
       <div className="grid grid-cols-4 gap-2">
-        {tinctures.map(([name, color]) => (
+        {tinctures.map(([name, color, description]) => (
           <button
             key={`${title}-${name}`}
             onClick={() => onPick(color)}
             className={`h-11 border transition ${selected === color ? "border-[var(--gok-silver)]" : "border-[var(--gok-line)]"}`}
             style={{ backgroundColor: color }}
-            title={name}
+            title={`${name}: ${description}`}
             aria-label={name}
           />
         ))}
@@ -449,23 +466,17 @@ function ChargeIcon({ type, color }) {
 
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true" className="h-full w-full overflow-visible">
-      {type === "wolf" && <path {...common} d="M12 60 L28 24 L42 42 L58 18 L70 43 L88 36 L78 62 L92 84 L62 75 L48 92 L38 74 L16 78 Z" />}
-      {type === "lion" && (
-        <>
-          <circle {...common} cx="48" cy="42" r="25" />
-          <path {...common} d="M22 36 L8 22 L30 25 L35 5 L48 23 L64 6 L66 28 L90 24 L76 42 L91 58 L68 57 L63 80 L49 63 L32 82 L31 58 L10 62 Z" />
-          <path {...common} d="M55 58 C66 64 74 72 75 88 L52 79 L34 90 C34 75 42 64 55 58 Z" />
-        </>
-      )}
-      {type === "dragon" && <path {...common} d="M10 63 C30 25 52 45 54 18 L70 36 L90 23 L78 52 L92 70 L67 68 L58 90 L44 70 C34 78 22 76 10 63 Z" />}
-      {type === "kraken" && <path {...common} d="M50 10 C70 10 80 25 70 42 C88 45 92 62 82 76 C75 62 63 61 56 72 L62 94 L50 82 L38 94 L44 72 C37 61 25 62 18 76 C8 62 12 45 30 42 C20 25 30 10 50 10 Z" />}
-      {type === "stag" && <path {...common} d="M35 90 L42 58 L28 45 L12 55 L23 35 L8 18 L31 26 L36 7 L45 30 L55 30 L64 7 L69 26 L92 18 L77 35 L88 55 L72 45 L58 58 L65 90 L50 76 Z" />}
-      {type === "falcon" && <path {...common} d="M7 55 C26 25 44 19 50 42 C56 19 74 25 93 55 C73 50 60 56 54 75 L50 92 L46 75 C40 56 27 50 7 55 Z" />}
-      {type === "raven" && <path {...common} d="M16 55 C38 18 65 20 84 49 L97 48 L86 59 C80 76 61 87 40 79 L18 92 L28 70 C18 65 12 61 16 55 Z" />}
-      {type === "bear" && <path {...common} d="M23 24 L34 14 L44 24 L56 24 L66 14 L78 24 L80 58 C78 80 63 90 50 90 C37 90 22 80 20 58 Z" />}
-      {type === "horse" && <path {...common} d="M27 90 L34 56 L24 45 L30 20 L54 12 L74 28 L66 49 L78 66 L66 90 L58 64 L43 59 L39 90 Z" />}
+      {type === "wolf" && <path {...common} d="M10 58 L25 24 L38 38 L50 14 L61 38 L79 24 L71 50 L91 72 L67 68 L55 91 L45 70 L20 78 Z" />}
+      {type === "lion" && <path {...common} d="M22 73 L30 45 L18 30 L36 31 L43 12 L52 30 L70 16 L68 38 L88 45 L69 55 L74 82 L55 68 L38 89 L39 65 Z" />}
+      {type === "dragon" && <path {...common} d="M8 62 C22 27 46 40 50 17 L65 35 L91 20 L78 50 L92 68 L66 66 L56 91 L43 70 C30 79 16 76 8 62 Z" />}
+      {type === "kraken" && <path {...common} d="M50 9 C70 9 80 25 70 42 C88 45 93 62 82 77 C75 61 63 61 56 72 L63 95 L50 82 L37 95 L44 72 C37 61 25 61 18 77 C7 62 12 45 30 42 C20 25 30 9 50 9 Z" />}
+      {type === "stag" && <path {...common} d="M34 91 L42 58 L27 45 L11 55 L23 34 L8 17 L31 26 L36 7 L45 30 H55 L64 7 L69 26 L92 17 L77 34 L89 55 L73 45 L58 58 L66 91 L50 76 Z" />}
+      {type === "falcon" && <path {...common} d="M6 55 C27 24 44 18 50 42 C56 18 73 24 94 55 C74 51 60 57 54 76 L50 94 L46 76 C40 57 26 51 6 55 Z" />}
+      {type === "raven" && <path {...common} d="M15 55 C37 18 66 20 84 49 L97 48 L86 60 C80 76 61 87 40 79 L18 93 L28 70 C18 65 12 61 15 55 Z" />}
+      {type === "bear" && <path {...common} d="M22 24 L34 13 L44 24 H56 L66 13 L79 24 L80 58 C78 80 63 91 50 91 C37 91 22 80 20 58 Z" />}
+      {type === "horse" && <path {...common} d="M26 91 L34 56 L24 45 L30 20 L54 12 L75 28 L66 49 L79 66 L66 91 L58 64 L43 59 L39 91 Z" />}
       {type === "serpent" && <path {...common} d="M67 13 C36 14 26 36 48 46 C72 57 63 80 30 85 L20 70 C49 72 52 60 35 53 C8 41 25 11 67 13 Z M68 13 L88 21 L68 31 Z" />}
-      {type === "boar" && <path {...common} d="M16 60 C20 34 47 26 72 35 L88 26 L83 47 L94 61 L78 66 L68 84 L58 68 L34 72 L22 88 L21 69 Z" />}
+      {type === "boar" && <path {...common} d="M15 60 C20 34 47 26 72 35 L88 26 L83 47 L94 61 L78 66 L68 84 L58 68 L34 72 L22 89 L21 69 Z" />}
       {type === "rose" && (
         <>
           <circle {...common} cx="50" cy="50" r="13" />
@@ -477,11 +488,15 @@ function ChargeIcon({ type, color }) {
       {type === "sun" && <path {...common} d="M50 5 L58 30 L82 18 L70 42 L95 50 L70 58 L82 82 L58 70 L50 95 L42 70 L18 82 L30 58 L5 50 L30 42 L18 18 L42 30 Z" />}
       {type === "moon" && <path {...common} d="M70 10 C45 22 38 53 58 76 C45 78 27 69 21 51 C13 25 39 4 70 10 Z" />}
       {type === "tower" && <path {...common} d="M22 90 V28 H32 V12 H44 V28 H56 V12 H68 V28 H78 V90 H58 V68 H42 V90 Z" />}
-      {type === "sword" && <path {...common} d="M47 9 H53 L58 60 L77 69 L69 80 L56 72 L53 94 H47 L44 72 L31 80 L23 69 L42 60 Z" />}
+      {type === "sword" && <path {...common} d="M47 8 H53 L58 60 L78 69 L69 81 L56 72 L53 95 H47 L44 72 L31 81 L22 69 L42 60 Z" />}
       {type === "crown" && <path {...common} d="M12 78 L18 30 L38 58 L50 18 L62 58 L82 30 L88 78 Z" />}
       {type === "ship" && <path {...common} d="M15 60 H85 L72 82 H28 Z M48 18 H54 V60 H48 Z M54 24 C70 30 78 42 80 55 H54 Z M47 28 C32 33 24 44 22 56 H47 Z" />}
       {type === "tree" && <path {...common} d="M45 92 L48 64 C29 64 16 51 22 36 C26 25 37 25 41 31 C43 16 58 10 66 20 C75 19 84 29 78 42 C90 50 78 67 58 64 L62 92 Z" />}
       {type === "star" && <path {...common} d="M50 6 L61 37 L94 37 L67 56 L78 90 L50 70 L22 90 L33 56 L6 37 L39 37 Z" />}
+      {type === "axe" && <path {...common} d="M44 91 L51 48 L32 36 C39 18 57 13 82 18 C76 42 64 58 51 48 L58 91 Z" />}
+      {type === "chalice" && <path {...common} d="M27 15 H73 L66 46 C64 58 57 65 50 65 C43 65 36 58 34 46 Z M47 65 H53 V83 H70 V91 H30 V83 H47 Z" />}
+      {type === "key" && <path {...common} d="M34 17 C49 17 58 31 52 44 L91 83 L79 95 L70 86 L63 92 L56 85 L49 91 L39 81 L44 53 C31 58 17 48 17 34 C17 24 24 17 34 17 Z" />}
+      {type === "flame" && <path {...common} d="M51 95 C28 85 20 67 30 49 C36 37 45 32 43 16 C58 25 62 42 59 54 C68 48 72 38 72 28 C89 50 85 78 51 95 Z" />}
     </svg>
   );
 }

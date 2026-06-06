@@ -116,9 +116,137 @@ const castles = [
     militaryStrength: 1850,
     population: 14500,
     wealth: 5,
-    neighbors: ["moat-cailin", "white-harbor", "dreadfort", "last-hearth"],
+    neighbors: ["cerwyn", "barrowton", "torrhens-square", "moat-cailin", "white-harbor", "dreadfort", "last-hearth"],
     summary:
       "Ancient seat of House Stark, built around hot springs and a godswood at the heart of northern power.",
+  },
+  {
+    id: "deepwood-motte",
+    name: "Deepwood Motte",
+    house: "House Glover",
+    region: "The North",
+    lord: "Master Glover",
+    left: 25.7,
+    top: 31.1,
+    label: "left",
+    militaryStrength: 760,
+    population: 4200,
+    wealth: 3,
+    neighbors: ["barrowton", "torrhens-square", "winterfell", "pyke"],
+    summary:
+      "A timbered northern stronghold in the Wolfswood, important to western defenses and coastal warning fires.",
+  },
+  {
+    id: "barrowton",
+    name: "Barrowton",
+    house: "House Dustin",
+    region: "The North",
+    lord: "Lady Dustin",
+    left: 31.3,
+    top: 35.8,
+    label: "left",
+    militaryStrength: 820,
+    population: 7600,
+    wealth: 4,
+    neighbors: ["deepwood-motte", "torrhens-square", "winterfell", "moat-cailin"],
+    summary:
+      "A western northern town and seat of House Dustin, surrounded by ancient barrows and old First Men memory.",
+  },
+  {
+    id: "torrhens-square",
+    name: "Torrhen's Square",
+    house: "House Tallhart",
+    region: "The North",
+    lord: "Lord Tallhart",
+    left: 34.5,
+    top: 33.6,
+    label: "left",
+    militaryStrength: 700,
+    population: 4800,
+    wealth: 3,
+    neighbors: ["deepwood-motte", "barrowton", "cerwyn", "winterfell"],
+    summary:
+      "A square-built Tallhart holdfast west of Winterfell, guarding roads through the northern heartland.",
+  },
+  {
+    id: "cerwyn",
+    name: "Cerwyn",
+    house: "House Cerwyn",
+    region: "The North",
+    lord: "Lord Cerwyn",
+    left: 43.5,
+    top: 31.6,
+    label: "right",
+    militaryStrength: 690,
+    population: 5100,
+    wealth: 3,
+    neighbors: ["winterfell", "torrhens-square", "oldcastle", "dreadfort"],
+    summary:
+      "A close Stark bannerman seat northeast of Winterfell, often pulled into the first shock of northern wars.",
+  },
+  {
+    id: "oldcastle",
+    name: "Oldcastle",
+    house: "House Locke",
+    region: "The North",
+    lord: "Lord Locke",
+    left: 54.9,
+    top: 39.2,
+    label: "right",
+    militaryStrength: 640,
+    population: 4300,
+    wealth: 3,
+    neighbors: ["cerwyn", "white-harbor", "ramsgate", "winterfell"],
+    summary:
+      "An old northern seat near the White Knife's influence, bound to the politics of White Harbor and Winterfell.",
+  },
+  {
+    id: "ramsgate",
+    name: "Ramsgate",
+    house: "House Bolton Vassals",
+    region: "The North",
+    lord: "Northern Castellan",
+    left: 67.0,
+    top: 36.1,
+    label: "right",
+    militaryStrength: 610,
+    population: 3700,
+    wealth: 3,
+    neighbors: ["dreadfort", "oldcastle", "white-harbor", "karhold"],
+    summary:
+      "A hard eastern northern castle near Bolton influence, useful as a watch point over roads and lonely coast.",
+  },
+  {
+    id: "greywater-watch",
+    name: "Greywater Watch",
+    house: "House Reed",
+    region: "The Neck",
+    lord: "Lord Reed",
+    left: 41.1,
+    top: 47.9,
+    label: "right",
+    militaryStrength: 520,
+    population: 1800,
+    wealth: 2,
+    neighbors: ["moat-cailin", "winterfell", "the-twins"],
+    summary:
+      "The elusive moving seat of House Reed lies hidden in the bogs and channels of the Neck.",
+  },
+  {
+    id: "flints-finger",
+    name: "Flint's Finger",
+    house: "House Flint",
+    region: "The North",
+    lord: "Lord Flint",
+    left: 27.5,
+    top: 46.7,
+    label: "left",
+    militaryStrength: 570,
+    population: 3200,
+    wealth: 3,
+    neighbors: ["barrowton", "moat-cailin", "seagard"],
+    summary:
+      "A rocky western hold on the edge of the North, watching cold waters and the difficult routes toward the Neck.",
   },
   {
     id: "last-hearth",
@@ -164,7 +292,7 @@ const castles = [
     militaryStrength: 1420,
     population: 9100,
     wealth: 4,
-    neighbors: ["karhold", "winterfell", "white-harbor"],
+    neighbors: ["karhold", "winterfell", "white-harbor", "cerwyn", "ramsgate"],
     summary:
       "The grim redoubt of House Bolton commands the eastern North and carries a reputation for fear.",
   },
@@ -180,7 +308,7 @@ const castles = [
     militaryStrength: 1280,
     population: 42000,
     wealth: 7,
-    neighbors: ["winterfell", "dreadfort", "moat-cailin", "the-twins"],
+    neighbors: ["winterfell", "dreadfort", "oldcastle", "ramsgate", "moat-cailin", "the-twins"],
     summary:
       "The North's great port and richest city, ruled by House Manderly from the mouth of the White Knife.",
   },
@@ -196,7 +324,7 @@ const castles = [
     militaryStrength: 680,
     population: 900,
     wealth: 2,
-    neighbors: ["winterfell", "white-harbor", "the-twins"],
+    neighbors: ["winterfell", "white-harbor", "greywater-watch", "flints-finger", "the-twins"],
     summary:
       "A ruined but deadly fortress in the Neck, famous for making the northern causeway almost impossible to force.",
   },
@@ -329,6 +457,54 @@ const castles = [
       "A busy port town and castle on the Bay of Crabs, rich from trade and vulnerable to politics.",
   },
   {
+    id: "raventree-hall",
+    name: "Raventree Hall",
+    house: "House Blackwood",
+    region: "Riverlands",
+    lord: "Lord Blackwood",
+    left: 43.6,
+    top: 61.2,
+    label: "left",
+    militaryStrength: 760,
+    population: 6100,
+    wealth: 4,
+    neighbors: ["riverrun", "harrenhal", "the-twins", "stone-hedge"],
+    summary:
+      "The Blackwood seat is famed for its dead weirwood and ancient rivalry with House Bracken.",
+  },
+  {
+    id: "stone-hedge",
+    name: "Stone Hedge",
+    house: "House Bracken",
+    region: "Riverlands",
+    lord: "Lord Bracken",
+    left: 40.4,
+    top: 64.1,
+    label: "left",
+    militaryStrength: 780,
+    population: 6500,
+    wealth: 4,
+    neighbors: ["riverrun", "raventree-hall", "harrenhal", "pinkmaiden"],
+    summary:
+      "A Bracken stronghold in the riverlands, forever shadowed by bitter border disputes and old blood feuds.",
+  },
+  {
+    id: "darry",
+    name: "Darry",
+    house: "House Darry",
+    region: "Riverlands",
+    lord: "Lord Darry",
+    left: 55.1,
+    top: 65.6,
+    label: "right",
+    militaryStrength: 680,
+    population: 5700,
+    wealth: 4,
+    neighbors: ["harrenhal", "maidenpool", "kings-landing"],
+    summary:
+      "A loyalist riverlands castle on important roads between the Trident and the Crownlands.",
+  },
+  {
     id: "eyrie",
     name: "The Eyrie",
     house: "House Arryn",
@@ -340,9 +516,57 @@ const castles = [
     militaryStrength: 900,
     population: 2600,
     wealth: 5,
-    neighbors: ["runestone", "gulltown", "maidenpool"],
+    neighbors: ["bloody-gate", "strongsong", "hearts-home", "runestone", "gulltown", "maidenpool"],
     summary:
       "An almost untouchable mountain castle high above the Vale, seat of House Arryn and symbol of falcon rule.",
+  },
+  {
+    id: "bloody-gate",
+    name: "Bloody Gate",
+    house: "House Arryn Garrison",
+    region: "The Vale",
+    lord: "Knight of the Gate",
+    left: 63.4,
+    top: 62.6,
+    label: "right",
+    militaryStrength: 720,
+    population: 900,
+    wealth: 2,
+    neighbors: ["eyrie", "strongsong", "maidenpool"],
+    summary:
+      "A mountain gate fortress that guards the dangerous approach into the Vale of Arryn.",
+  },
+  {
+    id: "strongsong",
+    name: "Strongsong",
+    house: "House Belmore",
+    region: "The Vale",
+    lord: "Lord Belmore",
+    left: 57.6,
+    top: 58.9,
+    label: "left",
+    militaryStrength: 640,
+    population: 4600,
+    wealth: 3,
+    neighbors: ["eyrie", "bloody-gate", "hearts-home"],
+    summary:
+      "A Vale mountain castle of House Belmore, positioned among steep roads and old Arryn loyalties.",
+  },
+  {
+    id: "hearts-home",
+    name: "Heart's Home",
+    house: "House Corbray",
+    region: "The Vale",
+    lord: "Lord Corbray",
+    left: 69.3,
+    top: 56.8,
+    label: "right",
+    militaryStrength: 760,
+    population: 5300,
+    wealth: 4,
+    neighbors: ["eyrie", "strongsong", "runestone", "gulltown"],
+    summary:
+      "Seat of House Corbray, known for proud knights, mountain politics, and the Valyrian sword Lady Forlorn.",
   },
   {
     id: "runestone",
@@ -1556,6 +1780,7 @@ export default function MapPage() {
                   return (
                     <button
                       key={castle.id}
+                      aria-label={`Open ${castle.name}`}
                       onClick={(event) => {
                         event.stopPropagation();
                         setSelectedCastleId(castle.id);
@@ -1565,7 +1790,7 @@ export default function MapPage() {
                       }}
                       onMouseEnter={() => setHoveredCastleId(castle.id)}
                       onMouseLeave={() => setHoveredCastleId(null)}
-                      className="absolute z-10 flex h-9 w-9 items-center justify-center rounded-full"
+                      className="absolute z-10 flex h-7 w-7 items-center justify-center rounded-full"
                       style={{
                         left: pct(castle.left),
                         top: pct(castle.top),
@@ -1574,11 +1799,11 @@ export default function MapPage() {
                       }}
                     >
                       <span
-                        className={`block h-4 w-4 rounded-full transition ${
+                        className={`block h-[11px] w-[11px] rounded-full transition ${
                           hovered
-                            ? "border-2 border-amber-300 bg-amber-300/25 shadow-[0_0_14px_rgba(251,191,36,0.85)]"
+                            ? "border border-stone-100 bg-red-950/35 shadow-[0_0_9px_rgba(229,231,235,0.85)]"
                             : owned
-                              ? "border-2 border-emerald-300 bg-emerald-300/20"
+                              ? "border border-stone-100 bg-emerald-950/35 shadow-[0_0_8px_rgba(16,185,129,0.75)]"
                               : "border border-transparent bg-transparent"
                         }`}
                         style={{ backgroundColor: owned ? houseSigil.color : undefined }}
@@ -1834,11 +2059,13 @@ function CastlePopup({ castle, state, houseName, images, canClaim, onClaim, onCl
               <img src={heroImage.src} alt={heroImage.name} className="h-full min-h-64 w-full object-cover sm:min-h-80" />
             </button>
           ) : (
-            <div className="flex min-h-64 items-center justify-center bg-[radial-gradient(circle_at_50%_20%,rgba(251,191,36,0.22),transparent_34%),linear-gradient(135deg,#17130d,#050505)] p-8 text-center sm:min-h-80">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-amber-300">Castle Archive</p>
+            <div className="flex min-h-64 items-center justify-center bg-[radial-gradient(circle_at_50%_18%,rgba(120,120,120,0.2),transparent_32%),linear-gradient(135deg,#171717,#050505)] p-8 text-center sm:min-h-80">
+              <div className="max-w-xl">
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-stone-300">Castle Archive</p>
                 <h2 className="mt-3 text-3xl font-black text-stone-100">{castle.name}</h2>
-                <p className="mt-3 text-sm leading-6 text-stone-400">No castle image has been added yet.</p>
+                <p className="mt-3 text-sm leading-6 text-stone-400">
+                  Image window ready. Add exterior views, interiors, banners, maps, and historical artwork when your castle folders are ready.
+                </p>
               </div>
             </div>
           )}
@@ -1879,9 +2106,9 @@ function CastlePopup({ castle, state, houseName, images, canClaim, onClaim, onCl
               )}
               <button
                 onClick={onOpenGallery}
-                className="min-h-11 rounded-md bg-amber-400 px-5 py-3 text-sm font-black text-stone-950 transition hover:bg-amber-300"
+                className="min-h-11 rounded-md border border-stone-600 bg-stone-900 px-5 py-3 text-sm font-black text-stone-100 transition hover:bg-stone-800"
               >
-                View Gallery
+                Open Image Windows
               </button>
             </div>
           </div>
@@ -1893,6 +2120,7 @@ function CastlePopup({ castle, state, houseName, images, canClaim, onClaim, onCl
             <Info label="Population" value={castle.population.toLocaleString()} />
             <Info label="Wealth" value={`${castle.wealth}/10`} />
             <Info label="Power Score" value={scoreCastle(castle, state).toLocaleString()} />
+            <Info label="Gallery Slots" value="Exterior, Interior, Banners, Maps, Artwork" />
           </div>
         </div>
       </section>

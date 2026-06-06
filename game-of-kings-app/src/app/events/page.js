@@ -1,9 +1,9 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
 
@@ -41,10 +41,27 @@ const quizzes = [
 ];
 
 const tournaments = [
-  ["dragonstone-melee", "Dragonstone Grand Melee", "Melee", 45, 260, "Legendary Artifact Chance"],
-  ["winterfell-archery", "Winterfell Archery Championship", "Archery", 25, 130, "Unique Banner"],
-  ["kings-landing-trivia", "King's Landing Royal Tournament", "Trivia Championship", 15, 95, "Exclusive Title"],
-  ["blackwater-naval", "Blackwater Naval Trial", "Naval Battles", 35, 180, "Gold Purse"],
+  ["dragonstone-melee", "Dragonstone Grand Melee", "Melee", 260, "Legendary Artifact Chance"],
+  ["winterfell-archery", "Winterfell Archery Championship", "Archery", 130, "Unique Banner"],
+  ["kings-landing-trivia", "King's Landing Royal Tournament", "Trivia Championship", 95, "Exclusive Title"],
+  ["blackwater-naval", "Blackwater Naval Trial", "Naval Battles", 180, "Gold Purse"],
+  ["oldtown-lore-cup", "Oldtown Lore Cup", "Book Trivia", 150, "Rare Collectible"],
+  ["pyke-sea-trial", "Pyke Sea Trial", "Naval Battles", 175, "Ironborn Trophy"],
+];
+
+const realmHouses = [
+  "House Stark",
+  "House Lannister",
+  "House Targaryen",
+  "House Greyjoy",
+  "House Baratheon",
+  "House Tyrell",
+  "House Martell",
+  "House Arryn",
+  "House Tully",
+  "House Manderly",
+  "House Dayne",
+  "House Hightower",
 ];
 
 const artifacts = [
@@ -58,9 +75,31 @@ const artifacts = [
   ["lost-relic", "Lost Relic", "Mystery"],
 ];
 
+function getFridayKey(date = new Date()) {
+  const friday = new Date(date);
+  friday.setHours(12, 0, 0, 0);
+  const daysUntilFriday = (5 - friday.getDay() + 7) % 7;
+  friday.setDate(friday.getDate() + daysUntilFriday);
+  return friday.toISOString().slice(0, 10);
+}
+
+function hashText(value) {
+  return value.split("").reduce((hash, character) => {
+    return (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }, 7);
+}
+
+function pickWeeklyWinner(tournamentId, fridayKey, entrants) {
+  return entrants[hashText(`${tournamentId}-${fridayKey}`) % entrants.length];
+}
+
 export default function EventsPage() {
   const [realm, setRealm] = useState(null);
   const [message, setMessage] = useState("");
+  const fridayKey = getFridayKey();
+  const isFriday = new Date().getDay() === 5;
+  const houseName = realm?.houseName?.trim() ? `House ${realm.houseName.trim()}` : "Your House";
+  const entrants = useMemo(() => [houseName, ...realmHouses.filter((house) => house !== houseName)], [houseName]);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -88,25 +127,43 @@ export default function EventsPage() {
     setMessage(correct ? `Correct. You earned ${quiz.rewardGold} gold and ${quiz.rewardRenown} renown.` : "Not quite. Try another event.");
   }
 
-  function joinTournament(tournament) {
-    const joined = realm.joinedTournaments || [];
-    const gold = realm.gold ?? 350;
-    if (joined.includes(tournament[0]) || gold < tournament[3]) return;
+  function collectTournamentReward(tournament) {
+    const tournamentId = tournament[0];
+    const weeklyKey = `${tournamentId}-${fridayKey}`;
+    const collected = realm.collectedTournamentWeeks || [];
+    const winner = pickWeeklyWinner(tournamentId, fridayKey, entrants);
+
+    if (!isFriday) {
+      setMessage(`The heralds announce tournament winners every Friday. Next announcement: ${fridayKey}.`);
+      return;
+    }
+
+    if (collected.includes(weeklyKey)) {
+      setMessage(`${tournament[1]} has already been recorded for ${fridayKey}.`);
+      return;
+    }
+
+    if (winner !== houseName) {
+      setMessage(`${winner} won ${tournament[1]} for ${fridayKey}. Everyone had the same odds.`);
+      saveRealm({
+        ...realm,
+        collectedTournamentWeeks: [...collected, weeklyKey],
+      });
+      return;
+    }
 
     const inventory = realm.artifactInventory || [];
-    const artifact = artifacts[Math.floor(Math.random() * artifacts.length)];
-    const wonArtifact = Math.random() > 0.5;
-
+    const artifact = artifacts[hashText(`${tournamentId}-${fridayKey}-artifact`) % artifacts.length];
     const nextRealm = {
       ...realm,
-      gold: gold - tournament[3],
-      renown: (realm.renown ?? 0) + tournament[4],
-      joinedTournaments: [...joined, tournament[0]],
-      artifactInventory: wonArtifact && !inventory.includes(artifact[0]) ? [...inventory, artifact[0]] : inventory,
+      gold: (realm.gold ?? 350) + 120,
+      renown: (realm.renown ?? 0) + tournament[3],
+      collectedTournamentWeeks: [...collected, weeklyKey],
+      artifactInventory: !inventory.includes(artifact[0]) ? [...inventory, artifact[0]] : inventory,
     };
 
     saveRealm(nextRealm);
-    setMessage(wonArtifact ? `${tournament[1]} complete. You won ${artifact[1]}.` : `${tournament[1]} complete. You gained ${tournament[4]} renown.`);
+    setMessage(`Your house won ${tournament[1]} for ${fridayKey}: +120 gold, +${tournament[3]} renown, and ${artifact[1]}.`);
   }
 
   if (!realm) {
@@ -136,13 +193,14 @@ export default function EventsPage() {
           <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">Events</p>
           <h1 className="mt-2 text-4xl font-black leading-tight">Win rewards without touching the map.</h1>
           <p className="mt-3 text-sm leading-6 text-stone-400">
-            Quizzes and tournaments live here now. Pick one simple activity, get gold or renown, then return to your castle.
+            Quizzes and tournaments live here now. Tournaments are automatic: every house is entered, every house has equal odds, and winners are announced each Friday.
           </p>
           <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-4">
             <Stat label="Gold" value={(realm.gold ?? 350).toLocaleString()} />
             <Stat label="Renown" value={(realm.renown ?? 0).toLocaleString()} />
             <Stat label="Quizzes" value={(realm.completedQuizzes || []).length} />
             <Stat label="Artifacts" value={(realm.artifactInventory || []).length} />
+            <Stat label="Next Draw" value={fridayKey} />
           </div>
           {message && <p className="mt-4 rounded-md bg-emerald-950 p-3 text-sm font-bold text-emerald-300">{message}</p>}
         </div>
@@ -176,23 +234,37 @@ export default function EventsPage() {
 
           <section className="border border-stone-700 bg-stone-900 p-5">
             <h2 className="text-2xl font-black">Tournaments</h2>
+            <p className="mt-2 text-sm leading-6 text-stone-400">
+              No signups and no entry cost. Your house is automatically entered in every tournament with the same chance as every other house.
+            </p>
             <div className="mt-4 space-y-3">
-              {tournaments.map((tournament) => (
-                <div key={tournament[0]} className="border border-stone-800 bg-black p-4">
-                  <p className="text-xs font-black uppercase tracking-wider text-amber-300">{tournament[2]}</p>
-                  <h3 className="mt-2 text-xl font-black">{tournament[1]}</h3>
-                  <p className="mt-2 text-sm text-stone-400">
-                    Entry: {tournament[3]} gold. Reward: {tournament[4]} renown and {tournament[5]}.
-                  </p>
-                  <button
-                    onClick={() => joinTournament(tournament)}
-                    disabled={(realm.joinedTournaments || []).includes(tournament[0]) || (realm.gold ?? 350) < tournament[3]}
-                    className="mt-3 min-h-11 w-full rounded-md bg-amber-400 px-4 py-3 font-black text-stone-950 disabled:bg-stone-700 disabled:text-stone-400"
-                  >
-                    {(realm.joinedTournaments || []).includes(tournament[0]) ? "Joined" : "Join"}
-                  </button>
-                </div>
-              ))}
+              {tournaments.map((tournament) => {
+                const winner = pickWeeklyWinner(tournament[0], fridayKey, entrants);
+                const collected = (realm.collectedTournamentWeeks || []).includes(`${tournament[0]}-${fridayKey}`);
+
+                return (
+                  <div key={tournament[0]} className="border border-stone-800 bg-black p-4">
+                    <p className="text-xs font-black uppercase tracking-wider text-amber-300">{tournament[2]}</p>
+                    <h3 className="mt-2 text-xl font-black">{tournament[1]}</h3>
+                    <div className="mt-3 grid gap-2 text-sm text-stone-400">
+                      <p>Entry: automatic for all houses.</p>
+                      <p>Odds: equal, 1 in {entrants.length}.</p>
+                      <p>Friday announcement: {fridayKey}.</p>
+                      <p>Prize: {tournament[3]} renown and {tournament[4]}.</p>
+                      <p className="font-black text-stone-200">
+                        Friday result: {isFriday ? winner : `sealed until ${fridayKey}`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => collectTournamentReward(tournament)}
+                      className="mt-3 min-h-11 w-full rounded-md border border-stone-600 bg-stone-900 px-4 py-3 font-black text-stone-100 transition hover:bg-stone-800 disabled:opacity-50"
+                      disabled={collected || !isFriday}
+                    >
+                      {collected ? "Friday Result Recorded" : isFriday ? "Record Friday Result" : "Opens Friday"}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </section>
         </div>
