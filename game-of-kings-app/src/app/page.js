@@ -50,6 +50,18 @@ export default function HomePage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link
+              href="/house"
+              className="hidden text-sm font-bold text-stone-300 hover:text-amber-200 sm:inline"
+            >
+              House
+            </Link>
+            <Link
+              href="/events"
+              className="hidden text-sm font-bold text-stone-300 hover:text-amber-200 sm:inline"
+            >
+              Events
+            </Link>
+            <Link
               href="#realm-life"
               className="hidden text-sm font-bold text-stone-300 hover:text-amber-200 sm:inline"
             >
@@ -81,10 +93,10 @@ export default function HomePage() {
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/map"
+                href="/house"
                 className="min-h-12 rounded-md bg-amber-500 px-7 py-4 text-center text-base font-black text-stone-950 transition hover:bg-amber-300 md:text-lg"
               >
-                Start Your House
+                Create Your House
               </Link>
               <a
                 href="#realm-life"

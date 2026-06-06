@@ -18,6 +18,64 @@ const galleryTypes = [
   ["artwork", "Historical Artwork"],
 ];
 
+const localCastleGalleries = {
+  "castle-black": {
+    exterior: [{ id: "castle-black-exterior-1", name: "Castle Black", src: "/castles/castle-black/exterior-1.jpg" }],
+  },
+  "casterly-rock": {
+    exterior: [{ id: "casterly-rock-exterior-1", name: "Casterly Rock", src: "/castles/casterly-rock/exterior-1.jpg" }],
+  },
+  dragonstone: {
+    exterior: [{ id: "dragonstone-exterior-1", name: "Dragonstone", src: "/castles/dragonstone/exterior-1.jpg" }],
+  },
+  dreadfort: {
+    exterior: [{ id: "dreadfort-exterior-1", name: "Dreadfort", src: "/castles/dreadfort/exterior-1.png" }],
+  },
+  eyrie: {
+    exterior: [{ id: "eyrie-exterior-1", name: "The Eyrie", src: "/castles/eyrie/exterior-1.jpg" }],
+  },
+  highgarden: {
+    exterior: [
+      { id: "highgarden-exterior-1", name: "Highgarden", src: "/castles/highgarden/exterior-1.png" },
+      { id: "highgarden-exterior-2", name: "Highgarden Overlook", src: "/castles/highgarden/exterior-2.png" },
+    ],
+    artwork: [{ id: "highgarden-artwork-1", name: "Highgarden Artwork", src: "/castles/highgarden/artwork-1.webp" }],
+  },
+  "horn-hill": {
+    exterior: [{ id: "horn-hill-exterior-1", name: "Horn Hill", src: "/castles/horn-hill/exterior-1.webp" }],
+  },
+  karhold: {
+    exterior: [{ id: "karhold-exterior-1", name: "Karhold", src: "/castles/karhold/exterior-1.png" }],
+  },
+  oldtown: {
+    exterior: [{ id: "oldtown-exterior-1", name: "Oldtown", src: "/castles/oldtown/exterior-1.jpg" }],
+  },
+  pyke: {
+    exterior: [{ id: "pyke-exterior-1", name: "Pyke", src: "/castles/pyke/exterior-1.jpg" }],
+  },
+  riverrun: {
+    exterior: [{ id: "riverrun-exterior-1", name: "Riverrun", src: "/castles/riverrun/exterior-1.jpg" }],
+  },
+  starfall: {
+    exterior: [{ id: "starfall-exterior-1", name: "Starfall", src: "/castles/starfall/exterior-1.jpg" }],
+  },
+  "storms-end": {
+    exterior: [{ id: "storms-end-exterior-1", name: "Storm's End", src: "/castles/storms-end/exterior-1.jpg" }],
+  },
+  sunspear: {
+    exterior: [{ id: "sunspear-exterior-1", name: "Sunspear", src: "/castles/sunspear/exterior-1.jpg" }],
+  },
+  "white-harbor": {
+    exterior: [{ id: "white-harbor-exterior-1", name: "White Harbor", src: "/castles/white-harbor/exterior-1.jpg" }],
+  },
+  winterfell: {
+    exterior: [
+      { id: "winterfell-exterior-1", name: "Winterfell", src: "/castles/winterfell/exterior-1.jpg" },
+      { id: "winterfell-exterior-2", name: "Winterfell Overlook", src: "/castles/winterfell/exterior-2.png" },
+    ],
+  },
+};
+
 const sigils = [
   { name: "Wolf", color: "#94a3b8" },
   { name: "Lion", color: "#d97706" },
@@ -36,8 +94,8 @@ const castles = [
     house: "Night's Watch",
     region: "The Wall",
     lord: "Lord Commander",
-    left: 54.1,
-    top: 17.5,
+    left: 54.4,
+    top: 17.1,
     label: "right",
     militaryStrength: 760,
     population: 1100,
@@ -52,8 +110,8 @@ const castles = [
     house: "House Stark",
     region: "The North",
     lord: "Lord Stark",
-    left: 44.2,
-    top: 32.8,
+    left: 43.1,
+    top: 33.0,
     label: "right",
     militaryStrength: 1850,
     population: 14500,
@@ -68,8 +126,8 @@ const castles = [
     house: "House Umber",
     region: "The North",
     lord: "Lord Umber",
-    left: 55.2,
-    top: 23.4,
+    left: 55.0,
+    top: 23.5,
     label: "right",
     militaryStrength: 880,
     population: 5200,
@@ -84,8 +142,8 @@ const castles = [
     house: "House Karstark",
     region: "The North",
     lord: "Lord Karstark",
-    left: 71.9,
-    top: 27.8,
+    left: 72.0,
+    top: 28.0,
     label: "right",
     militaryStrength: 920,
     population: 6800,
@@ -100,8 +158,8 @@ const castles = [
     house: "House Bolton",
     region: "The North",
     lord: "Lord Bolton",
-    left: 61.6,
-    top: 31.8,
+    left: 61.4,
+    top: 31.9,
     label: "right",
     militaryStrength: 1420,
     population: 9100,
@@ -116,8 +174,8 @@ const castles = [
     house: "House Manderly",
     region: "The North",
     lord: "Lord Manderly",
-    left: 49.3,
-    top: 41.0,
+    left: 49.4,
+    top: 41.1,
     label: "right",
     militaryStrength: 1280,
     population: 42000,
@@ -132,8 +190,8 @@ const castles = [
     house: "Northern Garrison",
     region: "The Neck",
     lord: "Warden of the Causeway",
-    left: 39.8,
-    top: 42.4,
+    left: 39.6,
+    top: 42.5,
     label: "right",
     militaryStrength: 680,
     population: 900,
@@ -148,8 +206,8 @@ const castles = [
     house: "House Greyjoy",
     region: "Iron Islands",
     lord: "Lord Reaper of Pyke",
-    left: 17.8,
-    top: 56.9,
+    left: 17.2,
+    top: 56.8,
     label: "left",
     militaryStrength: 1320,
     population: 8200,
@@ -180,8 +238,8 @@ const castles = [
     house: "House Frey",
     region: "Riverlands",
     lord: "Lord Frey",
-    left: 38.6,
-    top: 54.2,
+    left: 38.5,
+    top: 54.1,
     label: "right",
     militaryStrength: 1750,
     population: 15000,
@@ -212,7 +270,7 @@ const castles = [
     house: "House Tully",
     region: "Riverlands",
     lord: "Lord Tully",
-    left: 38.3,
+    left: 38.6,
     top: 61.5,
     label: "right",
     militaryStrength: 1500,
@@ -228,8 +286,8 @@ const castles = [
     house: "Disputed",
     region: "Riverlands",
     lord: "Castellan of Harrenhal",
-    left: 49.3,
-    top: 63.0,
+    left: 49.2,
+    top: 62.8,
     label: "right",
     militaryStrength: 1180,
     population: 6400,
@@ -276,7 +334,7 @@ const castles = [
     house: "House Arryn",
     region: "The Vale",
     lord: "Lord Arryn",
-    left: 61.9,
+    left: 62.1,
     top: 56.0,
     label: "right",
     militaryStrength: 900,
@@ -324,8 +382,8 @@ const castles = [
     house: "House Lannister",
     region: "Westerlands",
     lord: "Lord Lannister",
-    left: 16.5,
-    top: 69.1,
+    left: 16.6,
+    top: 69.2,
     label: "left",
     militaryStrength: 2100,
     population: 22000,
@@ -388,8 +446,8 @@ const castles = [
     house: "The Crown",
     region: "Crownlands",
     lord: "The Iron Throne",
-    left: 61.2,
-    top: 72.0,
+    left: 61.3,
+    top: 71.9,
     label: "right",
     militaryStrength: 2600,
     population: 500000,
@@ -420,8 +478,8 @@ const castles = [
     house: "House Tyrell",
     region: "The Reach",
     lord: "Lord Tyrell",
-    left: 25.9,
-    top: 83.8,
+    left: 26.1,
+    top: 83.7,
     label: "right",
     militaryStrength: 2300,
     population: 78000,
@@ -500,8 +558,8 @@ const castles = [
     house: "House Baratheon",
     region: "Stormlands",
     lord: "Lord Baratheon",
-    left: 72.7,
-    top: 79.1,
+    left: 72.4,
+    top: 79.0,
     label: "right",
     militaryStrength: 2050,
     population: 16000,
@@ -564,7 +622,7 @@ const castles = [
     house: "House Martell",
     region: "Dorne",
     lord: "Prince of Dorne",
-    left: 82.8,
+    left: 82.7,
     top: 93.1,
     label: "right",
     militaryStrength: 1780,
@@ -811,6 +869,8 @@ export default function MapPage() {
   const [activeTab, setActiveTab] = useState("realm");
   const [selectedCastleId, setSelectedCastleId] = useState("winterfell");
   const [hoveredCastleId, setHoveredCastleId] = useState(null);
+  const [alignmentMode, setAlignmentMode] = useState(false);
+  const [markerOverrides, setMarkerOverrides] = useState({});
   const [galleryType, setGalleryType] = useState("exterior");
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [fullscreenImage, setFullscreenImage] = useState(null);
@@ -846,9 +906,17 @@ export default function MapPage() {
   const [artifactInventory, setArtifactInventory] = useState([]);
   const [joinedTournaments, setJoinedTournaments] = useState([]);
 
+  const displayCastles = useMemo(
+    () =>
+      castles.map((castle) => ({
+        ...castle,
+        ...(markerOverrides[castle.id] || {}),
+      })),
+    [markerOverrides]
+  );
   const selectedCastle = useMemo(
-    () => castles.find((castle) => castle.id === selectedCastleId) || castles[0],
-    [selectedCastleId]
+    () => displayCastles.find((castle) => castle.id === selectedCastleId) || displayCastles[0],
+    [displayCastles, selectedCastleId]
   );
   const selectedState = castleState[selectedCastle.id] || {
     owner: null,
@@ -856,19 +924,22 @@ export default function MapPage() {
   };
   const playerCastleIds = useMemo(
     () =>
-      castles
+      displayCastles
         .filter((castle) => castleState[castle.id]?.owner === "player")
         .map((castle) => castle.id),
-    [castleState]
+    [castleState, displayCastles]
   );
   const playerCastles = useMemo(
-    () => castles.filter((castle) => playerCastleIds.includes(castle.id)),
-    [playerCastleIds]
+    () => displayCastles.filter((castle) => playerCastleIds.includes(castle.id)),
+    [displayCastles, playerCastleIds]
   );
   const checkedInToday = lastCheckInDate === new Date(now).toISOString().slice(0, 10);
   const activeWars = wars.filter((war) => war.endsAt > now);
   const completedWars = wars.filter((war) => war.endsAt <= now).slice(0, 4);
-  const selectedGallery = galleries[selectedCastle.id]?.[galleryType] || [];
+  const selectedGallery = [
+    ...(localCastleGalleries[selectedCastle.id]?.[galleryType] || []),
+    ...(galleries[selectedCastle.id]?.[galleryType] || []),
+  ];
   const canClaim = playerCastleIds.length === 0 && selectedState.owner !== "player";
   const economyPerHour = playerCastles.reduce(
     (total, castle) => total + castle.wealth * 18 + Math.floor(castle.population / 2000),
@@ -929,6 +1000,7 @@ export default function MapPage() {
         setCompletedQuizzes(data.completedQuizzes || []);
         setArtifactInventory(data.artifactInventory || []);
         setJoinedTournaments(data.joinedTournaments || []);
+        setMarkerOverrides(data.markerOverrides || {});
         setSelectedCastleId(data.selectedCastleId || "winterfell");
       } catch {
         localStorage.removeItem(STORAGE_KEY);
@@ -971,6 +1043,7 @@ export default function MapPage() {
         completedQuizzes,
         artifactInventory,
         joinedTournaments,
+        markerOverrides,
         selectedCastleId,
       })
     );
@@ -987,6 +1060,7 @@ export default function MapPage() {
     joinedTournaments,
     lastCheckInDate,
     lastResolvedAt,
+    markerOverrides,
     now,
     renown,
     selectedCastleId,
@@ -1366,8 +1440,22 @@ export default function MapPage() {
   }
 
   const neighboringTargets = selectedCastle.neighbors
-    .map((id) => castles.find((castle) => castle.id === id))
+    .map((id) => displayCastles.find((castle) => castle.id === id))
     .filter(Boolean);
+
+  function alignSelectedMarker(event) {
+    if (!alignmentMode) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const left = Number((((event.clientX - rect.left) / rect.width) * 100).toFixed(2));
+    const top = Number((((event.clientY - rect.top) / rect.height) * 100).toFixed(2));
+
+    setMarkerOverrides((current) => ({
+      ...current,
+      [selectedCastle.id]: { left, top },
+    }));
+    addEvent(`${selectedCastle.name} marker aligned to ${left}%, ${top}%.`, "map");
+  }
 
   return (
     <main className="min-h-screen bg-[#070707] text-stone-100">
@@ -1398,7 +1486,7 @@ export default function MapPage() {
           <div className="border border-stone-700 bg-stone-950">
             <div className="flex flex-col gap-3 border-b border-stone-800 p-3 md:flex-row md:items-center md:justify-between">
               <div className="flex snap-x gap-2 overflow-x-auto pb-1">
-                {["realm", "forum", "quizzes", "tournaments", "artifacts"].map((tab) => (
+                {["realm", "forum"].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -1411,6 +1499,18 @@ export default function MapPage() {
                     {tab}
                   </button>
                 ))}
+                <Link
+                  href="/house"
+                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
+                >
+                  House
+                </Link>
+                <Link
+                  href="/events"
+                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
+                >
+                  Events
+                </Link>
               </div>
 
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_240px] sm:items-center">
@@ -1424,33 +1524,63 @@ export default function MapPage() {
                   }}
                   className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-bold text-stone-100 outline-none focus:border-amber-300"
                 >
-                  {castles.map((castle) => (
+                  {displayCastles.map((castle) => (
                     <option key={castle.id} value={castle.id}>
                       {castle.name}
                     </option>
                   ))}
                 </select>
                 <div className="flex items-center gap-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
-                  Zoom {Math.round(zoom * 100)}%
-                </span>
-                <input
-                  aria-label="Map zoom"
-                  type="range"
-                  min="0.7"
-                  max="2.4"
-                  step="0.05"
-                  value={zoom}
-                  onChange={(event) => setZoom(Number(event.target.value))}
-                  className="w-full accent-amber-400"
-                />
+                  <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
+                    Zoom {Math.round(zoom * 100)}%
+                  </span>
+                  <input
+                    aria-label="Map zoom"
+                    type="range"
+                    min="0.7"
+                    max="2.4"
+                    step="0.05"
+                    value={zoom}
+                    onChange={(event) => setZoom(Number(event.target.value))}
+                    className="w-full accent-amber-400"
+                  />
                 </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 border-b border-stone-800 bg-black/50 p-3 text-sm text-stone-400 sm:flex-row sm:items-center sm:justify-between">
+              <p>
+                Selected: <span className="font-black text-amber-300">{selectedCastle.name}</span>
+                {alignmentMode ? " - tap the printed dot on the map to move this marker." : ""}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAlignmentMode((current) => !current)}
+                  className={`min-h-10 rounded-md px-3 py-2 text-xs font-black ${
+                    alignmentMode ? "bg-amber-400 text-stone-950" : "bg-stone-800 text-stone-200"
+                  }`}
+                >
+                  {alignmentMode ? "Finish Aligning" : "Align Marker"}
+                </button>
+                <button
+                  onClick={() =>
+                    setMarkerOverrides((current) => {
+                      const next = { ...current };
+                      delete next[selectedCastle.id];
+                      return next;
+                    })
+                  }
+                  className="min-h-10 rounded-md border border-stone-700 px-3 py-2 text-xs font-black text-stone-300"
+                >
+                  Reset Marker
+                </button>
               </div>
             </div>
 
             <div className="h-[58vh] overflow-auto bg-[#10100e] overscroll-contain md:h-[72vh]">
               <div
                 className="relative origin-top-left"
+                onClick={alignSelectedMarker}
                 style={{
                   width: `${Math.max(150, 100 * zoom)}%`,
                   minWidth: `${Math.max(150, 100 * zoom)}%`,
@@ -1463,7 +1593,7 @@ export default function MapPage() {
                   draggable={false}
                 />
 
-                {castles.map((castle) => {
+                {displayCastles.map((castle) => {
                   const state = castleState[castle.id] || { troops: castle.militaryStrength };
                   const selected = castle.id === selectedCastle.id;
                   const hovered = castle.id === hoveredCastleId;
@@ -1472,7 +1602,8 @@ export default function MapPage() {
                   return (
                     <button
                       key={castle.id}
-                      onClick={() => {
+                      onClick={(event) => {
+                        event.stopPropagation();
                         setSelectedCastleId(castle.id);
                         setActiveTab("realm");
                         setGalleryIndex(0);
@@ -1573,93 +1704,6 @@ export default function MapPage() {
             />
           )}
 
-          {activeTab === "quizzes" && (
-            <Panel>
-              <h2 className="text-2xl font-black">Daily and Weekly Quizzes</h2>
-              <p className="mt-2 text-sm leading-6 text-stone-400">
-                Trivia gives returning players a friendly way to earn gold, renown, collectibles, and event momentum.
-              </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {quizzes.map((quiz) => (
-                  <div key={quiz.id} className="border border-stone-800 bg-black p-4">
-                    <p className="text-xs font-black uppercase tracking-wider text-amber-300">
-                      {quiz.cadence} / {quiz.category}
-                    </p>
-                    <h3 className="mt-2 font-black">{quiz.question}</h3>
-                    <div className="mt-4 space-y-2">
-                      {quiz.options.map((option) => (
-                        <button
-                          key={option}
-                          disabled={completedQuizzes.includes(quiz.id)}
-                          onClick={() => answerQuiz(quiz, option)}
-                          className="min-h-11 w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-left text-sm font-bold transition hover:border-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="mt-3 text-xs font-bold text-emerald-300">
-                      Reward: {quiz.rewardGold} gold / {quiz.rewardRenown} renown
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </Panel>
-          )}
-
-          {activeTab === "tournaments" && (
-            <Panel>
-              <h2 className="text-2xl font-black">Live Tournament System</h2>
-              <p className="mt-2 text-sm leading-6 text-stone-400">
-                Tournaments are always open events. Join, spend gold, gain renown, and roll for banners, titles, and artifacts.
-              </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {tournamentCatalog.map((tournament) => (
-                  <div key={tournament[0]} className="border border-stone-800 bg-black p-4">
-                    <p className="text-xs font-black uppercase tracking-wider text-amber-300">{tournament[2]}</p>
-                    <h3 className="mt-2 text-xl font-black">{tournament[1]}</h3>
-                    <p className="mt-2 text-sm text-stone-400">
-                      Entry: {tournament[3]} gold / Reward: {tournament[4]} renown / {tournament[5]}
-                    </p>
-                    <button
-                      onClick={() => joinTournament(tournament)}
-                      disabled={joinedTournaments.includes(tournament[0]) || gold < tournament[3]}
-                      className="mt-4 min-h-11 w-full rounded-md bg-amber-400 px-4 py-3 font-black text-stone-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
-                    >
-                      {joinedTournaments.includes(tournament[0]) ? "Joined" : "Join Tournament"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </Panel>
-          )}
-
-          {activeTab === "artifacts" && (
-            <Panel>
-              <h2 className="text-2xl font-black">Legendary Artifacts</h2>
-              <p className="mt-2 text-sm leading-6 text-stone-400">
-                Collect rare relics through tournaments, quests, seasonal events, auctions, and rare drops.
-              </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {artifactCatalog.map((artifact) => {
-                  const owned = artifactInventory.includes(artifact[0]);
-                  return (
-                    <div
-                      key={artifact[0]}
-                      className={`border p-4 ${owned ? "border-amber-300 bg-amber-950/30" : "border-stone-800 bg-black"}`}
-                    >
-                      <p className="text-xs font-black uppercase tracking-wider text-stone-500">{artifact[2]}</p>
-                      <h3 className="mt-2 text-lg font-black">{artifact[1]}</h3>
-                      <p className="mt-2 text-sm leading-6 text-stone-400">{artifact[3]}</p>
-                      <p className={`mt-3 text-xs font-black ${owned ? "text-amber-300" : "text-stone-600"}`}>
-                        {owned ? "Collected" : "Undiscovered"}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </Panel>
-          )}
         </div>
 
         <aside className="space-y-3 md:space-y-4">
@@ -1686,39 +1730,35 @@ export default function MapPage() {
 
           <Panel>
             <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">Your House</p>
-            <div className="mt-4 space-y-3">
-              <input
-                value={houseName}
-                onChange={(event) => setHouseName(event.target.value)}
-                placeholder="House name"
-                className="w-full rounded-md border border-stone-700 bg-black px-3 py-2 text-sm outline-none focus:border-amber-300"
-              />
-              <input
-                value={houseMotto}
-                onChange={(event) => setHouseMotto(event.target.value)}
-                placeholder="House words"
-                className="w-full rounded-md border border-stone-700 bg-black px-3 py-2 text-sm outline-none focus:border-amber-300"
-              />
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-8 2xl:grid-cols-4">
-                {sigils.map((sigil) => (
-                  <button
-                    key={sigil.name}
-                    onClick={() => setHouseSigil(sigil)}
-                    className={`min-h-14 rounded-md border p-2 text-xs font-bold ${
-                      houseSigil.name === sigil.name ? "border-amber-300 bg-stone-800" : "border-stone-700 bg-black"
-                    }`}
-                  >
-                    <span className="mx-auto mb-1 block h-5 w-5 rounded-full" style={{ backgroundColor: sigil.color }} />
-                    {sigil.name}
-                  </button>
-                ))}
+            {houseName ? (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <span
+                    className="h-12 w-10 rounded-t-full border border-amber-300"
+                    style={{ backgroundColor: houseSigil.color }}
+                  />
+                  <div>
+                    <h2 className="font-black">House {houseName}</h2>
+                    <p className="text-sm text-stone-400">{houseMotto || "No words declared."}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-stone-400">
+                  {playerCastles.length
+                    ? `Seat: ${playerCastles[0].name}.`
+                    : "Now click a castle and claim it as your only seat."}
+                </p>
               </div>
-              <p className="text-sm text-stone-400">
-                {playerCastles.length
-                  ? `Seat: ${playerCastles[0].name}. ${houseMotto || "No words declared."}`
-                  : "Choose one castle on the map and claim it as your only player seat."}
+            ) : (
+              <p className="mt-3 text-sm leading-6 text-stone-400">
+                Make your house first, then come back to the map and claim one castle.
               </p>
-            </div>
+            )}
+            <Link
+              href="/house"
+              className="mt-4 block min-h-11 rounded-md bg-amber-400 px-4 py-3 text-center font-black text-stone-950 transition hover:bg-amber-300"
+            >
+              {houseName ? "Edit House Founder" : "Create House"}
+            </Link>
           </Panel>
 
           <Panel>
@@ -1925,6 +1965,7 @@ function GalleryPanel({ castle, galleryType, setGalleryType, selectedGallery, ga
         ) : (
           <div className="flex h-56 items-center justify-center p-6 text-center text-sm text-stone-500 sm:h-72">
             No images yet. Upload exterior shots, interiors, banners, maps, or historical artwork for this castle.
+            Local files can also be organized under public/castles/castle-id/.
           </div>
         )}
       </div>
