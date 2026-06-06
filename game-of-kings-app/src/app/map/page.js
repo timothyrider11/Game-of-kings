@@ -110,8 +110,8 @@ const castles = [
     house: "House Stark",
     region: "The North",
     lord: "Lord Stark",
-    left: 43.1,
-    top: 33.0,
+    left: 41.5,
+    top: 32.95,
     label: "right",
     militaryStrength: 1850,
     population: 14500,
@@ -190,8 +190,8 @@ const castles = [
     house: "Northern Garrison",
     region: "The Neck",
     lord: "Warden of the Causeway",
-    left: 39.6,
-    top: 42.5,
+    left: 37.79,
+    top: 42.13,
     label: "right",
     militaryStrength: 680,
     population: 900,
@@ -206,8 +206,8 @@ const castles = [
     house: "House Greyjoy",
     region: "Iron Islands",
     lord: "Lord Reaper of Pyke",
-    left: 17.2,
-    top: 56.8,
+    left: 19.28,
+    top: 57.59,
     label: "left",
     militaryStrength: 1320,
     population: 8200,
@@ -238,8 +238,8 @@ const castles = [
     house: "House Frey",
     region: "Riverlands",
     lord: "Lord Frey",
-    left: 38.5,
-    top: 54.1,
+    left: 36.34,
+    top: 54.2,
     label: "right",
     militaryStrength: 1750,
     population: 15000,
@@ -254,8 +254,8 @@ const castles = [
     house: "House Mallister",
     region: "Riverlands",
     lord: "Lord Mallister",
-    left: 33.8,
-    top: 55.7,
+    left: 32.89,
+    top: 55.18,
     label: "left",
     militaryStrength: 980,
     population: 8700,
@@ -270,8 +270,8 @@ const castles = [
     house: "House Tully",
     region: "Riverlands",
     lord: "Lord Tully",
-    left: 38.6,
-    top: 61.5,
+    left: 36.42,
+    top: 62.35,
     label: "right",
     militaryStrength: 1500,
     population: 18000,
@@ -286,8 +286,8 @@ const castles = [
     house: "Disputed",
     region: "Riverlands",
     lord: "Castellan of Harrenhal",
-    left: 49.2,
-    top: 62.8,
+    left: 50.98,
+    top: 62.19,
     label: "right",
     militaryStrength: 1180,
     population: 6400,
@@ -302,8 +302,8 @@ const castles = [
     house: "House Piper",
     region: "Riverlands",
     lord: "Lord Piper",
-    left: 32.8,
-    top: 65.8,
+    left: 33.12,
+    top: 66.15,
     label: "right",
     militaryStrength: 620,
     population: 5200,
@@ -318,8 +318,8 @@ const castles = [
     house: "House Mooton",
     region: "Riverlands",
     lord: "Lord Mooton",
-    left: 56.1,
-    top: 62.6,
+    left: 58.01,
+    top: 62.96,
     label: "right",
     militaryStrength: 720,
     population: 24000,
@@ -382,8 +382,8 @@ const castles = [
     house: "House Lannister",
     region: "Westerlands",
     lord: "Lord Lannister",
-    left: 16.6,
-    top: 69.2,
+    left: 15.63,
+    top: 69.74,
     label: "left",
     militaryStrength: 2100,
     population: 22000,
@@ -398,8 +398,8 @@ const castles = [
     house: "House Lannister",
     region: "Westerlands",
     lord: "Lord Mayor of Lannisport",
-    left: 13.7,
-    top: 71.7,
+    left: 13.92,
+    top: 71.64,
     label: "left",
     militaryStrength: 1300,
     population: 160000,
@@ -414,8 +414,8 @@ const castles = [
     house: "House Lefford",
     region: "Westerlands",
     lord: "Lord Lefford",
-    left: 27.2,
-    top: 65.9,
+    left: 26.87,
+    top: 66.14,
     label: "right",
     militaryStrength: 980,
     population: 4700,
@@ -430,8 +430,8 @@ const castles = [
     house: "House Crakehall",
     region: "Westerlands",
     lord: "Lord Crakehall",
-    left: 14.2,
-    top: 74.2,
+    left: 13.35,
+    top: 74.83,
     label: "left",
     militaryStrength: 860,
     population: 7200,
@@ -478,8 +478,8 @@ const castles = [
     house: "House Tyrell",
     region: "The Reach",
     lord: "Lord Tyrell",
-    left: 26.1,
-    top: 83.7,
+    left: 24.56,
+    top: 84.66,
     label: "right",
     militaryStrength: 2300,
     population: 78000,
@@ -494,8 +494,8 @@ const castles = [
     house: "House Hightower",
     region: "The Reach",
     lord: "Lord Hightower",
-    left: 16.4,
-    top: 90.1,
+    left: 16.33,
+    top: 90.5,
     label: "left",
     militaryStrength: 1900,
     population: 340000,
@@ -526,8 +526,8 @@ const castles = [
     house: "House Florent",
     region: "The Reach",
     lord: "Lord Florent",
-    left: 13.9,
-    top: 83.9,
+    left: 15.86,
+    top: 84.88,
     label: "left",
     militaryStrength: 940,
     population: 6800,
@@ -558,8 +558,8 @@ const castles = [
     house: "House Baratheon",
     region: "Stormlands",
     lord: "Lord Baratheon",
-    left: 72.4,
-    top: 79.0,
+    left: 71.34,
+    top: 78.02,
     label: "right",
     militaryStrength: 2050,
     population: 16000,
@@ -638,8 +638,8 @@ const castles = [
     house: "House Yronwood",
     region: "Dorne",
     lord: "Lord Yronwood",
-    left: 47.9,
-    top: 88.5,
+    left: 45.89,
+    top: 89.29,
     label: "right",
     militaryStrength: 1280,
     population: 9200,
@@ -654,8 +654,8 @@ const castles = [
     house: "House Dayne",
     region: "Dorne",
     lord: "Lord Dayne",
-    left: 29.4,
-    top: 92.3,
+    left: 27.36,
+    top: 92.58,
     label: "right",
     militaryStrength: 840,
     population: 5100,
@@ -670,8 +670,8 @@ const castles = [
     house: "House Fowler",
     region: "Dorne",
     lord: "Lord Fowler",
-    left: 40.7,
-    top: 91.2,
+    left: 40.16,
+    top: 91.1,
     label: "right",
     militaryStrength: 980,
     population: 4600,
@@ -686,8 +686,8 @@ const castles = [
     house: "House Allyrion",
     region: "Dorne",
     lord: "Lord Allyrion",
-    left: 66.8,
-    top: 92.1,
+    left: 68.63,
+    top: 91.51,
     label: "right",
     militaryStrength: 760,
     population: 6900,
@@ -850,13 +850,6 @@ function pct(value) {
   return `${value}%`;
 }
 
-function getLabelPosition(label) {
-  if (label === "left") return "right-full mr-2 top-1/2 -translate-y-1/2 text-right";
-  if (label === "top") return "bottom-full left-1/2 mb-2 -translate-x-1/2 text-center";
-  if (label === "bottom") return "left-1/2 top-full mt-2 -translate-x-1/2 text-center";
-  return "left-full ml-2 top-1/2 -translate-y-1/2 text-left";
-}
-
 function scoreCastle(castle, castleState) {
   return castleState.troops + castle.wealth * 150 + Math.floor(castle.population / 120);
 }
@@ -869,8 +862,6 @@ export default function MapPage() {
   const [activeTab, setActiveTab] = useState("realm");
   const [selectedCastleId, setSelectedCastleId] = useState("winterfell");
   const [hoveredCastleId, setHoveredCastleId] = useState(null);
-  const [alignmentMode, setAlignmentMode] = useState(false);
-  const [markerOverrides, setMarkerOverrides] = useState({});
   const [galleryType, setGalleryType] = useState("exterior");
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [fullscreenImage, setFullscreenImage] = useState(null);
@@ -906,17 +897,9 @@ export default function MapPage() {
   const [artifactInventory, setArtifactInventory] = useState([]);
   const [joinedTournaments, setJoinedTournaments] = useState([]);
 
-  const displayCastles = useMemo(
-    () =>
-      castles.map((castle) => ({
-        ...castle,
-        ...(markerOverrides[castle.id] || {}),
-      })),
-    [markerOverrides]
-  );
   const selectedCastle = useMemo(
-    () => displayCastles.find((castle) => castle.id === selectedCastleId) || displayCastles[0],
-    [displayCastles, selectedCastleId]
+    () => castles.find((castle) => castle.id === selectedCastleId) || castles[0],
+    [selectedCastleId]
   );
   const selectedState = castleState[selectedCastle.id] || {
     owner: null,
@@ -924,14 +907,14 @@ export default function MapPage() {
   };
   const playerCastleIds = useMemo(
     () =>
-      displayCastles
+      castles
         .filter((castle) => castleState[castle.id]?.owner === "player")
         .map((castle) => castle.id),
-    [castleState, displayCastles]
+    [castleState]
   );
   const playerCastles = useMemo(
-    () => displayCastles.filter((castle) => playerCastleIds.includes(castle.id)),
-    [displayCastles, playerCastleIds]
+    () => castles.filter((castle) => playerCastleIds.includes(castle.id)),
+    [playerCastleIds]
   );
   const checkedInToday = lastCheckInDate === new Date(now).toISOString().slice(0, 10);
   const activeWars = wars.filter((war) => war.endsAt > now);
@@ -1000,7 +983,6 @@ export default function MapPage() {
         setCompletedQuizzes(data.completedQuizzes || []);
         setArtifactInventory(data.artifactInventory || []);
         setJoinedTournaments(data.joinedTournaments || []);
-        setMarkerOverrides(data.markerOverrides || {});
         setSelectedCastleId(data.selectedCastleId || "winterfell");
       } catch {
         localStorage.removeItem(STORAGE_KEY);
@@ -1043,7 +1025,6 @@ export default function MapPage() {
         completedQuizzes,
         artifactInventory,
         joinedTournaments,
-        markerOverrides,
         selectedCastleId,
       })
     );
@@ -1060,7 +1041,6 @@ export default function MapPage() {
     joinedTournaments,
     lastCheckInDate,
     lastResolvedAt,
-    markerOverrides,
     now,
     renown,
     selectedCastleId,
@@ -1440,22 +1420,8 @@ export default function MapPage() {
   }
 
   const neighboringTargets = selectedCastle.neighbors
-    .map((id) => displayCastles.find((castle) => castle.id === id))
+    .map((id) => castles.find((castle) => castle.id === id))
     .filter(Boolean);
-
-  function alignSelectedMarker(event) {
-    if (!alignmentMode) return;
-
-    const rect = event.currentTarget.getBoundingClientRect();
-    const left = Number((((event.clientX - rect.left) / rect.width) * 100).toFixed(2));
-    const top = Number((((event.clientY - rect.top) / rect.height) * 100).toFixed(2));
-
-    setMarkerOverrides((current) => ({
-      ...current,
-      [selectedCastle.id]: { left, top },
-    }));
-    addEvent(`${selectedCastle.name} marker aligned to ${left}%, ${top}%.`, "map");
-  }
 
   return (
     <main className="min-h-screen bg-[#070707] text-stone-100">
@@ -1524,7 +1490,7 @@ export default function MapPage() {
                   }}
                   className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-bold text-stone-100 outline-none focus:border-amber-300"
                 >
-                  {displayCastles.map((castle) => (
+                  {castles.map((castle) => (
                     <option key={castle.id} value={castle.id}>
                       {castle.name}
                     </option>
@@ -1548,39 +1514,16 @@ export default function MapPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 border-b border-stone-800 bg-black/50 p-3 text-sm text-stone-400 sm:flex-row sm:items-center sm:justify-between">
+            <div className="border-b border-stone-800 bg-black/50 p-3 text-sm text-stone-400">
               <p>
                 Selected: <span className="font-black text-amber-300">{selectedCastle.name}</span>
-                {alignmentMode ? " - tap the printed dot on the map to move this marker." : ""}
+                <span className="ml-2 text-stone-500">Tap a printed castle dot on the map to open it.</span>
               </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setAlignmentMode((current) => !current)}
-                  className={`min-h-10 rounded-md px-3 py-2 text-xs font-black ${
-                    alignmentMode ? "bg-amber-400 text-stone-950" : "bg-stone-800 text-stone-200"
-                  }`}
-                >
-                  {alignmentMode ? "Finish Aligning" : "Align Marker"}
-                </button>
-                <button
-                  onClick={() =>
-                    setMarkerOverrides((current) => {
-                      const next = { ...current };
-                      delete next[selectedCastle.id];
-                      return next;
-                    })
-                  }
-                  className="min-h-10 rounded-md border border-stone-700 px-3 py-2 text-xs font-black text-stone-300"
-                >
-                  Reset Marker
-                </button>
-              </div>
             </div>
 
             <div className="h-[58vh] overflow-auto bg-[#10100e] overscroll-contain md:h-[72vh]">
               <div
                 className="relative origin-top-left"
-                onClick={alignSelectedMarker}
                 style={{
                   width: `${Math.max(150, 100 * zoom)}%`,
                   minWidth: `${Math.max(150, 100 * zoom)}%`,
@@ -1593,7 +1536,7 @@ export default function MapPage() {
                   draggable={false}
                 />
 
-                {displayCastles.map((castle) => {
+                {castles.map((castle) => {
                   const state = castleState[castle.id] || { troops: castle.militaryStrength };
                   const selected = castle.id === selectedCastle.id;
                   const hovered = castle.id === hoveredCastleId;
@@ -1610,7 +1553,7 @@ export default function MapPage() {
                       }}
                       onMouseEnter={() => setHoveredCastleId(castle.id)}
                       onMouseLeave={() => setHoveredCastleId(null)}
-                      className="absolute z-10"
+                      className="absolute z-10 flex h-9 w-9 items-center justify-center rounded-full"
                       style={{
                         left: pct(castle.left),
                         top: pct(castle.top),
@@ -1619,22 +1562,15 @@ export default function MapPage() {
                       }}
                     >
                       <span
-                        className={`block h-5 w-5 rounded-full border-2 shadow-[0_0_18px_rgba(251,191,36,0.45)] transition md:h-4 md:w-4 ${
+                        className={`block h-4 w-4 rounded-full transition ${
                           selected || hovered
-                            ? "border-white bg-amber-300"
+                            ? "border-2 border-amber-300 bg-amber-300/25 shadow-[0_0_14px_rgba(251,191,36,0.85)]"
                             : owned
-                              ? "border-amber-200"
-                              : "border-stone-100 bg-red-900"
+                              ? "border-2 border-emerald-300 bg-emerald-300/20"
+                              : "border border-transparent bg-transparent"
                         }`}
                         style={{ backgroundColor: owned ? houseSigil.color : undefined }}
                       />
-                      <span
-                        className={`pointer-events-none absolute hidden w-max max-w-[150px] rounded bg-black/85 px-2 py-1 text-[11px] font-black leading-tight text-stone-100 shadow-xl ring-1 ring-stone-700 sm:block ${getLabelPosition(castle.label)} ${
-                          selected || hovered ? "text-amber-200 ring-amber-300" : ""
-                        }`}
-                      >
-                        {castle.name}
-                      </span>
                     </button>
                   );
                 })}
