@@ -1,8 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050605;
+  --foreground: #d5d0c6;
+  --gok-black: #050605;
+  --gok-iron: #121414;
+  --gok-charcoal: #1a1b1a;
+  --gok-steel: #737a78;
+  --gok-silver: #c4c1b8;
+  --gok-dim: #918b7f;
+  --gok-parchment: #c2b8a4;
+  --gok-blood: #5e1114;
+  --gok-blood-dark: #26070a;
+  --gok-line: rgba(173, 169, 158, 0.24);
+  --gok-line-strong: rgba(196, 193, 184, 0.46);
+  --gok-shadow: rgba(0, 0, 0, 0.84);
 }
 
 @theme inline {
@@ -12,15 +24,288 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--gok-black);
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% 24%, rgba(129, 136, 132, 0.11), transparent 34%),
+    radial-gradient(circle at 86% 10%, rgba(94, 17, 20, 0.12), transparent 30%),
+    linear-gradient(180deg, #050605 0%, #0a0b0a 46%, #050605 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+a,
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: rgba(94, 17, 20, 0.82);
+  color: var(--gok-silver);
+}
+
+.gok-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 48% 18%, rgba(170, 172, 166, 0.08), transparent 36%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0), #050605 58%);
+  color: var(--gok-silver);
+}
+
+.gok-hero {
+  position: relative;
+  min-height: 94vh;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(156, 153, 144, 0.2);
+  background: #050605;
+}
+
+.gok-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(5, 6, 5, 0.06) 0%, rgba(5, 6, 5, 0.35) 26%, rgba(5, 6, 5, 0.2) 56%, rgba(5, 6, 5, 0.88) 100%),
+    linear-gradient(180deg, rgba(5, 6, 5, 0.42), rgba(5, 6, 5, 0.08) 38%, rgba(5, 6, 5, 0.94) 100%);
+  z-index: 2;
+}
+
+.gok-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background:
+    radial-gradient(circle at 13% 36%, rgba(190, 184, 166, 0.14), transparent 15%),
+    radial-gradient(circle at 78% 21%, rgba(186, 195, 190, 0.1), transparent 23%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 5px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.56), transparent 42%, rgba(0, 0, 0, 0.64));
+  mix-blend-mode: screen;
+  opacity: 0.58;
+}
+
+.gok-coast,
+.gok-map {
+  position: absolute;
+  inset-block: 0;
+  background-position: center;
+  background-size: cover;
+  filter: grayscale(0.9) contrast(1.18) brightness(0.42);
+}
+
+.gok-coast {
+  left: 0;
+  width: 45%;
+  background-image: url("/castles/pyke/exterior-1.jpg");
+  mask-image: linear-gradient(90deg, black 0%, black 52%, transparent 100%);
+}
+
+.gok-map {
+  right: 0;
+  width: 78%;
+  background-image: url("/LONG-MAP.png");
+  background-position: center;
+  opacity: 0.58;
+  mask-image: linear-gradient(90deg, transparent 0%, black 23%, black 100%);
+}
+
+.gok-brand {
+  color: var(--gok-silver);
+  font-size: clamp(1.45rem, 3vw, 2.7rem);
+  font-weight: 400;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 1px #000, 0 0 22px rgba(207, 207, 198, 0.12);
+}
+
+.gok-nav-link {
+  color: rgba(210, 205, 194, 0.82);
+  font-size: 1rem;
+  text-shadow: 0 1px 2px #000;
+  transition: color 180ms ease, text-shadow 180ms ease;
+}
+
+.gok-nav-link:hover {
+  color: var(--gok-silver);
+  text-shadow: 0 0 12px rgba(196, 193, 184, 0.28);
+}
+
+.gok-eyebrow {
+  color: rgba(196, 193, 184, 0.75);
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0.48em;
+  text-transform: uppercase;
+}
+
+.gok-title {
+  color: var(--gok-silver);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  line-height: 0.98;
+  text-transform: uppercase;
+  text-shadow:
+    0 1px 0 rgba(218, 214, 204, 0.52),
+    0 2px 0 #494a45,
+    0 5px 7px rgba(0, 0, 0, 0.96),
+    0 0 28px rgba(208, 208, 196, 0.16);
+}
+
+.gok-rule {
+  height: 1px;
+  max-width: 420px;
+  background:
+    linear-gradient(90deg, transparent, rgba(196, 193, 184, 0.6), rgba(94, 17, 20, 0.48), transparent);
+}
+
+.gok-copy {
+  color: rgba(210, 205, 194, 0.78);
+  text-shadow: 0 1px 1px #000;
+}
+
+.gok-panel,
+.gok-card {
+  position: relative;
+  border: 1px solid var(--gok-line);
+  background:
+    linear-gradient(180deg, rgba(26, 27, 26, 0.93), rgba(5, 6, 5, 0.96)),
+    radial-gradient(circle at 50% 0%, rgba(196, 193, 184, 0.08), transparent 45%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 0 38px rgba(0, 0, 0, 0.68),
+    0 24px 70px var(--gok-shadow);
+}
+
+.gok-panel::before,
+.gok-card::before,
+.gok-btn::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(196, 193, 184, 0.12);
+  pointer-events: none;
+}
+
+.gok-panel::after,
+.gok-card::after,
+.gok-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 18%, transparent 82%, rgba(255, 255, 255, 0.045)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0 1px, transparent 1px 7px);
+  opacity: 0.72;
+}
+
+.gok-btn {
+  position: relative;
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border: 1px solid var(--gok-line-strong);
+  background:
+    linear-gradient(180deg, #2a2b29 0%, #151615 48%, #090a09 100%);
+  color: var(--gok-silver);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px #000;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    inset 0 -12px 24px rgba(0, 0, 0, 0.42),
+    0 12px 30px rgba(0, 0, 0, 0.38);
+  transition: border-color 180ms ease, color 180ms ease, transform 180ms ease, background 180ms ease;
+}
+
+.gok-btn:hover {
+  border-color: rgba(208, 205, 195, 0.72);
+  background:
+    linear-gradient(180deg, #343633 0%, #171817 48%, #080908 100%);
+  color: #e3ded2;
+  transform: translateY(-1px);
+}
+
+.gok-btn-blood {
+  background:
+    linear-gradient(180deg, #311012 0%, #18090a 54%, #080606 100%);
+  border-color: rgba(129, 38, 42, 0.72);
+}
+
+.gok-shield {
+  position: relative;
+  display: inline-block;
+  height: 1.8rem;
+  width: 1.45rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(196, 193, 184, 0.48);
+  background:
+    linear-gradient(135deg, rgba(196, 193, 184, 0.2), rgba(5, 6, 5, 0.8)),
+    linear-gradient(180deg, #282b29, #090909);
+  clip-path: polygon(50% 0, 100% 18%, 88% 76%, 50% 100%, 12% 76%, 0 18%);
+  box-shadow: inset 0 0 12px #000;
+}
+
+.gok-shield::after {
+  content: "";
+  position: absolute;
+  inset: 20% 45%;
+  background: rgba(196, 193, 184, 0.45);
+}
+
+.gok-status {
+  border: 1px solid rgba(107, 126, 120, 0.42);
+  background: rgba(13, 31, 27, 0.55);
+  color: rgba(188, 203, 197, 0.86);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.gok-map-name {
+  position: absolute;
+  color: rgba(155, 132, 103, 0.28);
+  font-size: clamp(1rem, 1.4vw, 1.5rem);
+  text-shadow: 0 2px 4px #000;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .gok-coast {
+    width: 72%;
+    opacity: 0.72;
+  }
+
+  .gok-map {
+    width: 100%;
+    opacity: 0.36;
+  }
+
+  .gok-brand {
+    font-size: 1.08rem;
+    letter-spacing: 0.18em;
+  }
+
+  .gok-title {
+    letter-spacing: 0.04em;
+  }
+
+  .gok-eyebrow {
+    font-size: 0.66rem;
+    letter-spacing: 0.28em;
+    line-height: 1.8;
+  }
 }
