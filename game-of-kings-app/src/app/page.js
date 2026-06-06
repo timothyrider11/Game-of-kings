@@ -9,14 +9,14 @@ const realmStats = [
   { label: "Realm Points", value: "91k" },
 ];
 
-const phasePreview = [
-  ["Council", "Plan your route, read the realm, and choose a friendly goal."],
-  ["Check-In", "Clock in for daily points, banners, and garrison growth."],
-  ["Muster", "Turn points and gold into troops without needing a long session."],
-  ["Diplomacy", "Send aid to allies and earn reputation for helping the realm."],
-  ["War", "Fight neighboring armies when you want the heavier strategy layer."],
-  ["Questing", "Browse chronicles, scout castles, and complete quick tasks."],
-  ["Revenue", "Let the realm resolve income and keep moving while you are away."],
+const livingSystems = [
+  ["37 Castle Map", "Explore a full Westeros map with major castles, settlements, panels, stats, and galleries."],
+  ["Real-Time Economy", "Gold and renown continue updating while upgrades, wars, and events stay timestamped."],
+  ["Live Wars", "Campaigns resolve over time instead of waiting for manual turns."],
+  ["Discussion Boards", "Create categories, threads, replies, upvotes, house forums, and media-linked posts."],
+  ["Daily Quizzes", "Answer trivia for gold, renown, collectibles, and event momentum."],
+  ["Tournaments", "Join melees, archery contests, naval battles, and trivia championships."],
+  ["Artifacts", "Collect relics like legendary blades, royal seals, dragon eggs, and ancient crowns."],
 ];
 
 const leaderboard = [
@@ -74,8 +74,9 @@ export default function HomePage() {
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-stone-300">
               Game of Kings is a dark medieval realm where players control one castle, earn
-              points by checking in and helping others, then spend those points to strengthen
-              armies, climb leaderboards, and shape the map together.
+              gold and renown by checking in, joining discussions, answering quizzes, and
+              helping the realm, then use that progress to grow armies, collect artifacts,
+              join tournaments, and shape the map together.
             </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -147,9 +148,9 @@ export default function HomePage() {
         </div>
 
         <div className="mt-10 grid gap-4 md:grid-cols-3">
-          <Feature title="Daily Check-Ins" detail="Clock in, collect points, and grow your castle garrison." />
-          <Feature title="Cooperative Aid" detail="Send supplies, scouts, and morale to other houses for bonus renown." />
-          <Feature title="Army Growth" detail="Convert earned points into troops so friendly play still powers strategy." />
+          <Feature title="Daily Check-Ins" detail="Clock in, collect gold and renown, and keep your house visible." />
+          <Feature title="Community Play" detail="Earn reputation through forums, replies, votes, quizzes, and events." />
+          <Feature title="Army Growth" detail="Spend gold on troops, upgrades, tournaments, ships, and future market purchases." />
         </div>
       </section>
 
@@ -157,16 +158,16 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[360px_minmax(0,1fr)]">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.28em] text-amber-300">
-              Realm Phases
+              Living Systems
             </p>
-            <h2 className="mt-3 text-4xl font-black">A complete loop, not a blank map.</h2>
+            <h2 className="mt-3 text-4xl font-black">A world that keeps moving.</h2>
             <p className="mt-4 leading-7 text-stone-300">
-              Each phase gives players a different reason to interact: planning, earning,
-              helping, building, fighting, and collecting.
+              There are no player turns now. The realm runs continuously with timestamped
+              actions, live wars, castle upgrades, economy updates, forums, quizzes, and events.
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {phasePreview.map(([name, detail]) => (
+            {livingSystems.map(([name, detail]) => (
               <div key={name} className="border border-stone-800 bg-black p-5">
                 <h3 className="text-xl font-black text-stone-100">{name}</h3>
                 <p className="mt-2 text-sm leading-6 text-stone-400">{detail}</p>
