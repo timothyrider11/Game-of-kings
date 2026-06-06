@@ -1371,19 +1371,19 @@ export default function MapPage() {
 
   return (
     <main className="min-h-screen bg-[#070707] text-stone-100">
-      <section className="border-b border-stone-800 bg-black px-4 py-4">
-        <div className="mx-auto flex max-w-[1600px] flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <section className="sticky top-0 z-40 border-b border-stone-800 bg-black/95 px-3 py-3 backdrop-blur md:static md:px-4 md:py-4">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <Link href="/" className="text-xs font-black uppercase tracking-[0.28em] text-amber-300">
               Game of Kings
             </Link>
-            <h1 className="mt-1 text-3xl font-black md:text-5xl">Living Westeros Map</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">
+            <h1 className="mt-1 text-2xl font-black leading-tight md:text-5xl">Living Westeros Map</h1>
+            <p className="mt-2 hidden max-w-3xl text-sm leading-6 text-stone-400 sm:block">
               No turns. The economy, wars, upgrades, votes, forums, tournaments, and galleries are timestamped and keep moving in real time.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-center md:grid-cols-5 xl:min-w-[780px]">
+          <div className="grid grid-cols-5 gap-1 overflow-x-auto pb-1 text-center md:gap-2 xl:min-w-[780px]">
             <Stat label="Gold" value={gold.toLocaleString()} />
             <Stat label="Renown" value={renown.toLocaleString()} />
             <Stat label="Holdings" value={playerCastles.length} />
@@ -1393,16 +1393,16 @@ export default function MapPage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-[1600px] gap-4 px-4 py-4 2xl:grid-cols-[minmax(0,1fr)_440px]">
+      <section className="mx-auto grid max-w-[1600px] gap-3 px-3 py-3 md:gap-4 md:px-4 md:py-4 2xl:grid-cols-[minmax(0,1fr)_440px]">
         <div className="space-y-4">
           <div className="border border-stone-700 bg-stone-950">
             <div className="flex flex-col gap-3 border-b border-stone-800 p-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-wrap gap-2">
+              <div className="flex snap-x gap-2 overflow-x-auto pb-1">
                 {["realm", "forum", "quizzes", "tournaments", "artifacts"].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`rounded-md px-4 py-2 text-sm font-black capitalize transition ${
+                    className={`min-h-11 shrink-0 snap-start rounded-md px-4 py-2 text-sm font-black capitalize transition ${
                       activeTab === tab
                         ? "bg-amber-400 text-stone-950"
                         : "bg-stone-900 text-stone-300 hover:bg-stone-800"
@@ -1413,7 +1413,24 @@ export default function MapPage() {
                 ))}
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_240px] sm:items-center">
+                <select
+                  aria-label="Jump to castle"
+                  value={selectedCastle.id}
+                  onChange={(event) => {
+                    setSelectedCastleId(event.target.value);
+                    setActiveTab("realm");
+                    setGalleryIndex(0);
+                  }}
+                  className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-bold text-stone-100 outline-none focus:border-amber-300"
+                >
+                  {castles.map((castle) => (
+                    <option key={castle.id} value={castle.id}>
+                      {castle.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex items-center gap-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                   Zoom {Math.round(zoom * 100)}%
                 </span>
@@ -1425,17 +1442,18 @@ export default function MapPage() {
                   step="0.05"
                   value={zoom}
                   onChange={(event) => setZoom(Number(event.target.value))}
-                  className="w-44 accent-amber-400"
+                  className="w-full accent-amber-400"
                 />
+                </div>
               </div>
             </div>
 
-            <div className="h-[72vh] overflow-auto bg-[#10100e]">
+            <div className="h-[58vh] overflow-auto bg-[#10100e] overscroll-contain md:h-[72vh]">
               <div
                 className="relative origin-top-left"
                 style={{
-                  width: `${100 * zoom}%`,
-                  minWidth: `${100 * zoom}%`,
+                  width: `${Math.max(150, 100 * zoom)}%`,
+                  minWidth: `${Math.max(150, 100 * zoom)}%`,
                 }}
               >
                 <img
@@ -1470,7 +1488,7 @@ export default function MapPage() {
                       }}
                     >
                       <span
-                        className={`block h-4 w-4 rounded-full border-2 shadow-[0_0_18px_rgba(251,191,36,0.45)] transition ${
+                        className={`block h-5 w-5 rounded-full border-2 shadow-[0_0_18px_rgba(251,191,36,0.45)] transition md:h-4 md:w-4 ${
                           selected || hovered
                             ? "border-white bg-amber-300"
                             : owned
@@ -1480,7 +1498,7 @@ export default function MapPage() {
                         style={{ backgroundColor: owned ? houseSigil.color : undefined }}
                       />
                       <span
-                        className={`pointer-events-none absolute w-max max-w-[150px] rounded bg-black/80 px-2 py-1 text-[11px] font-black leading-tight text-stone-100 shadow-xl ring-1 ring-stone-700 ${getLabelPosition(castle.label)} ${
+                        className={`pointer-events-none absolute hidden w-max max-w-[150px] rounded bg-black/85 px-2 py-1 text-[11px] font-black leading-tight text-stone-100 shadow-xl ring-1 ring-stone-700 sm:block ${getLabelPosition(castle.label)} ${
                           selected || hovered ? "text-amber-200 ring-amber-300" : ""
                         }`}
                       >
@@ -1561,7 +1579,7 @@ export default function MapPage() {
               <p className="mt-2 text-sm leading-6 text-stone-400">
                 Trivia gives returning players a friendly way to earn gold, renown, collectibles, and event momentum.
               </p>
-              <div className="mt-5 grid gap-3 lg:grid-cols-3">
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {quizzes.map((quiz) => (
                   <div key={quiz.id} className="border border-stone-800 bg-black p-4">
                     <p className="text-xs font-black uppercase tracking-wider text-amber-300">
@@ -1574,7 +1592,7 @@ export default function MapPage() {
                           key={option}
                           disabled={completedQuizzes.includes(quiz.id)}
                           onClick={() => answerQuiz(quiz, option)}
-                          className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-left text-sm font-bold transition hover:border-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="min-h-11 w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-left text-sm font-bold transition hover:border-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {option}
                         </button>
@@ -1595,7 +1613,7 @@ export default function MapPage() {
               <p className="mt-2 text-sm leading-6 text-stone-400">
                 Tournaments are always open events. Join, spend gold, gain renown, and roll for banners, titles, and artifacts.
               </p>
-              <div className="mt-5 grid gap-3 lg:grid-cols-2">
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {tournamentCatalog.map((tournament) => (
                   <div key={tournament[0]} className="border border-stone-800 bg-black p-4">
                     <p className="text-xs font-black uppercase tracking-wider text-amber-300">{tournament[2]}</p>
@@ -1606,7 +1624,7 @@ export default function MapPage() {
                     <button
                       onClick={() => joinTournament(tournament)}
                       disabled={joinedTournaments.includes(tournament[0]) || gold < tournament[3]}
-                      className="mt-4 w-full rounded-md bg-amber-400 px-4 py-3 font-black text-stone-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+                      className="mt-4 min-h-11 w-full rounded-md bg-amber-400 px-4 py-3 font-black text-stone-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
                     >
                       {joinedTournaments.includes(tournament[0]) ? "Joined" : "Join Tournament"}
                     </button>
@@ -1622,7 +1640,7 @@ export default function MapPage() {
               <p className="mt-2 text-sm leading-6 text-stone-400">
                 Collect rare relics through tournaments, quests, seasonal events, auctions, and rare drops.
               </p>
-              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {artifactCatalog.map((artifact) => {
                   const owned = artifactInventory.includes(artifact[0]);
                   return (
@@ -1644,7 +1662,7 @@ export default function MapPage() {
           )}
         </div>
 
-        <aside className="space-y-4">
+        <aside className="space-y-3 md:space-y-4">
           <Panel>
             <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-300">Online World</p>
             <h2 className="mt-2 text-2xl font-black">Realm Clock</h2>
@@ -1653,13 +1671,13 @@ export default function MapPage() {
               <button
                 onClick={checkIn}
                 disabled={checkedInToday}
-                className="rounded-md bg-emerald-700 px-4 py-3 font-black transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+                className="min-h-11 rounded-md bg-emerald-700 px-4 py-3 text-sm font-black transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
               >
                 {checkedInToday ? "Checked In" : "Daily Check-In"}
               </button>
               <button
                 onClick={resetRealm}
-                className="rounded-md border border-stone-700 px-4 py-3 font-black text-stone-300 transition hover:border-red-400 hover:text-red-300"
+                className="min-h-11 rounded-md border border-stone-700 px-4 py-3 text-sm font-black text-stone-300 transition hover:border-red-400 hover:text-red-300"
               >
                 Reset Local Realm
               </button>
@@ -1681,12 +1699,12 @@ export default function MapPage() {
                 placeholder="House words"
                 className="w-full rounded-md border border-stone-700 bg-black px-3 py-2 text-sm outline-none focus:border-amber-300"
               />
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-8 2xl:grid-cols-4">
                 {sigils.map((sigil) => (
                   <button
                     key={sigil.name}
                     onClick={() => setHouseSigil(sigil)}
-                    className={`rounded-md border p-2 text-xs font-bold ${
+                    className={`min-h-14 rounded-md border p-2 text-xs font-bold ${
                       houseSigil.name === sigil.name ? "border-amber-300 bg-stone-800" : "border-stone-700 bg-black"
                     }`}
                   >
@@ -1805,14 +1823,14 @@ function CastlePanel({ castle, state, houseName, canClaim, onClaim, onRecruit, o
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">{castle.region}</p>
-          <h2 className="mt-2 text-3xl font-black">{castle.name}</h2>
+          <h2 className="mt-2 text-2xl font-black leading-tight md:text-3xl">{castle.name}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">{castle.summary}</p>
         </div>
         {canClaim && (
           <button
             onClick={onClaim}
             disabled={!houseName.trim()}
-            className="rounded-md bg-emerald-700 px-5 py-3 font-black transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+            className="min-h-11 rounded-md bg-emerald-700 px-5 py-3 font-black transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
           >
             Claim Castle
           </button>
@@ -1833,14 +1851,14 @@ function CastlePanel({ castle, state, houseName, canClaim, onClaim, onRecruit, o
           <button
             onClick={onRecruit}
             disabled={gold < 90}
-            className="rounded-md bg-red-700 px-5 py-3 font-black transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+            className="min-h-11 rounded-md bg-red-700 px-5 py-3 font-black transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
           >
             Recruit 85 Troops - 90 Gold
           </button>
           <button
             onClick={onUpgrade}
             disabled={gold < 300 || Boolean(state.upgradeEndsAt)}
-            className="rounded-md bg-blue-700 px-5 py-3 font-black transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+            className="min-h-11 rounded-md bg-blue-700 px-5 py-3 font-black transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
           >
             {state.upgradeEndsAt ? `Upgrading: ${Math.floor(upgradeRemaining / 60)}m ${upgradeRemaining % 60}s` : "Start Barracks Upgrade - 300 Gold"}
           </button>
@@ -1855,7 +1873,7 @@ function CastlePanel({ castle, state, houseName, canClaim, onClaim, onRecruit, o
               key={target.id}
               onClick={() => onWar(target.id)}
               disabled={state.owner !== "player" || castleState[target.id]?.owner === "player" || state.troops < 250}
-              className="rounded-md border border-stone-700 bg-black px-3 py-2 text-left text-sm font-bold transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="min-h-12 rounded-md border border-stone-700 bg-black px-3 py-2 text-left text-sm font-bold transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {target.name}
               <span className="block text-xs text-stone-500">{target.region}</span>
@@ -1872,14 +1890,14 @@ function GalleryPanel({ castle, galleryType, setGalleryType, selectedGallery, ga
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">Castle Gallery</p>
           <h2 className="mt-2 text-2xl font-black">{castle.name}</h2>
         </div>
         <button
           onClick={onUploadClick}
-          className="rounded-md bg-amber-400 px-4 py-2 text-sm font-black text-stone-950 transition hover:bg-amber-300"
+          className="min-h-11 rounded-md bg-amber-400 px-4 py-2 text-sm font-black text-stone-950 transition hover:bg-amber-300"
         >
           Upload Images
         </button>
@@ -1890,7 +1908,7 @@ function GalleryPanel({ castle, galleryType, setGalleryType, selectedGallery, ga
           <button
             key={key}
             onClick={() => setGalleryType(key)}
-            className={`rounded-md px-3 py-2 text-xs font-black ${
+            className={`min-h-10 rounded-md px-3 py-2 text-xs font-black ${
               galleryType === key ? "bg-stone-100 text-stone-950" : "bg-black text-stone-400"
             }`}
           >
@@ -1902,10 +1920,10 @@ function GalleryPanel({ castle, galleryType, setGalleryType, selectedGallery, ga
       <div className="mt-4 border border-stone-800 bg-black">
         {activeImage ? (
           <button onClick={() => onFullscreen(activeImage)} className="block w-full">
-            <img src={activeImage.src} alt={activeImage.name} className="h-72 w-full object-cover" />
+            <img src={activeImage.src} alt={activeImage.name} className="h-56 w-full object-cover sm:h-72" />
           </button>
         ) : (
-          <div className="flex h-72 items-center justify-center p-6 text-center text-sm text-stone-500">
+          <div className="flex h-56 items-center justify-center p-6 text-center text-sm text-stone-500 sm:h-72">
             No images yet. Upload exterior shots, interiors, banners, maps, or historical artwork for this castle.
           </div>
         )}
@@ -1948,7 +1966,7 @@ function ForumPanel({ threads, threadDraft, setThreadDraft, forumSearch, setForu
               value={threadDraft.title}
               onChange={(event) => setThreadDraft((draft) => ({ ...draft, title: event.target.value }))}
               placeholder="Thread title"
-              className="w-full rounded-md border border-stone-700 bg-black px-3 py-2 text-sm outline-none focus:border-amber-300"
+              className="min-h-11 w-full rounded-md border border-stone-700 bg-black px-3 py-2 text-sm outline-none focus:border-amber-300"
             />
             <textarea
               value={threadDraft.body}
@@ -1957,11 +1975,11 @@ function ForumPanel({ threads, threadDraft, setThreadDraft, forumSearch, setForu
               rows={5}
               className="w-full rounded-md border border-stone-700 bg-black px-3 py-2 text-sm outline-none focus:border-amber-300"
             />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <select
                 value={threadDraft.category}
                 onChange={(event) => setThreadDraft((draft) => ({ ...draft, category: event.target.value }))}
-                className="rounded-md border border-stone-700 bg-black px-3 py-2 text-sm"
+                className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm"
               >
                 <option>Realm Council</option>
                 <option>House Forums</option>
@@ -1974,16 +1992,16 @@ function ForumPanel({ threads, threadDraft, setThreadDraft, forumSearch, setForu
                 value={threadDraft.house}
                 onChange={(event) => setThreadDraft((draft) => ({ ...draft, house: event.target.value }))}
                 placeholder="House forum"
-                className="rounded-md border border-stone-700 bg-black px-3 py-2 text-sm outline-none focus:border-amber-300"
+                className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm outline-none focus:border-amber-300"
               />
             </div>
             <input
               value={threadDraft.media}
               onChange={(event) => setThreadDraft((draft) => ({ ...draft, media: event.target.value }))}
               placeholder="Image or embedded media URL"
-              className="w-full rounded-md border border-stone-700 bg-black px-3 py-2 text-sm outline-none focus:border-amber-300"
+              className="min-h-11 w-full rounded-md border border-stone-700 bg-black px-3 py-2 text-sm outline-none focus:border-amber-300"
             />
-            <button className="w-full rounded-md bg-amber-400 px-4 py-3 font-black text-stone-950 transition hover:bg-amber-300">
+            <button className="min-h-11 w-full rounded-md bg-amber-400 px-4 py-3 font-black text-stone-950 transition hover:bg-amber-300">
               Create Thread
             </button>
           </form>
@@ -2010,10 +2028,10 @@ function ForumPanel({ threads, threadDraft, setThreadDraft, forumSearch, setForu
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => onUpvote(thread.id)} className="rounded-md bg-stone-800 px-3 py-2 text-xs font-black">
+                    <button onClick={() => onUpvote(thread.id)} className="min-h-10 rounded-md bg-stone-800 px-3 py-2 text-xs font-black">
                       Upvote {thread.upvotes}
                     </button>
-                    <button onClick={() => onModerate(thread.id)} className="rounded-md border border-stone-700 px-3 py-2 text-xs font-black text-stone-300">
+                    <button onClick={() => onModerate(thread.id)} className="min-h-10 rounded-md border border-stone-700 px-3 py-2 text-xs font-black text-stone-300">
                       {thread.moderated ? "Unflag" : "Flag"}
                     </button>
                   </div>
@@ -2037,14 +2055,14 @@ function ForumPanel({ threads, threadDraft, setThreadDraft, forumSearch, setForu
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <input
                     value={replyDrafts[thread.id] || ""}
                     onChange={(event) => setReplyDrafts((drafts) => ({ ...drafts, [thread.id]: event.target.value }))}
                     placeholder="Reply"
-                    className="min-w-0 flex-1 rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm outline-none focus:border-amber-300"
+                    className="min-h-11 min-w-0 flex-1 rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm outline-none focus:border-amber-300"
                   />
-                  <button onClick={() => onReply(thread.id)} className="rounded-md bg-stone-100 px-4 py-2 text-sm font-black text-stone-950">
+                  <button onClick={() => onReply(thread.id)} className="min-h-11 rounded-md bg-stone-100 px-4 py-2 text-sm font-black text-stone-950">
                     Reply
                   </button>
                 </div>
@@ -2059,22 +2077,22 @@ function ForumPanel({ threads, threadDraft, setThreadDraft, forumSearch, setForu
 
 function Stat({ label, value }) {
   return (
-    <div className="border border-stone-700 bg-stone-900 px-3 py-2">
-      <p className="text-xs font-bold uppercase tracking-wider text-stone-400">{label}</p>
-      <p className="text-xl font-black text-stone-100">{value}</p>
+    <div className="min-w-[92px] border border-stone-700 bg-stone-900 px-2 py-2 md:min-w-0 md:px-3">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 md:text-xs">{label}</p>
+      <p className="text-base font-black text-stone-100 md:text-xl">{value}</p>
     </div>
   );
 }
 
 function Panel({ children }) {
-  return <div className="border border-stone-700 bg-stone-900 p-5 shadow-xl">{children}</div>;
+  return <div className="border border-stone-700 bg-stone-900 p-4 shadow-xl md:p-5">{children}</div>;
 }
 
 function Info({ label, value }) {
   return (
     <div className="border border-stone-800 bg-black p-3">
       <p className="text-xs font-bold uppercase tracking-wider text-stone-500">{label}</p>
-      <p className="mt-1 text-base font-black">{value}</p>
+      <p className="mt-1 break-words text-base font-black">{value}</p>
     </div>
   );
 }
