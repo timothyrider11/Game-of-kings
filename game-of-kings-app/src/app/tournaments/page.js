@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { artifactVault, rollArtifact } from "../../lib/artifacts";
+import { artifactVault, rollUnclaimedArtifact } from "../../lib/artifacts";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
@@ -234,12 +234,13 @@ export default function TournamentsPage() {
     setMessage(`${houseName(realm)} has entered ${tournament.name}. Entry paid: ${tournament.entryGold} gold.`);
   }
 
-  function revealTournament(tournament, startsAt, bracket, signup) {
+  async function revealTournament(tournament, startsAt, bracket, signup) {
     const recordKey = `${tournament.id}-${new Date(startsAt).toISOString().slice(0, 10)}`;
     if (realm.tournamentRecords?.[recordKey]) return;
 
     const playerWon = Boolean(signup) && bracket.champion[0] === houseName(realm);
-    const foundArtifact = playerWon ? rollArtifact(0.01) : null;
+    const { activities: latestActivities } = await loadRealmActivity(300);
+    const foundArtifact = playerWon ? rollUnclaimedArtifact(0.01, latestActivities) : null;
     const nextArmor = playerWon ? [...(realm.armorInventory || []), tournament.armor] : realm.armorInventory || [];
     const nextRealm = {
       ...realm,
@@ -268,6 +269,7 @@ export default function TournamentsPage() {
       body: playerWon
         ? `${bracket.champion[1]} won ${tournament.prizeGold} gold, ${tournament.prizeRenown} renown, and ${tournament.armor}.${foundArtifact ? ` A 1% relic roll revealed ${foundArtifact}.` : ""}`
         : `${bracket.champion[1]} won the bracket. Results are now posted in the tournament hall.`,
+      meta: foundArtifact ? { artifact: foundArtifact, chance: 0.01, source: "tournament" } : { source: "tournament" },
     }));
     setMessage(playerWon ? `You won ${tournament.name}. Armor awarded: ${tournament.armor}.` : `${bracket.champion[0]} won ${tournament.name}.`);
   }

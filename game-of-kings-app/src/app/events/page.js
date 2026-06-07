@@ -99,8 +99,9 @@ const newcomerGiveaway = {
   id: "prince-that-was-promised-dragon-egg",
   name: "The Prince That Was Promised Giveaway",
   prize: "Hatchable Dragon Egg",
+  announceAt: "June 21, 2026",
   description:
-    "A cosmetic and lore-only artifact. The hatchling begins as a baby dragon for weeks before growing into a young dragon for display in your house archive.",
+    "A cosmetic and lore-only artifact. The hatchling begins as a baby dragon for weeks before growing into a young dragon for display in your house archive. Winner announced June 21, 2026 with the House of the Dragon premiere.",
 };
 
 function hashText(value) {
@@ -360,6 +361,7 @@ export default function EventsPage() {
           prize: newcomerGiveaway.prize,
           house: `House ${realm.houseName}`,
           enteredAt: new Date(now).toISOString(),
+          announceAt: newcomerGiveaway.announceAt,
           status: "entered",
         },
       },
@@ -370,15 +372,16 @@ export default function EventsPage() {
       type: "giveaway",
       title: "A House Entered The Dragon Egg Draw",
       actor: `House ${realm.houseName}`,
-      body: `${newcomerGiveaway.name}: ${newcomerGiveaway.prize} entry recorded. Cosmetic and lore-only, no battle effect.`,
+      body: `${newcomerGiveaway.name}: ${newcomerGiveaway.prize} entry recorded. Good luck. Winner announced ${newcomerGiveaway.announceAt}. Cosmetic and lore-only, no battle effect.`,
       meta: {
         action: "giveaway-entry",
         giveawayId: newcomerGiveaway.id,
         prize: newcomerGiveaway.prize,
+        announceAt: newcomerGiveaway.announceAt,
       },
     }));
     loadRealmActivity(150).then(({ activities: loaded }) => setActivities(loaded));
-    setMessage("Entry recorded for The Prince That Was Promised Giveaway.");
+    setMessage("Good luck. Your entry is recorded for The Prince That Was Promised Giveaway.");
   }
 
   function recordTournament(tournament, window, bracket, signup) {
@@ -530,12 +533,13 @@ export default function EventsPage() {
               </div>
               <p className="mt-4 text-sm leading-6 text-stone-400">{newcomerGiveaway.description}</p>
               <p className="mt-3 text-sm font-black text-stone-200">Prize: {newcomerGiveaway.prize}</p>
+              <p className="mt-1 text-sm font-black text-stone-400">Winner announced: {newcomerGiveaway.announceAt}</p>
               <button
                 onClick={enterGiveaway}
                 disabled={Boolean(realm.giveawayEntries?.[newcomerGiveaway.id])}
                 className="mt-4 min-h-12 w-full rounded-md border border-stone-500 bg-stone-900 px-5 py-3 font-black text-stone-100 transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:border-stone-800 disabled:bg-stone-950 disabled:text-stone-600"
               >
-                {realm.giveawayEntries?.[newcomerGiveaway.id] ? "Entered" : "Enter Giveaway"}
+                {realm.giveawayEntries?.[newcomerGiveaway.id] ? "Entered - Good Luck" : "Enter Giveaway"}
               </button>
             </section>
 

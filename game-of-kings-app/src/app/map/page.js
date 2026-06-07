@@ -4,8 +4,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { rollArtifact } from "../../lib/artifacts";
-import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
+import { rollUnclaimedArtifact } from "../../lib/artifacts";
+import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { abandonCastleCloud, claimCastleCloud, getSessionUser, loadCastleClaims, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 import { isRoyalEmail, normalizeRulerTitle, STORAGE_KEY } from "../../lib/realm-identity";
 
@@ -1886,9 +1886,9 @@ export default function MapPage() {
     );
   }
 
-  function logPublicActivity({ type, title, body }) {
+  function logPublicActivity({ type, title, body, meta = {} }) {
     const actor = houseName ? `House ${houseName}` : rulerName ? `${rulerTitle} ${rulerName}` : "A realm visitor";
-    recordRealmActivity(buildActivity({ type, title, body, actor }));
+    recordRealmActivity(buildActivity({ type, title, body, actor, meta }));
   }
 
   function claimCastle() {
@@ -1968,24 +1968,25 @@ export default function MapPage() {
     });
   }
 
-  function runBanditRaid(raid) {
+  async function runBanditRaid(raid) {
     const seat = playerCastles[0];
     if (!houseName.trim() || !seat) {
-      addEvent("Found your house and claim a castle before sending riders after bandits.", "raid");
+      addEvent("Found your house and claim a castle before taking a quest.", "quest");
       return;
     }
 
     const seatState = castleState[seat.id];
     if (!seatState || seatState.troops <= raid.troopCost + 25) {
-      addEvent(`${seat.name} needs more troops before risking a raid against ${raid.title}.`, "raid");
+      addEvent(`${seat.name} needs more troops before risking the quest: ${raid.title}.`, "quest");
       return;
     }
 
     if (raidHistory.some((entry) => entry.instanceId === raid.instanceId)) {
-      addEvent(`${raid.title} has already been answered by your house this hour.`, "raid");
+      addEvent(`${raid.title} has already been answered by your house this hour.`, "quest");
       return;
     }
 
+    const { activities } = await loadRealmActivity(300);
     const roll = Math.random();
     const successChance = Math.min(0.82, 0.48 + seatState.troops / 2600 + renown / 12000);
     const succeeded = roll <= successChance;
@@ -1994,7 +1995,7 @@ export default function MapPage() {
     const troopsLost = succeeded ? Math.ceil(raid.troopCost * 0.55) : raid.troopCost;
     const story = succeeded ? raid.success : raid.failure;
     const resultTitle = succeeded ? `${raid.title} Broken` : `${raid.title} Slipped Away`;
-    const foundArtifact = succeeded ? rollArtifact(0.01) : null;
+    const foundArtifact = succeeded ? rollUnclaimedArtifact(0.01, activities) : null;
 
     setCastleState((current) => ({
       ...current,
@@ -2023,11 +2024,12 @@ export default function MapPage() {
         ...current,
       ].slice(0, 25)
     );
-    addEvent(`${resultTitle}: ${story} Reward: ${goldReward} gold, ${renownReward} renown. Troops lost: ${troopsLost}.${foundArtifact ? ` Rare artifact found: ${foundArtifact}.` : ""}`, "raid");
+    addEvent(`${resultTitle}: ${story} Reward: ${goldReward} gold, ${renownReward} renown. Troops lost: ${troopsLost}.${foundArtifact ? ` Rare artifact found: ${foundArtifact}.` : ""}`, "quest");
     logPublicActivity({
-      type: "raid",
+      type: "quest",
       title: resultTitle,
       body: `${story} House ${houseName} gained ${goldReward} gold and ${renownReward} renown from ${seat.name}.${foundArtifact ? ` A 1% relic roll revealed ${foundArtifact}.` : ""}`,
+      meta: foundArtifact ? { artifact: foundArtifact, chance: 0.01, source: "quest" } : { source: "quest" },
     });
   }
 
@@ -2117,11 +2119,12 @@ export default function MapPage() {
     });
   }
 
-  function finishResolvedWar(war) {
+  async function finishResolvedWar(war) {
     if (!war.resolved) return;
 
     if (war.winner === war.attacker && playerCastleIds.length < 2) {
-      const foundArtifact = rollArtifact(0.01);
+      const { activities } = await loadRealmActivity(300);
+      const foundArtifact = rollUnclaimedArtifact(0.01, activities);
       setCastleState((current) => ({
         ...current,
         [war.defenderId]: {
@@ -2139,6 +2142,7 @@ export default function MapPage() {
         type: "war",
         title: `${war.attacker} Won A Campaign`,
         body: `${war.defender} yielded after the live battle resolved. +55 renown was awarded.${foundArtifact ? ` A 1% relic roll revealed ${foundArtifact}.` : ""}`,
+        meta: foundArtifact ? { artifact: foundArtifact, chance: 0.01, source: "battle" } : { source: "battle" },
       });
     } else {
       setRenown((current) => current + 12);
@@ -2481,7 +2485,7 @@ export default function MapPage() {
             </div>
             {!isSignedIn && (
               <p className="mt-3 text-xs leading-5 text-stone-500">
-                Visitors can browse the realm. Sign in to claim a castle, check in, raid camps, and keep progress.
+                Visitors can browse the realm. Sign in to claim a castle, check in, take quests, and keep progress.
               </p>
             )}
           </Panel>
@@ -2489,15 +2493,15 @@ export default function MapPage() {
           <Panel>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-red-300">Live Raid Notices</p>
-                <h2 className="mt-2 text-2xl font-black">Bandit Camps</h2>
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-red-300">Live Quest Notices</p>
+                <h2 className="mt-2 text-2xl font-black">Quests</h2>
               </div>
               <span className="rounded border border-stone-700 bg-black px-2 py-1 text-xs font-black text-stone-400">
                 rotates hourly
               </span>
             </div>
             <p className="mt-2 text-sm leading-6 text-stone-400">
-              Ride out for instant story results, gold, and renown. No turns, no waiting.
+              Ride out for instant story results, gold, renown, and a 1% chance at a unique realm artifact. No turns, no waiting.
             </p>
             <div className="mt-4 space-y-3">
               {activeRaids.map((raid) => {
@@ -2523,7 +2527,7 @@ export default function MapPage() {
             </div>
             {raidHistory.length > 0 && (
               <div className="mt-4 max-h-44 overflow-y-auto border border-stone-800 bg-black/60 p-3">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-stone-500">Recent Raid Chronicle</p>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-stone-500">Recent Quest Chronicle</p>
                 {raidHistory.slice(0, 4).map((raid) => (
                   <p key={raid.instanceId} className="mt-2 text-sm leading-6 text-stone-400">
                     <span className="font-black text-stone-200">{raid.title}:</span> {raid.story}
