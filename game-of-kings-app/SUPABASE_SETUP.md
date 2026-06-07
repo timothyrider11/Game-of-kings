@@ -75,3 +75,17 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 The app already uses those names in `src/lib/supabase.js`.
+
+## 6. Spam And Duplicate Account Tracking
+
+Keep email confirmation enabled in Supabase Auth for public signups.
+
+To track repeated signups from the same IP later, add a server-side route or Supabase Edge Function that records:
+
+- user id
+- email domain
+- IP address from request headers
+- user agent
+- signup time
+
+Do not collect IP addresses from client-side JavaScript. That should happen server-side so players cannot spoof it easily.

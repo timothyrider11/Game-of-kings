@@ -8,6 +8,7 @@ create table if not exists public.profiles (
   username text unique not null,
   ruler_name text not null default '',
   ruler_title text not null default 'Lord',
+  avatar_url text not null default '',
   role text not null default 'player' check (role in ('player', 'admin')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

@@ -25,6 +25,7 @@ export default function AccountPage() {
   const [username, setUsername] = useState("");
   const [rulerName, setRulerName] = useState("");
   const [rulerTitle, setRulerTitle] = useState("Lord");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -55,6 +56,7 @@ export default function AccountPage() {
       setUsername(profile.username || "");
       setRulerName(profile.ruler_name || "");
       setRulerTitle(profile.ruler_title || "Lord");
+      setAvatarUrl(profile.avatar_url || "");
     });
   }, [user]);
 
@@ -65,13 +67,13 @@ export default function AccountPage() {
 
     const result =
       mode === "sign-up"
-        ? await signUpWithPassword({ email, password, username, rulerName, rulerTitle })
+        ? await signUpWithPassword({ email, password, username, rulerName, rulerTitle, avatarUrl })
         : await signInWithPassword(email, password);
 
     if (result.error) {
       setMessage(result.error);
     } else {
-      setMessage(mode === "sign-up" ? "Account created. Check email if Supabase asks for confirmation." : "Signed in.");
+      setMessage(mode === "sign-up" ? "Account created. Check your raven cage and send the raven back with verification." : "Signed in.");
     }
 
     setBusy(false);
@@ -80,7 +82,18 @@ export default function AccountPage() {
   async function saveProfile(event) {
     event.preventDefault();
     setBusy(true);
-    const { error } = await upsertProfile({ username, rulerName, rulerTitle });
+    const { error } = await upsertProfile({ username, rulerName, rulerTitle, avatarUrl });
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const realm = stored ? JSON.parse(stored) : {};
+    const nextRealm = {
+      ...realm,
+      username,
+      rulerName,
+      rulerTitle,
+      avatarUrl,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRealm));
+    await saveCloudRealm(nextRealm);
     setMessage(error || "Profile saved.");
     setBusy(false);
   }
@@ -101,6 +114,7 @@ export default function AccountPage() {
       username,
       rulerName,
       rulerTitle,
+      avatarUrl,
     });
 
     setMessage(error || "Realm saved to your account.");
@@ -221,6 +235,12 @@ export default function AccountPage() {
                     className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-4 outline-none focus:border-[var(--gok-line-strong)]"
                     required
                   />
+                  <input
+                    value={avatarUrl}
+                    onChange={(event) => setAvatarUrl(event.target.value)}
+                    placeholder="Profile picture URL"
+                    className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-4 outline-none focus:border-[var(--gok-line-strong)] md:col-span-3"
+                  />
                 </div>
               )}
 
@@ -232,7 +252,19 @@ export default function AccountPage() {
             <div className="relative z-10 space-y-5">
               <div>
                 <p className="gok-eyebrow">Signed In</p>
-                <p className="mt-2 text-xl text-[var(--gok-silver)]">{user.email}</p>
+                <div className="mt-3 flex items-center gap-4">
+                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden border border-[var(--gok-line-strong)] bg-black text-xl text-[var(--gok-silver)]">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={username || "Profile"} className="h-full w-full object-cover" />
+                    ) : (
+                      (username || user.email || "?").slice(0, 1).toUpperCase()
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xl text-[var(--gok-silver)]">{user.email}</p>
+                    <p className="text-sm text-[var(--gok-dim)]">Verified houses save progress across the realm.</p>
+                  </div>
+                </div>
               </div>
 
               <form onSubmit={saveProfile} className="grid gap-3 md:grid-cols-3">
@@ -260,6 +292,12 @@ export default function AccountPage() {
                   placeholder="Ruler name"
                   className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-4 outline-none focus:border-[var(--gok-line-strong)]"
                   required
+                />
+                <input
+                  value={avatarUrl}
+                  onChange={(event) => setAvatarUrl(event.target.value)}
+                  placeholder="Profile picture URL"
+                  className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-4 outline-none focus:border-[var(--gok-line-strong)] md:col-span-3"
                 />
                 <button disabled={busy} className="gok-btn min-h-12 px-4 py-3 disabled:opacity-50 md:col-span-3">
                   Save Profile

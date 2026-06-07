@@ -17,7 +17,7 @@ export async function signInWithPassword(email, password) {
   return { error: error?.message || null };
 }
 
-export async function signUpWithPassword({ email, password, username, rulerName, rulerTitle }) {
+export async function signUpWithPassword({ email, password, username, rulerName, rulerTitle, avatarUrl = "" }) {
   if (!supabase) return { error: CLOUD_DISABLED_MESSAGE };
 
   const { data, error } = await supabase.auth.signUp({
@@ -28,6 +28,7 @@ export async function signUpWithPassword({ email, password, username, rulerName,
         username,
         ruler_name: rulerName,
         ruler_title: rulerTitle,
+        avatar_url: avatarUrl,
       },
     },
   });
@@ -40,6 +41,7 @@ export async function signUpWithPassword({ email, password, username, rulerName,
       username,
       rulerName,
       rulerTitle,
+      avatarUrl,
     });
   }
 
@@ -68,7 +70,7 @@ export async function loadProfile() {
   return { profile: data || null, error: error?.message || null };
 }
 
-export async function upsertProfile({ userId, username, rulerName, rulerTitle }) {
+export async function upsertProfile({ userId, username, rulerName, rulerTitle, avatarUrl = "" }) {
   if (!supabase) return { error: CLOUD_DISABLED_MESSAGE };
 
   const targetUserId = userId || (await getSessionUser()).user?.id;
@@ -79,6 +81,7 @@ export async function upsertProfile({ userId, username, rulerName, rulerTitle })
     username: username.trim(),
     ruler_name: rulerName.trim(),
     ruler_title: rulerTitle,
+    avatar_url: avatarUrl.trim(),
   });
 
   return { error: error?.message || null };

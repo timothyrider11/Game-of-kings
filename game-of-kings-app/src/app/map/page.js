@@ -1928,19 +1928,12 @@ export default function MapPage() {
           <div className="border border-stone-700 bg-stone-950">
             <div className="flex flex-col gap-3 border-b border-stone-800 p-3 md:flex-row md:items-center md:justify-between">
               <div className="flex snap-x gap-2 overflow-x-auto pb-1">
-                {["realm", "forum"].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`min-h-11 shrink-0 snap-start rounded-md px-4 py-2 text-sm font-black capitalize transition ${
-                      activeTab === tab
-                        ? "bg-amber-400 text-stone-950"
-                        : "bg-stone-900 text-stone-300 hover:bg-stone-800"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
+                <button
+                  onClick={() => setActiveTab("realm")}
+                  className="min-h-11 shrink-0 snap-start rounded-md bg-amber-400 px-4 py-2 text-sm font-black capitalize text-stone-950 transition"
+                >
+                  Realm
+                </button>
                 <Link
                   href="/house"
                   className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
@@ -1952,6 +1945,18 @@ export default function MapPage() {
                   className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
                 >
                   Events
+                </Link>
+                <Link
+                  href="/tournaments"
+                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
+                >
+                  Tournaments
+                </Link>
+                <Link
+                  href="/forum"
+                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
+                >
+                  Forum
                 </Link>
               </div>
 

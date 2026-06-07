@@ -353,6 +353,12 @@ export default function EventsPage() {
             <Link href="/map" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
               Map
             </Link>
+            <Link href="/tournaments" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
+              Tournaments
+            </Link>
+            <Link href="/forum" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
+              Forum
+            </Link>
           </div>
         </div>
       </nav>
