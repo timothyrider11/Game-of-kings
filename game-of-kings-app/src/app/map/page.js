@@ -1025,7 +1025,110 @@ const extraCastles = printedMapLocations.map(([id, name, region, left, top]) => 
   summary: `${name} is a printed map location in ${region}. Its archive window is ready for lore expansion, images, and player claims as the realm grows.`,
 }));
 
-const castles = [...coreCastles, ...extraCastles];
+const markerPositionOverrides = {
+  "hardhome": [60.95, 12.08],
+  "fist-of-the-first-men": [40.17, 14.11],
+  "crasters-keep": [45.3, 15.61],
+  "castle-black": [50.91, 17.51],
+  "eastwatch": [57.52, 17.27],
+  "shadow-tower": [40.79, 18.57],
+  "moles-town": [52.15, 19.42],
+  "last-hearth": [51.76, 23.59],
+  "deepwood-motte": [26.86, 26.72],
+  "karhold": [67.49, 28.01],
+  "dreadfort": [57.84, 31.91],
+  "winterfell": [41.49, 32.96],
+  "torrhens-square": [28.72, 35.43],
+  "cerwyn": [38.92, 35.64],
+  "hornwood": [55.81, 36.16],
+  "barrowton": [27.94, 39.81],
+  "ramsgate": [68.5, 39.89],
+  "white-harbor": [47.02, 42.08],
+  "moat-cailin": [37.75, 42.12],
+  "oldcastle": [54.49, 47.07],
+  "greywater-watch": [35.26, 47.15],
+  "flints-finger": [16.74, 46.01],
+  "widows-watch": [70.37, 47.11],
+  "coldwater": [64.06, 49.82],
+  "snakewood": [65.54, 51.32],
+  "longbow-hall": [69.67, 52.34],
+  "hearts-home": [64.22, 52.62],
+  "strongsong": [49.27, 53.84],
+  "old-anchor": [73.02, 54.08],
+  "the-twins": [36.12, 54.2],
+  "seagard": [32.93, 55.18],
+  "eyrie": [58.15, 56.23],
+  "ironoaks": [64.3, 56.96],
+  "runestone": [72.7, 58.7],
+  "bloody-gate": [51.69, 57.69],
+  "pyke": [14.09, 57.24],
+  "ten-towers": [21.95, 57.45],
+  "oldstones": [36.27, 57.53],
+  "redfort": [64.69, 63.97],
+  "gulltown": [72.63, 63.0],
+  "lord-harroways-town": [47.56, 61.42],
+  "riverrun": [35.96, 61.99],
+  "harrenhal": [50.99, 62.19],
+  "wickenden": [57.99, 62.96],
+  "saltpans": [53.79, 63.24],
+  "maidenpool": [41.57, 63.45],
+  "casterly-rock": [14.32, 65.68],
+  "pinkmaiden": [33.08, 66.16],
+  "antlers": [52.15, 66.32],
+  "lannisport": [15.65, 69.73],
+  "hayford": [47.72, 70.14],
+  "duskendale": [69.43, 70.42],
+  "kings-landing": [54.41, 75.93],
+  "crakehall": [13.31, 74.84],
+  "golden-tooth": [26.0, 76.82],
+  "haystack-hall": [62.58, 76.26],
+  "evenfall-hall": [71.3, 78.0],
+  "storms-end": [66.32, 79.14],
+  "old-oak": [15.02, 79.46],
+  "bronzegate": [58.15, 76.95],
+  "cider-hall": [35.42, 79.26],
+  "ashford": [39.62, 80.88],
+  "longtable": [33.39, 81.41],
+  "rains-of-summerhall": [50.91, 82.3],
+  "griffins-roost": [58.23, 82.74],
+  "rain-house": [70.6, 82.42],
+  "harvest-hall": [42.58, 82.05],
+  "mistwood": [65.39, 84.57],
+  "blackhaven": [49.12, 85.95],
+  "brightwater-keep": [17.59, 85.62],
+  "highgarden": [24.52, 84.65],
+  "starpike": [33.0, 85.54],
+  "crows-nest": [60.95, 83.51],
+  "stonehelm": [55.19, 84.65],
+  "honeyholt": [19.38, 87.49],
+  "horn-hill": [26.78, 87.93],
+  "tower-of-joy": [35.73, 86.92],
+  "weeping-town": [66.87, 86.72],
+  "oldtown": [16.35, 90.49],
+  "oldtown-uplands": [22.11, 89.15],
+  "blackmont": [30.59, 89.88],
+  "yronwood": [45.15, 89.88],
+  "three-towers": [11.21, 91.3],
+  "blackcrown": [13.93, 92.68],
+  "starfall": [28.1, 93.36],
+  "skyreach": [38.84, 93.12],
+  "the-tor": [59.24, 93.85],
+  "ghost-hill": [68.66, 91.5],
+  "spottswood": [77.3, 91.34],
+  "sandstone": [34.56, 95.39],
+  "hellholt": [42.42, 95.35],
+  "vaith": [55.89, 94.86],
+  "godsgrace": [68.34, 95.51],
+  "sunspear": [78.23, 91.74],
+  "saltshore": [60.02, 96.49],
+  "lemonwood": [71.85, 93.16],
+  "sunhouse": [22.11, 95.59],
+};
+
+const castles = [...coreCastles, ...extraCastles].map((castle) => {
+  const position = markerPositionOverrides[castle.id];
+  return position ? { ...castle, left: position[0], top: position[1] } : castle;
+});
 
 const initialThreads = [
   {
@@ -1895,7 +1998,7 @@ export default function MapPage() {
                       }}
                       onMouseEnter={() => setHoveredCastleId(castle.id)}
                       onMouseLeave={() => setHoveredCastleId(null)}
-                      className="absolute z-10 flex h-7 w-7 items-center justify-center rounded-full"
+                      className="absolute z-10 flex h-10 w-10 items-center justify-center rounded-full"
                       style={{
                         left: pct(castle.left),
                         top: pct(castle.top),
@@ -1904,12 +2007,12 @@ export default function MapPage() {
                       }}
                     >
                       <span
-                        className={`block h-[11px] w-[11px] rounded-full transition ${
+                        className={`block h-6 w-6 rounded-full transition ${
                           hovered
-                            ? "border border-stone-100 bg-red-950/35 shadow-[0_0_9px_rgba(229,231,235,0.85)]"
+                            ? "border-2 border-stone-100 bg-red-950/45 shadow-[0_0_12px_rgba(229,231,235,0.9)]"
                             : owned
-                              ? "border border-stone-100 bg-emerald-950/35 shadow-[0_0_8px_rgba(16,185,129,0.75)]"
-                              : "border border-transparent bg-transparent"
+                              ? "border-2 border-stone-100 bg-emerald-950/35 shadow-[0_0_8px_rgba(16,185,129,0.75)]"
+                              : "border border-stone-950/40 bg-black/5 shadow-[0_0_4px_rgba(255,255,255,0.2)]"
                         }`}
                         style={{ backgroundColor: owned ? houseSigil.color : undefined }}
                       />
