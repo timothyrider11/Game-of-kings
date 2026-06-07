@@ -25,6 +25,14 @@ const tinctures = [
   ["Old Bone", "#d1c7b5", "Relics, vows, and ancient claims."],
   ["Soot Brown", "#241b16", "Forge smoke and burned timber."],
   ["Candle Gold", "#8a6d3b", "Wealth without looking bright or modern."],
+  ["Tarnished Brass", "#6f5a2f", "Old hall fixtures and quiet money."],
+  ["Oxidized Copper", "#315d55", "Sea air, age, and green-blue metal."],
+  ["Dried Rose", "#6b2635", "Courtly color without brightness."],
+  ["Deep Plum", "#25182d", "Old blood, secrets, and night courts."],
+  ["Frost Grey", "#8d9693", "Cold stone and northern mornings."],
+  ["Smoke White", "#d8d2c4", "Pale cloth, ash, and old vows."],
+  ["River Slate", "#273541", "Wet stone and river crossings."],
+  ["Pine Black", "#101f19", "Dark forests and old green roads."],
 ];
 
 const fieldLayouts = [
@@ -58,16 +66,21 @@ const shieldShapes = [
 
 const charges = [
   ["wolf", "Wolf", "Loyal, cold, watchful, and dangerous in packs."],
+  ["direwolf", "Direwolf", "Ancient northern strength, loyalty, and fearsome family bonds."],
   ["lion", "Lion", "Pride, command, wealth, and open power."],
   ["dragon", "Dragon", "Fire, conquest, old magic, and royal ambition."],
+  ["griffin", "Griffin", "Watchful courage, high pride, and stormland nobility."],
   ["kraken", "Kraken", "Sea raids, deep grudges, and coastal terror."],
   ["stag", "Stag", "Storm kings, endurance, and lawful rule."],
   ["falcon", "Falcon", "Mountain sight, precision, and noble distance."],
+  ["eagle", "Eagle", "High command, long sight, and hard-won freedom."],
   ["raven", "Raven", "Secrets, messages, omens, and memory."],
   ["bear", "Bear", "Raw strength, patience, and brutal defense."],
   ["horse", "Horse", "Speed, cavalry, open roads, and messengers."],
   ["serpent", "Serpent", "Cunning, poison, survival, and hidden strikes."],
   ["boar", "Boar", "Ferocity, stubborn charges, and hard survival."],
+  ["bull", "Bull", "Strength, stubborn rule, and battlefield force."],
+  ["ram", "Ram", "Mountain endurance, sieges, and headlong courage."],
   ["rose", "Rose", "Courtly beauty, wealth, and soft power."],
   ["sun", "Sun", "Desert pride, warmth, and royal confidence."],
   ["moon", "Moon", "Night vows, mystery, and quiet influence."],
@@ -210,6 +223,7 @@ export default function HouseFounderPage() {
   const [sigil, setSigil] = useState(defaultSigil);
   const [selectedLayerId, setSelectedLayerId] = useState(defaultSigil.layers[0].id);
   const [savedMessage, setSavedMessage] = useState("");
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const background = useMemo(() => getFieldBackground(sigil), [sigil]);
   const layers = sigil.layers?.length ? sigil.layers : defaultSigil.layers;
@@ -218,8 +232,36 @@ export default function HouseFounderPage() {
   const selectedField = getById(fieldLayouts, sigil.field);
 
   useEffect(() => {
+    if (!hasLoaded) return;
+
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return;
+    const current = stored ? JSON.parse(stored) : {};
+    const chargeName = getById(charges, selectedLayer.charge)[1];
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        ...current,
+        houseName: houseName.trim(),
+        houseMotto: houseMotto.trim(),
+        rulerTitle,
+        rulerName: rulerName.trim(),
+        houseSigil: {
+          ...sigil,
+          name: chargeName,
+          description: selectedCharge[2],
+          fieldDescription: selectedField[2],
+        },
+      })
+    );
+  }, [hasLoaded, houseName, houseMotto, rulerName, rulerTitle, selectedCharge, selectedField, selectedLayer.charge, sigil]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      setHasLoaded(true);
+      return;
+    }
 
     try {
       const data = JSON.parse(stored);
@@ -235,6 +277,7 @@ export default function HouseFounderPage() {
     } catch {
       localStorage.removeItem(STORAGE_KEY);
     }
+    setHasLoaded(true);
   }, []);
 
   async function saveHouse() {
@@ -260,10 +303,10 @@ export default function HouseFounderPage() {
     const { error } = await saveCloudRealm(nextRealm);
     setSavedMessage(
       error && !error.includes("Not signed in")
-        ? `House saved locally. Cloud save needs attention: ${error}`
+        ? `House updated locally. Account update needs attention: ${error}`
         : error
-          ? "House saved locally. Sign in on the Account page to save it to your account."
-          : "House saved to this device and your account."
+          ? "House updated locally. Sign in on the Account page to update it to your account."
+          : "House updated on this device and your account."
     );
   }
 
@@ -329,7 +372,7 @@ export default function HouseFounderPage() {
           </h1>
           <p className="gok-copy relative z-10 mt-4 max-w-full text-sm leading-6">
             Build a custom sigil with shield fields, colors, emblem objects, size, position, stretch, and rotation.
-            This is the mark players will remember when your house enters the realm.
+            This is the mark players will remember when your house enters the realm. Changes auto-save to this device, and Update writes them to your account when signed in.
           </p>
 
           <div className="relative z-10 mt-5 space-y-3">
@@ -378,7 +421,7 @@ export default function HouseFounderPage() {
             disabled={!houseName.trim() || !rulerName.trim()}
             className="gok-btn gok-btn-blood relative z-10 mt-5 w-full px-5 py-3 disabled:cursor-not-allowed disabled:opacity-45"
           >
-            Save House
+            Update House
           </button>
           {savedMessage && <p className="relative z-10 mt-3 text-sm font-bold text-[var(--gok-parchment)]">{savedMessage}</p>}
           <Link href="/map" className="gok-btn relative z-10 mt-3 flex w-full px-5 py-3">
@@ -429,7 +472,7 @@ export default function HouseFounderPage() {
                       <button
                         key={id}
                         onClick={() => updateSelectedLayer("charge", id)}
-                        className={`border px-2 py-2 text-xs font-bold transition ${
+                        className={`min-h-[4.7rem] overflow-hidden border px-1.5 py-2 text-[0.68rem] font-bold leading-tight transition ${
                           selectedLayer.charge === id
                             ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
                             : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
@@ -439,7 +482,7 @@ export default function HouseFounderPage() {
                         <span className="mx-auto mb-1 block h-8 w-8">
                           <ChargeIcon type={id} color="currentColor" />
                         </span>
-                        {label}
+                        <span className="block break-words text-center">{label}</span>
                       </button>
                     ))}
                   </div>
@@ -628,16 +671,21 @@ function ChargeIcon({ type, color }) {
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true" className="h-full w-full overflow-visible">
       {type === "wolf" && <path {...common} d="M10 58 L25 24 L38 38 L50 14 L61 38 L79 24 L71 50 L91 72 L67 68 L55 91 L45 70 L20 78 Z" />}
+      {type === "direwolf" && <path {...common} d="M7 61 L19 30 L32 39 L41 18 L50 36 L60 18 L69 39 L82 30 L74 58 L94 70 L72 72 L62 91 L50 75 L38 91 L28 72 L6 70 Z" />}
       {type === "lion" && <path {...common} d="M22 73 L30 45 L18 30 L36 31 L43 12 L52 30 L70 16 L68 38 L88 45 L69 55 L74 82 L55 68 L38 89 L39 65 Z" />}
       {type === "dragon" && <path {...common} d="M8 62 C22 27 46 40 50 17 L65 35 L91 20 L78 50 L92 68 L66 66 L56 91 L43 70 C30 79 16 76 8 62 Z" />}
+      {type === "griffin" && <path {...common} d="M12 68 C23 30 51 40 54 16 L66 33 L88 26 L75 45 L88 61 L67 60 L58 86 L45 66 L25 82 L31 60 Z" />}
       {type === "kraken" && <path {...common} d="M50 9 C70 9 80 25 70 42 C88 45 93 62 82 77 C75 61 63 61 56 72 L63 95 L50 82 L37 95 L44 72 C37 61 25 61 18 77 C7 62 12 45 30 42 C20 25 30 9 50 9 Z" />}
       {type === "stag" && <path {...common} d="M34 91 L42 58 L27 45 L11 55 L23 34 L8 17 L31 26 L36 7 L45 30 H55 L64 7 L69 26 L92 17 L77 34 L89 55 L73 45 L58 58 L66 91 L50 76 Z" />}
       {type === "falcon" && <path {...common} d="M6 55 C27 24 44 18 50 42 C56 18 73 24 94 55 C74 51 60 57 54 76 L50 94 L46 76 C40 57 26 51 6 55 Z" />}
+      {type === "eagle" && <path {...common} d="M5 50 C25 20 42 19 50 39 C58 19 75 20 95 50 C76 49 65 57 58 73 L50 94 L42 73 C35 57 24 49 5 50 Z M40 42 L50 31 L60 42 L50 49 Z" />}
       {type === "raven" && <path {...common} d="M15 55 C37 18 66 20 84 49 L97 48 L86 60 C80 76 61 87 40 79 L18 93 L28 70 C18 65 12 61 15 55 Z" />}
       {type === "bear" && <path {...common} d="M22 24 L34 13 L44 24 H56 L66 13 L79 24 L80 58 C78 80 63 91 50 91 C37 91 22 80 20 58 Z" />}
       {type === "horse" && <path {...common} d="M26 91 L34 56 L24 45 L30 20 L54 12 L75 28 L66 49 L79 66 L66 91 L58 64 L43 59 L39 91 Z" />}
       {type === "serpent" && <path {...common} d="M67 13 C36 14 26 36 48 46 C72 57 63 80 30 85 L20 70 C49 72 52 60 35 53 C8 41 25 11 67 13 Z M68 13 L88 21 L68 31 Z" />}
       {type === "boar" && <path {...common} d="M15 60 C20 34 47 26 72 35 L88 26 L83 47 L94 61 L78 66 L68 84 L58 68 L34 72 L22 89 L21 69 Z" />}
+      {type === "bull" && <path {...common} d="M20 34 C23 15 38 10 45 28 H55 C62 10 77 15 80 34 L67 28 L71 56 C70 77 60 91 50 91 C40 91 30 77 29 56 L33 28 Z" />}
+      {type === "ram" && <path {...common} d="M20 44 C8 28 23 10 40 22 C46 8 61 8 67 22 C84 10 99 28 86 44 C78 32 65 35 66 50 C66 74 58 90 50 90 C42 90 34 74 34 50 C35 35 22 32 20 44 Z" />}
       {type === "rose" && (
         <>
           <circle {...common} cx="50" cy="50" r="13" />

@@ -165,10 +165,10 @@ export default function AccountPage() {
         <div className="gok-panel p-5">
           <p className="gok-eyebrow">Realm Account</p>
           <h1 className="mt-3 text-4xl uppercase tracking-[0.08em] text-[var(--gok-silver)]">
-            Save your house.
+            Keep your house.
           </h1>
           <p className="gok-copy mt-4 text-sm leading-6">
-            Sign in to keep your castle, house, gold, renown, sigil, and event progress across devices.
+            Sign in so your castle, house, gold, renown, sigil, and event progress follow your account across devices.
           </p>
 
           {message && (
@@ -269,7 +269,7 @@ export default function AccountPage() {
                   </div>
                   <div>
                     <p className="text-xl text-[var(--gok-silver)]">{user.email}</p>
-                    <p className="text-sm text-[var(--gok-dim)]">Verified houses save progress across the realm.</p>
+                    <p className="text-sm text-[var(--gok-dim)]">Verified houses keep progress across the realm.</p>
                   </div>
                 </div>
               </div>
@@ -307,13 +307,13 @@ export default function AccountPage() {
                   className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-4 outline-none focus:border-[var(--gok-line-strong)] md:col-span-3"
                 />
                 <button disabled={busy} className="gok-btn min-h-12 px-4 py-3 disabled:opacity-50 md:col-span-3">
-                  Save Profile
+                  Update Profile
                 </button>
               </form>
 
               <div className="grid gap-3 md:grid-cols-3">
                 <button onClick={saveLocalToCloud} disabled={busy} className="gok-btn gok-btn-blood min-h-12 px-4 py-3 disabled:opacity-50">
-                  Save Realm To Account
+                  Update Account Realm
                 </button>
                 <button onClick={loadCloudToLocal} disabled={busy} className="gok-btn min-h-12 px-4 py-3 disabled:opacity-50">
                   Load Account Realm

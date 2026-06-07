@@ -75,6 +75,8 @@ export default function HomePage() {
       .filter(Boolean)
       .slice(0, 6);
   }, [activities, currentTime]);
+  const waxColor = realm.houseSigil?.color || "#5e1114";
+  const waxInitial = realm.houseName ? realm.houseName.slice(0, 1).toUpperCase() : "G";
 
   return (
     <main className="gok-page">
@@ -147,7 +149,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <aside className="gok-panel p-5 md:p-6 lg:mt-14">
+          <aside className="gok-panel gok-activity-panel p-5 md:p-6 lg:mt-14">
             <div className="relative z-10 flex items-start justify-between gap-4">
               <div>
                 <p className="gok-eyebrow text-[0.68rem]">Live Realm</p>
@@ -187,6 +189,10 @@ export default function HomePage() {
               <span className="gok-shield" />
               Clock In For Points
             </Link>
+
+            <div className="gok-wax-seal" style={{ backgroundColor: waxColor }}>
+              <span>{waxInitial}</span>
+            </div>
 
             <div className="relative z-10 mt-5 border border-[rgba(196,193,184,0.13)] bg-black/25 p-4">
               <p className="gok-eyebrow text-[0.62rem]">Who&apos;s In The Realm</p>

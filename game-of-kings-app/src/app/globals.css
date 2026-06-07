@@ -290,6 +290,73 @@ button {
   scrollbar-width: thin;
 }
 
+.gok-activity-panel {
+  background:
+    radial-gradient(circle at 30% 12%, rgba(174, 158, 121, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(23, 20, 17, 0.98), rgba(7, 7, 6, 0.98));
+}
+
+.gok-activity-panel .gok-activity-scroll {
+  border-color: rgba(122, 106, 76, 0.34);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018), transparent 9%, transparent 91%, rgba(255, 255, 255, 0.018)),
+    repeating-linear-gradient(0deg, rgba(126, 111, 79, 0.055) 0 1px, transparent 1px 6px),
+    linear-gradient(180deg, rgba(42, 34, 25, 0.92), rgba(13, 10, 8, 0.95));
+  box-shadow:
+    inset 0 0 24px rgba(0, 0, 0, 0.72),
+    inset 0 0 0 1px rgba(212, 199, 164, 0.06);
+}
+
+.gok-activity-panel .gok-activity-scroll article {
+  background:
+    linear-gradient(180deg, rgba(17, 14, 10, 0.68), rgba(0, 0, 0, 0.18));
+}
+
+.gok-wax-seal {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  height: 4rem;
+  width: 4rem;
+  align-items: center;
+  justify-content: center;
+  margin: 1.1rem auto 0;
+  border-radius: 999px;
+  color: rgba(235, 229, 213, 0.82);
+  font-size: 1.35rem;
+  font-weight: 700;
+  text-shadow: 0 1px 2px #000;
+  box-shadow:
+    inset 0 4px 9px rgba(255, 255, 255, 0.16),
+    inset 0 -10px 16px rgba(0, 0, 0, 0.42),
+    0 8px 20px rgba(0, 0, 0, 0.55);
+}
+
+.gok-wax-seal::before {
+  content: "";
+  position: absolute;
+  inset: -0.35rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.12), transparent 18%),
+    radial-gradient(circle at 80% 25%, rgba(0, 0, 0, 0.26), transparent 19%),
+    radial-gradient(circle at 32% 92%, rgba(0, 0, 0, 0.22), transparent 18%);
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.gok-wax-seal span {
+  position: relative;
+  display: flex;
+  height: 2.45rem;
+  width: 2.45rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(235, 229, 213, 0.32);
+  border-radius: 999px;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.45);
+}
+
 .gok-activity-scroll::-webkit-scrollbar {
   width: 0.6rem;
 }

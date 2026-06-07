@@ -1276,6 +1276,74 @@ const eventTemplates = [
   "The war table refreshed active campaigns and pending upgrades.",
 ];
 
+const banditRaidTemplates = [
+  {
+    id: "kingsroad-cutpurses",
+    title: "Cutpurses On The Kingsroad",
+    place: "a muddy kingsroad inn",
+    threat: "a band of knife-men has been robbing ravens and toll wagons after dusk",
+    rewardGold: 70,
+    rewardRenown: 8,
+    troopCost: 18,
+    success:
+      "Your riders caught the thieves under a broken milepost. Two surrendered when the house banner came through the rain.",
+    failure:
+      "The bandits scattered into the tree line before your men closed the road. A few horses were lost in the chase.",
+  },
+  {
+    id: "moonlit-camp",
+    title: "Moonlit Camp In The Pines",
+    place: "a pine hollow beyond the nearest village",
+    threat: "camp smoke and stolen sheep point to raiders hiding off the road",
+    rewardGold: 95,
+    rewardRenown: 11,
+    troopCost: 26,
+    success:
+      "Your scouts circled the hollow and struck before sunrise. The stolen goods were returned beneath your sigil.",
+    failure:
+      "The camp was a decoy. Your patrol found cold ashes and spring traps set in the brush.",
+  },
+  {
+    id: "bridge-toll",
+    title: "False Toll At The Bridge",
+    place: "a narrow stone bridge",
+    threat: "armed men are charging peasants under a stolen banner",
+    rewardGold: 120,
+    rewardRenown: 14,
+    troopCost: 34,
+    success:
+      "Your captain tore down the stolen banner and broke the toll gang in a shield rush.",
+    failure:
+      "The gang fired the bridge carts and fled through the smoke. The road is open, but repairs cost blood and coin.",
+  },
+  {
+    id: "graveyard-lanterns",
+    title: "Lanterns At The Old Graveyard",
+    place: "a ruined graveyard beside a sept road",
+    threat: "grave robbers are selling heirlooms and stirring fear in the villages",
+    rewardGold: 85,
+    rewardRenown: 12,
+    troopCost: 22,
+    success:
+      "The grave robbers were found by lanternlight with silver still in their sacks. Your house restored the dead their peace.",
+    failure:
+      "A storm rolled in and swallowed the trail. Your patrol returned with wet cloaks and little else.",
+  },
+  {
+    id: "salt-smugglers",
+    title: "Smugglers In The Salt Reeds",
+    place: "a reed-choked creek",
+    threat: "smugglers are moving stolen blades by skiff before dawn",
+    rewardGold: 145,
+    rewardRenown: 16,
+    troopCost: 40,
+    success:
+      "Your men dragged three skiffs from the reeds and found enough steel to arm a watch post.",
+    failure:
+      "The smugglers cut their ropes and vanished with the tide. One patrol boat was left gutted in the mud.",
+  },
+];
+
 function createEmptyGallery() {
   return galleryTypes.reduce((gallery, [key]) => ({ ...gallery, [key]: [] }), {});
 }
@@ -1414,6 +1482,7 @@ export default function MapPage() {
   const [completedQuizzes, setCompletedQuizzes] = useState([]);
   const [artifactInventory, setArtifactInventory] = useState([]);
   const [joinedTournaments, setJoinedTournaments] = useState([]);
+  const [raidHistory, setRaidHistory] = useState([]);
   const lastCloudSaveRef = useRef(0);
 
   const selectedCastle = useMemo(
@@ -1450,6 +1519,17 @@ export default function MapPage() {
     (total, castle) => total + castle.wealth * 18 + Math.floor(castle.population / 2000),
     0
   );
+  const raidCycle = Math.floor(now / (60 * MINUTE));
+  const activeRaids = useMemo(() => {
+    const start = raidCycle % banditRaidTemplates.length;
+    return [0, 1, 2].map((offset) => {
+      const raid = banditRaidTemplates[(start + offset) % banditRaidTemplates.length];
+      return {
+        ...raid,
+        instanceId: `${raid.id}-${raidCycle}`,
+      };
+    });
+  }, [raidCycle]);
 
   const filteredThreads = useMemo(() => {
     const query = forumSearch.trim().toLowerCase();
@@ -1484,6 +1564,7 @@ export default function MapPage() {
     setCompletedQuizzes(data.completedQuizzes || []);
     setArtifactInventory(data.artifactInventory || []);
     setJoinedTournaments(data.joinedTournaments || []);
+    setRaidHistory(data.raidHistory || []);
     setSelectedCastleId(data.selectedCastleId || "winterfell");
   }
 
@@ -1558,6 +1639,7 @@ export default function MapPage() {
       completedQuizzes,
       artifactInventory,
       joinedTournaments,
+      raidHistory,
       selectedCastleId,
     };
 
@@ -1582,6 +1664,7 @@ export default function MapPage() {
     lastResolvedAt,
     now,
     renown,
+    raidHistory,
     rulerName,
     rulerTitle,
     selectedCastleId,
@@ -1747,6 +1830,65 @@ export default function MapPage() {
       type: "check-in",
       title: "A House Answered The Realm Clock",
       body: "+100 gold and +10 renown were recorded. The next raven unlocks after 24 hours.",
+    });
+  }
+
+  function runBanditRaid(raid) {
+    const seat = playerCastles[0];
+    if (!houseName.trim() || !seat) {
+      addEvent("Found your house and claim a castle before sending riders after bandits.", "raid");
+      return;
+    }
+
+    const seatState = castleState[seat.id];
+    if (!seatState || seatState.troops <= raid.troopCost + 25) {
+      addEvent(`${seat.name} needs more troops before risking a raid against ${raid.title}.`, "raid");
+      return;
+    }
+
+    if (raidHistory.some((entry) => entry.instanceId === raid.instanceId)) {
+      addEvent(`${raid.title} has already been answered by your house this hour.`, "raid");
+      return;
+    }
+
+    const roll = Math.random();
+    const successChance = Math.min(0.82, 0.48 + seatState.troops / 2600 + renown / 12000);
+    const succeeded = roll <= successChance;
+    const goldReward = succeeded ? raid.rewardGold : Math.floor(raid.rewardGold * 0.22);
+    const renownReward = succeeded ? raid.rewardRenown : 2;
+    const troopsLost = succeeded ? Math.ceil(raid.troopCost * 0.55) : raid.troopCost;
+    const story = succeeded ? raid.success : raid.failure;
+    const resultTitle = succeeded ? `${raid.title} Broken` : `${raid.title} Slipped Away`;
+
+    setCastleState((current) => ({
+      ...current,
+      [seat.id]: {
+        ...current[seat.id],
+        troops: Math.max(1, current[seat.id].troops - troopsLost),
+      },
+    }));
+    setGold((current) => current + goldReward);
+    setRenown((current) => current + renownReward);
+    setRaidHistory((current) =>
+      [
+        {
+          instanceId: raid.instanceId,
+          title: raid.title,
+          succeeded,
+          story,
+          goldReward,
+          renownReward,
+          troopsLost,
+          at: new Date(now).toISOString(),
+        },
+        ...current,
+      ].slice(0, 25)
+    );
+    addEvent(`${resultTitle}: ${story} Reward: ${goldReward} gold, ${renownReward} renown. Troops lost: ${troopsLost}.`, "raid");
+    logPublicActivity({
+      type: "raid",
+      title: resultTitle,
+      body: `${story} House ${houseName} gained ${goldReward} gold and ${renownReward} renown from ${seat.name}.`,
     });
   }
 
@@ -1952,6 +2094,7 @@ export default function MapPage() {
     setCompletedQuizzes([]);
     setArtifactInventory([]);
     setJoinedTournaments([]);
+    setRaidHistory([]);
   }
 
   const directTargets = selectedCastle.neighbors
@@ -2190,6 +2333,53 @@ export default function MapPage() {
                 Reset Local Realm
               </button>
             </div>
+          </Panel>
+
+          <Panel>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-red-300">Live Raid Notices</p>
+                <h2 className="mt-2 text-2xl font-black">Bandit Camps</h2>
+              </div>
+              <span className="rounded border border-stone-700 bg-black px-2 py-1 text-xs font-black text-stone-400">
+                rotates hourly
+              </span>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-stone-400">
+              Ride out for instant story results, gold, and renown. No turns, no waiting.
+            </p>
+            <div className="mt-4 space-y-3">
+              {activeRaids.map((raid) => {
+                const completed = raidHistory.some((entry) => entry.instanceId === raid.instanceId);
+                return (
+                  <div key={raid.instanceId} className="border border-stone-800 bg-black p-3">
+                    <h3 className="font-black text-stone-100">{raid.title}</h3>
+                    <p className="mt-1 text-xs uppercase tracking-[0.14em] text-stone-500">{raid.place}</p>
+                    <p className="mt-2 text-sm leading-6 text-stone-400">{raid.threat}.</p>
+                    <p className="mt-2 text-xs font-bold text-stone-500">
+                      Reward: {raid.rewardGold} gold / {raid.rewardRenown} renown. Risk: about {raid.troopCost} troops.
+                    </p>
+                    <button
+                      onClick={() => runBanditRaid(raid)}
+                      disabled={completed || !houseName || playerCastles.length === 0}
+                      className="mt-3 min-h-10 w-full rounded-md border border-red-900/70 bg-red-950/45 px-3 py-2 text-xs font-black text-red-100 transition hover:border-red-400 disabled:cursor-not-allowed disabled:border-stone-800 disabled:bg-stone-950 disabled:text-stone-600"
+                    >
+                      {completed ? "Answered" : "Ride Out"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            {raidHistory.length > 0 && (
+              <div className="mt-4 max-h-44 overflow-y-auto border border-stone-800 bg-black/60 p-3">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-stone-500">Recent Raid Chronicle</p>
+                {raidHistory.slice(0, 4).map((raid) => (
+                  <p key={raid.instanceId} className="mt-2 text-sm leading-6 text-stone-400">
+                    <span className="font-black text-stone-200">{raid.title}:</span> {raid.story}
+                  </p>
+                ))}
+              </div>
+            )}
           </Panel>
 
           <Panel>
