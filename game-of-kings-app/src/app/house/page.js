@@ -80,6 +80,12 @@ const charges = [
   ["chalice", "Chalice", "Faith, feasts, poison, or old ceremony."],
   ["key", "Key", "Gatekeepers, secrets, and castle authority."],
   ["flame", "Flame", "Zeal, danger, and restless ambition."],
+  ["fish", "Fish", "Rivers, trade, patience, and old family currents."],
+  ["hammer", "Hammer", "Smiths, builders, siege work, and blunt force."],
+  ["castle", "Castle", "Fortified rule, landholding, and stubborn defense."],
+  ["hand", "Hand", "Service, loyalty, law, and trusted counsel."],
+  ["leaf", "Leaf", "Growth, harvest, healing, and old green places."],
+  ["skull", "Skull", "Fear, mortality, vengeance, and grim warnings."],
 ];
 
 const defaultSigil = {
@@ -96,6 +102,19 @@ const defaultSigil = {
   chargeRotate: 0,
   chargeStretch: 100,
   border: "#68716f",
+  layers: [
+    {
+      id: "layer-1",
+      charge: "wolf",
+      color: "#68716f",
+      size: 58,
+      x: 50,
+      y: 50,
+      rotate: 0,
+      stretch: 100,
+      opacity: 100,
+    },
+  ],
 };
 
 function getById(list, id) {
@@ -151,14 +170,48 @@ function updateSigilValue(setSigil, key, value) {
   }));
 }
 
+function createLayer(charge = "wolf", color = "#68716f") {
+  return {
+    id: `layer-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    charge,
+    color,
+    size: 58,
+    x: 50,
+    y: 50,
+    rotate: 0,
+    stretch: 100,
+    opacity: 100,
+  };
+}
+
+function normalizeSigil(savedSigil = {}) {
+  const fallbackLayer = createLayer(
+    savedSigil.charge || savedSigil.name?.toLowerCase() || defaultSigil.charge,
+    savedSigil.border || defaultSigil.border
+  );
+
+  return {
+    ...defaultSigil,
+    ...savedSigil,
+    charge: savedSigil.charge || savedSigil.name?.toLowerCase() || defaultSigil.charge,
+    name: savedSigil.name || defaultSigil.name,
+    color: savedSigil.color || defaultSigil.color,
+    secondary: savedSigil.secondary || defaultSigil.secondary,
+    layers: Array.isArray(savedSigil.layers) && savedSigil.layers.length ? savedSigil.layers : [fallbackLayer],
+  };
+}
+
 export default function HouseFounderPage() {
   const [houseName, setHouseName] = useState("");
   const [houseMotto, setHouseMotto] = useState("");
   const [sigil, setSigil] = useState(defaultSigil);
+  const [selectedLayerId, setSelectedLayerId] = useState(defaultSigil.layers[0].id);
   const [savedMessage, setSavedMessage] = useState("");
 
   const background = useMemo(() => getFieldBackground(sigil), [sigil]);
-  const selectedCharge = getById(charges, sigil.charge);
+  const layers = sigil.layers?.length ? sigil.layers : defaultSigil.layers;
+  const selectedLayer = layers.find((layer) => layer.id === selectedLayerId) || layers[0];
+  const selectedCharge = getById(charges, selectedLayer.charge);
   const selectedField = getById(fieldLayouts, sigil.field);
 
   useEffect(() => {
@@ -171,14 +224,9 @@ export default function HouseFounderPage() {
 
       setHouseName(data.houseName || "");
       setHouseMotto(data.houseMotto || "");
-      setSigil({
-        ...defaultSigil,
-        ...savedSigil,
-        charge: savedSigil.charge || savedSigil.name?.toLowerCase() || defaultSigil.charge,
-        name: savedSigil.name || defaultSigil.name,
-        color: savedSigil.color || defaultSigil.color,
-        secondary: savedSigil.secondary || defaultSigil.secondary,
-      });
+      const normalized = normalizeSigil(savedSigil);
+      setSigil(normalized);
+      setSelectedLayerId(normalized.layers[0].id);
     } catch {
       localStorage.removeItem(STORAGE_KEY);
     }
@@ -187,7 +235,7 @@ export default function HouseFounderPage() {
   function saveHouse() {
     const stored = localStorage.getItem(STORAGE_KEY);
     const current = stored ? JSON.parse(stored) : {};
-    const chargeName = getById(charges, sigil.charge)[1];
+    const chargeName = getById(charges, selectedLayer.charge)[1];
 
     localStorage.setItem(
       STORAGE_KEY,
@@ -204,6 +252,39 @@ export default function HouseFounderPage() {
       })
     );
     setSavedMessage("House saved. Your sigil is ready for the realm.");
+  }
+
+  function updateSelectedLayer(key, value) {
+    setSigil((current) => ({
+      ...current,
+      layers: current.layers.map((layer) =>
+        layer.id === selectedLayer.id ? { ...layer, [key]: value } : layer
+      ),
+    }));
+  }
+
+  function addLayer(charge = "crown") {
+    const nextLayer = createLayer(charge, sigil.border);
+    setSigil((current) => ({ ...current, layers: [...current.layers, nextLayer] }));
+    setSelectedLayerId(nextLayer.id);
+  }
+
+  function duplicateLayer() {
+    const nextLayer = {
+      ...selectedLayer,
+      id: `layer-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      x: Math.min(88, selectedLayer.x + 5),
+      y: Math.min(86, selectedLayer.y + 5),
+    };
+    setSigil((current) => ({ ...current, layers: [...current.layers, nextLayer] }));
+    setSelectedLayerId(nextLayer.id);
+  }
+
+  function removeLayer() {
+    if (layers.length <= 1) return;
+    const nextLayers = layers.filter((layer) => layer.id !== selectedLayer.id);
+    setSigil((current) => ({ ...current, layers: nextLayers }));
+    setSelectedLayerId(nextLayers[0].id);
   }
 
   return (
@@ -224,10 +305,10 @@ export default function HouseFounderPage() {
         </div>
       </nav>
 
-      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-6 lg:grid-cols-[390px_minmax(0,1fr)]">
-        <div className="gok-panel min-w-0 p-5">
+      <section className="mx-auto grid max-w-[1800px] gap-4 px-4 py-4 2xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="gok-panel min-w-0 p-4">
           <p className="gok-eyebrow relative z-10">House Founder</p>
-          <h1 className="relative z-10 mt-3 text-4xl font-normal uppercase tracking-[0.08em] text-[var(--gok-silver)]">
+          <h1 className="relative z-10 mt-3 text-3xl font-normal uppercase tracking-[0.08em] text-[var(--gok-silver)]">
             Forge your house.
           </h1>
           <p className="gok-copy relative z-10 mt-4 max-w-full text-sm leading-6">
@@ -270,7 +351,7 @@ export default function HouseFounderPage() {
           </Link>
         </div>
 
-        <div className="gok-panel min-w-0 p-5">
+        <div className="gok-panel min-w-0 p-4">
           <div className="relative z-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="gok-eyebrow">Sigil Generator</p>
@@ -283,68 +364,106 @@ export default function HouseFounderPage() {
             </p>
           </div>
 
-          <div className="relative z-10 mt-6 grid min-w-0 gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
-            <div className="min-w-0">
-              <SigilPreview sigil={sigil} background={background} />
+          <div className="relative z-10 mt-5 grid min-w-0 gap-5 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
+            <div className="min-w-0 xl:sticky xl:top-4 xl:self-start">
+              <SigilPreview sigil={sigil} background={background} layers={layers} />
               <div className="mt-4 text-center">
                 <h3 className="text-2xl font-normal text-[var(--gok-silver)]">House {houseName || "Unnamed"}</h3>
                 <p className="mt-1 text-[var(--gok-dim)]">&quot;{houseMotto || "Our Words"}&quot;</p>
               </div>
             </div>
 
-            <div className="min-w-0 space-y-6">
-              <ControlBlock title="Shield Fields">
-                <OptionGrid options={fieldLayouts} value={sigil.field} onChange={(value) => updateSigilValue(setSigil, "field", value)} />
-              </ControlBlock>
+            <div className="grid min-w-0 gap-4 2xl:grid-cols-[minmax(0,1fr)_360px]">
+              <div className="min-w-0 space-y-4">
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <ControlBlock title="Shield Fields">
+                    <OptionGrid options={fieldLayouts} value={sigil.field} onChange={(value) => updateSigilValue(setSigil, "field", value)} />
+                  </ControlBlock>
 
-              <ControlBlock title="Shield Shape">
-                <OptionGrid options={shieldShapes} value={sigil.shield} onChange={(value) => updateSigilValue(setSigil, "shield", value)} />
-              </ControlBlock>
-
-              <ControlBlock title="Emblem Objects">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-                  {charges.map(([id, label, description]) => (
-                    <button
-                      key={id}
-                      onClick={() => updateSigilValue(setSigil, "charge", id)}
-                      className={`border px-3 py-3 text-sm font-bold transition ${
-                        sigil.charge === id
-                          ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
-                          : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
-                      }`}
-                      title={description}
-                    >
-                      <span className="mx-auto mb-2 block h-10 w-10">
-                        <ChargeIcon type={id} color="currentColor" />
-                      </span>
-                      {label}
-                    </button>
-                  ))}
+                  <ControlBlock title="Shield Shape">
+                    <OptionGrid options={shieldShapes} value={sigil.shield} onChange={(value) => updateSigilValue(setSigil, "shield", value)} />
+                  </ControlBlock>
                 </div>
-              </ControlBlock>
 
-              <div className="grid gap-5 lg:grid-cols-2">
-                <ColorPicker title="Primary Field" selected={sigil.color} onPick={(value) => updateSigilValue(setSigil, "color", value)} />
-                <ColorPicker title="Secondary Field" selected={sigil.secondary} onPick={(value) => updateSigilValue(setSigil, "secondary", value)} />
-                <ColorPicker title="Field Accent" selected={sigil.accent} onPick={(value) => updateSigilValue(setSigil, "accent", value)} />
-                <ColorPicker title="Emblem Color" selected={sigil.border} onPick={(value) => updateSigilValue(setSigil, "border", value)} />
+                <ControlBlock title="Emblem Objects">
+                  <div className="grid grid-cols-4 gap-2 md:grid-cols-6 xl:grid-cols-8">
+                    {charges.map(([id, label, description]) => (
+                      <button
+                        key={id}
+                        onClick={() => updateSelectedLayer("charge", id)}
+                        className={`border px-2 py-2 text-xs font-bold transition ${
+                          selectedLayer.charge === id
+                            ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
+                            : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
+                        }`}
+                        title={description}
+                      >
+                        <span className="mx-auto mb-1 block h-8 w-8">
+                          <ChargeIcon type={id} color="currentColor" />
+                        </span>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </ControlBlock>
+
+                <div className="grid gap-4 lg:grid-cols-4">
+                  <ColorPicker title="Primary Field" selected={sigil.color} onPick={(value) => updateSigilValue(setSigil, "color", value)} />
+                  <ColorPicker title="Secondary Field" selected={sigil.secondary} onPick={(value) => updateSigilValue(setSigil, "secondary", value)} />
+                  <ColorPicker title="Field Accent" selected={sigil.accent} onPick={(value) => updateSigilValue(setSigil, "accent", value)} />
+                  <ColorPicker title="Selected Object" selected={selectedLayer.color} onPick={(value) => updateSelectedLayer("color", value)} />
+                </div>
               </div>
 
-              <ControlBlock title="Custom Placement">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <RangeControl label="Size" value={sigil.chargeSize} min="24" max="96" onChange={(value) => updateSigilValue(setSigil, "chargeSize", value)} />
-                  <RangeControl label="Width Stretch" value={sigil.chargeStretch} min="65" max="140" onChange={(value) => updateSigilValue(setSigil, "chargeStretch", value)} />
-                  <RangeControl label="Left / Right" value={sigil.chargeX} min="12" max="88" onChange={(value) => updateSigilValue(setSigil, "chargeX", value)} />
-                  <RangeControl label="Up / Down" value={sigil.chargeY} min="14" max="86" onChange={(value) => updateSigilValue(setSigil, "chargeY", value)} />
-                  <RangeControl label="Rotation" value={sigil.chargeRotate} min="-60" max="60" onChange={(value) => updateSigilValue(setSigil, "chargeRotate", value)} />
-                </div>
-                <button
-                  onClick={() => setSigil((current) => ({ ...current, chargeSize: 58, chargeX: 50, chargeY: 50, chargeRotate: 0, chargeStretch: 100 }))}
-                  className="gok-btn mt-4 px-4 py-2 text-xs"
-                >
-                  Center Object
-                </button>
-              </ControlBlock>
+              <aside className="min-w-0 space-y-4">
+                <ControlBlock title="Object Layers">
+                  <div className="grid gap-2">
+                    {layers.map((layer, index) => (
+                      <button
+                        key={layer.id}
+                        onClick={() => setSelectedLayerId(layer.id)}
+                        className={`flex min-h-10 items-center justify-between border px-3 py-2 text-left text-xs font-bold ${
+                          selectedLayer.id === layer.id
+                            ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
+                            : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)]"
+                        }`}
+                      >
+                        <span>{index + 1}. {getById(charges, layer.charge)[1]}</span>
+                        <span className="h-4 w-4 border border-black/50" style={{ backgroundColor: layer.color }} />
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <button onClick={() => addLayer()} className="gok-btn px-3 py-2 text-xs">Add</button>
+                    <button onClick={duplicateLayer} className="gok-btn px-3 py-2 text-xs">Copy</button>
+                    <button onClick={removeLayer} disabled={layers.length <= 1} className="gok-btn px-3 py-2 text-xs disabled:opacity-40">Remove</button>
+                  </div>
+                </ControlBlock>
+
+                <ControlBlock title="Custom Placement">
+                  <div className="grid gap-3">
+                    <RangeControl label="Size" value={selectedLayer.size} min="16" max="110" onChange={(value) => updateSelectedLayer("size", value)} />
+                    <RangeControl label="Width Stretch" value={selectedLayer.stretch} min="50" max="160" onChange={(value) => updateSelectedLayer("stretch", value)} />
+                    <RangeControl label="Left / Right" value={selectedLayer.x} min="8" max="92" onChange={(value) => updateSelectedLayer("x", value)} />
+                    <RangeControl label="Up / Down" value={selectedLayer.y} min="10" max="90" onChange={(value) => updateSelectedLayer("y", value)} />
+                    <RangeControl label="Rotation" value={selectedLayer.rotate} min="-90" max="90" onChange={(value) => updateSelectedLayer("rotate", value)} />
+                    <RangeControl label="Opacity" value={selectedLayer.opacity} min="20" max="100" onChange={(value) => updateSelectedLayer("opacity", value)} />
+                  </div>
+                  <button
+                    onClick={() => {
+                      updateSelectedLayer("size", 58);
+                      updateSelectedLayer("x", 50);
+                      updateSelectedLayer("y", 50);
+                      updateSelectedLayer("rotate", 0);
+                      updateSelectedLayer("stretch", 100);
+                      updateSelectedLayer("opacity", 100);
+                    }}
+                    className="gok-btn mt-4 px-4 py-2 text-xs"
+                  >
+                    Center Layer
+                  </button>
+                </ControlBlock>
+              </aside>
             </div>
           </div>
         </div>
@@ -353,11 +472,11 @@ export default function HouseFounderPage() {
   );
 }
 
-function SigilPreview({ sigil, background }) {
+function SigilPreview({ sigil, background, layers }) {
   const clipPath = getShieldClip(sigil.shield);
 
   return (
-    <div className="mx-auto w-full max-w-[320px]">
+    <div className="mx-auto w-full max-w-[420px]">
       <div className="relative aspect-[3/4] bg-black/30 p-4">
         <div
           className="absolute inset-4 border-[5px] shadow-2xl"
@@ -369,18 +488,22 @@ function SigilPreview({ sigil, background }) {
           }}
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.14),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.28))]" />
-          <div
-            className="absolute"
-            style={{
-              left: `${sigil.chargeX}%`,
-              top: `${sigil.chargeY}%`,
-              width: `${sigil.chargeSize}%`,
-              transform: `translate(-50%, -50%) rotate(${sigil.chargeRotate}deg) scaleX(${sigil.chargeStretch / 100})`,
-              filter: "drop-shadow(0 8px 10px rgba(0,0,0,.82))",
-            }}
-          >
-            <ChargeIcon type={sigil.charge} color={sigil.border} />
-          </div>
+          {layers.map((layer) => (
+            <div
+              key={layer.id}
+              className="absolute"
+              style={{
+                left: `${layer.x}%`,
+                top: `${layer.y}%`,
+                width: `${layer.size}%`,
+                opacity: layer.opacity / 100,
+                transform: `translate(-50%, -50%) rotate(${layer.rotate}deg) scaleX(${layer.stretch / 100})`,
+                filter: "drop-shadow(0 8px 10px rgba(0,0,0,.82))",
+              }}
+            >
+              <ChargeIcon type={layer.charge} color={layer.color} />
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -497,6 +620,12 @@ function ChargeIcon({ type, color }) {
       {type === "chalice" && <path {...common} d="M27 15 H73 L66 46 C64 58 57 65 50 65 C43 65 36 58 34 46 Z M47 65 H53 V83 H70 V91 H30 V83 H47 Z" />}
       {type === "key" && <path {...common} d="M34 17 C49 17 58 31 52 44 L91 83 L79 95 L70 86 L63 92 L56 85 L49 91 L39 81 L44 53 C31 58 17 48 17 34 C17 24 24 17 34 17 Z" />}
       {type === "flame" && <path {...common} d="M51 95 C28 85 20 67 30 49 C36 37 45 32 43 16 C58 25 62 42 59 54 C68 48 72 38 72 28 C89 50 85 78 51 95 Z" />}
+      {type === "fish" && <path {...common} d="M8 52 C27 28 58 25 79 45 L94 32 V72 L79 59 C56 78 27 75 8 52 Z M63 44 L71 36 L70 50 Z" />}
+      {type === "hammer" && <path {...common} d="M16 32 L31 17 L54 40 L79 15 L89 25 L64 50 L86 72 L72 86 L50 64 L25 89 L15 79 L40 54 Z" />}
+      {type === "castle" && <path {...common} d="M14 88 V32 H24 V15 H36 V32 H45 V15 H56 V32 H65 V15 H77 V32 H87 V88 H64 V67 H36 V88 Z" />}
+      {type === "hand" && <path {...common} d="M25 91 C18 75 18 59 23 45 L29 21 C31 14 42 16 41 24 L38 45 L45 13 C47 6 58 8 57 17 L53 44 L62 18 C65 10 76 14 73 23 L64 50 L75 36 C81 28 91 36 85 45 L64 75 C56 89 42 96 25 91 Z" />}
+      {type === "leaf" && <path {...common} d="M12 82 C17 36 48 10 88 12 C86 52 61 83 18 88 C33 70 51 50 75 27 C49 41 31 61 12 82 Z" />}
+      {type === "skull" && <path {...common} d="M50 9 C72 9 88 27 88 50 C88 64 80 72 69 77 V91 H31 V77 C20 72 12 64 12 50 C12 27 28 9 50 9 Z M31 47 A9 9 0 1 0 31 65 A9 9 0 1 0 31 47 M69 47 A9 9 0 1 0 69 65 A9 9 0 1 0 69 47 M44 73 H56 L50 61 Z" />}
     </svg>
   );
 }

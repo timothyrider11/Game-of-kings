@@ -61,11 +61,11 @@ const quizSets = [
 ];
 
 const tournaments = [
-  { id: "royal-joust", name: "King's Landing Royal Joust", type: "Jousting", cadenceDays: 7, offsetDays: 5, prizeGold: 180, prizeRenown: 45 },
-  { id: "winterfell-archery", name: "Winterfell Archery Championship", type: "Archery", cadenceDays: 9, offsetDays: 2, prizeGold: 130, prizeRenown: 32 },
-  { id: "dragonstone-melee", name: "Dragonstone Grand Melee", type: "Melee", cadenceDays: 11, offsetDays: 4, prizeGold: 220, prizeRenown: 58 },
-  { id: "blackwater-naval", name: "Blackwater Naval Trial", type: "Naval Battles", cadenceDays: 13, offsetDays: 7, prizeGold: 260, prizeRenown: 62 },
-  { id: "oldtown-lore-cup", name: "Oldtown Lore Cup", type: "Trivia Championship", cadenceDays: 6, offsetDays: 1, prizeGold: 100, prizeRenown: 28 },
+  { id: "royal-joust", name: "King's Landing Royal Joust", type: "Jousting", cadenceDays: 7, offsetDays: 5, entryGold: 75, prizeGold: 240, prizeRenown: 45 },
+  { id: "winterfell-archery", name: "Winterfell Archery Championship", type: "Archery", cadenceDays: 9, offsetDays: 2, entryGold: 45, prizeGold: 150, prizeRenown: 32 },
+  { id: "dragonstone-melee", name: "Dragonstone Grand Melee", type: "Melee", cadenceDays: 11, offsetDays: 4, entryGold: 90, prizeGold: 300, prizeRenown: 58 },
+  { id: "blackwater-naval", name: "Blackwater Naval Trial", type: "Naval Battles", cadenceDays: 13, offsetDays: 7, entryGold: 110, prizeGold: 360, prizeRenown: 62 },
+  { id: "oldtown-lore-cup", name: "Oldtown Lore Cup", type: "Trivia Championship", cadenceDays: 6, offsetDays: 1, entryGold: 35, prizeGold: 120, prizeRenown: 28 },
 ];
 
 const realmHouses = [
@@ -115,41 +115,21 @@ function getTournamentWindow(tournament, now = Date.now()) {
 
   return {
     key: `${tournament.id}-${cycle}`,
-    latestAt: eventDay * DAY_MS + 20 * 60 * 60 * 1000,
-    nextAt: nextEventDay * DAY_MS + 20 * 60 * 60 * 1000,
+    startsAt: nextEventDay * DAY_MS + 20 * 60 * 60 * 1000,
+    endsAt: nextEventDay * DAY_MS + 22 * 60 * 60 * 1000,
   };
 }
 
-function buildEntrants(realm) {
+function getPlayerHouse(realm) {
   const houseName = realm?.houseName?.trim() ? `House ${realm.houseName.trim()}` : "Your House";
   const lordName = realm?.houseName?.trim() ? `Lord ${realm.houseName.trim()}` : "Your Founder";
-  const playerWeight = 78 + Math.floor((realm?.renown ?? 0) / 40) + (realm?.artifactInventory || []).length * 7;
-  const player = [houseName, lordName, Math.min(130, playerWeight)];
-  const npcs = realmHouses.filter(([house]) => house !== houseName);
-
-  return [player, ...npcs];
+  return [houseName, lordName, 100];
 }
 
-function getOdds(entrants) {
-  const total = entrants.reduce((sum, entrant) => sum + entrant[2], 0);
-  return entrants.map(([house, lord, weight]) => ({
-    house,
-    lord,
-    weight,
-    chance: Math.round((weight / total) * 1000) / 10,
-  }));
-}
-
-function weightedPick(entrants, seed) {
-  const total = entrants.reduce((sum, entrant) => sum + entrant[2], 0);
-  let cursor = hashText(seed) % total;
-
-  for (const entrant of entrants) {
-    cursor -= entrant[2];
-    if (cursor < 0) return entrant;
-  }
-
-  return entrants[0];
+function buildTournamentEntrants(realm, signup) {
+  const playerHouse = getPlayerHouse(realm);
+  const npcs = realmHouses.filter(([house]) => house !== playerHouse[0]).slice(0, 7);
+  return signup ? [playerHouse, ...npcs] : npcs;
 }
 
 function contestLine(type, winner, loser, seed) {
@@ -184,7 +164,7 @@ function contestLine(type, winner, loser, seed) {
   return `${winner[1]} of ${winner[0]} defeated ${loser[1]} of ${loser[0]}: ${list[hashText(seed) % list.length]}.`;
 }
 
-function buildChronicle(tournament, entrants, cycleKey) {
+function buildBracket(tournament, entrants, cycleKey) {
   const shuffled = [...entrants].sort((a, b) => hashText(`${cycleKey}-${a[0]}`) - hashText(`${cycleKey}-${b[0]}`));
   const rounds = [];
   let field = shuffled.slice(0, 8);
@@ -194,7 +174,7 @@ function buildChronicle(tournament, entrants, cycleKey) {
     for (let index = 0; index < field.length; index += 2) {
       const first = field[index];
       const second = field[index + 1] || field[0];
-      const winner = weightedPick([first, second], `${cycleKey}-${index}-${tournament.id}`);
+      const winner = hashText(`${cycleKey}-${index}-${tournament.id}`) % 2 === 0 ? first : second;
       const loser = winner === first ? second : first;
       rounds.push(contestLine(tournament.type, winner, loser, `${cycleKey}-${index}-${loser[0]}`));
       next.push(winner);
@@ -236,8 +216,6 @@ export default function EventsPage() {
   const quizCycle = getQuizCycle(now);
   const activeQuiz = quizSets[quizCycle.index];
   const completedQuiz = realm?.quizAttempts?.[quizCycle.key];
-  const entrants = useMemo(() => buildEntrants(realm || {}), [realm]);
-  const odds = useMemo(() => getOdds(entrants), [entrants]);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -293,26 +271,51 @@ export default function EventsPage() {
     setMessage(`Quiz scored ${correct}/10. You earned ${rewardGold} gold and ${rewardRenown} renown.`);
   }
 
-  function recordTournament(tournament, window, chronicle) {
-    const recordKey = `${tournament.id}-${window.latestAt}`;
+  function signUpTournament(tournament, window) {
+    const signupKey = `${tournament.id}-${window.startsAt}`;
+    const signups = realm.tournamentSignups || {};
+    if (signups[signupKey]) return;
+    if ((realm.gold ?? 350) < tournament.entryGold) {
+      setMessage(`You need ${tournament.entryGold} gold to register for ${tournament.name}.`);
+      return;
+    }
+
+    saveRealm({
+      ...realm,
+      gold: (realm.gold ?? 350) - tournament.entryGold,
+      tournamentSignups: {
+        ...signups,
+        [signupKey]: {
+          tournament: tournament.name,
+          house: getPlayerHouse(realm)[0],
+          paidGold: tournament.entryGold,
+          signedAt: new Date(now).toISOString(),
+        },
+      },
+    });
+    setMessage(`Signed up for ${tournament.name}. Entry paid: ${tournament.entryGold} gold.`);
+  }
+
+  function recordTournament(tournament, window, bracket, signup) {
+    const recordKey = `${tournament.id}-${window.startsAt}`;
     const recorded = realm.tournamentRecords || {};
     if (recorded[recordKey]) {
       setMessage(`${tournament.name} is already recorded.`);
       return;
     }
 
-    const playerWon = chronicle.winner[0] === (realm.houseName?.trim() ? `House ${realm.houseName.trim()}` : "Your House");
+    const playerWon = signup && bracket.winner[0] === getPlayerHouse(realm)[0];
     const nextRealm = {
       ...realm,
       gold: (realm.gold ?? 350) + (playerWon ? tournament.prizeGold : 0),
-      renown: (realm.renown ?? 0) + (playerWon ? tournament.prizeRenown : 3),
+      renown: (realm.renown ?? 0) + (playerWon ? tournament.prizeRenown : signup ? 3 : 0),
       tournamentRecords: {
         ...recorded,
         [recordKey]: {
           tournament: tournament.name,
-          winner: chronicle.winner[0],
+          winner: bracket.winner[0],
           recordedAt: new Date(now).toISOString(),
-          rounds: chronicle.rounds,
+          rounds: bracket.rounds,
         },
       },
     };
@@ -320,12 +323,12 @@ export default function EventsPage() {
     saveRealm(nextRealm);
     setMessage(
       playerWon
-        ? `${chronicle.winner[0]} won ${tournament.name}: +${tournament.prizeGold} gold and +${tournament.prizeRenown} renown.`
-        : `${chronicle.winner[0]} won ${tournament.name}. Your house earned 3 renown for taking part.`
+        ? `${bracket.winner[0]} won ${tournament.name}: +${tournament.prizeGold} gold and +${tournament.prizeRenown} renown.`
+        : `${bracket.winner[0]} won ${tournament.name}.${signup ? " Your house earned 3 renown for taking part." : ""}`
     );
   }
 
-  if (!realm) {
+  if (!realm || !now) {
     return <main className="min-h-screen bg-[#070707] text-stone-100" />;
   }
 
@@ -352,7 +355,7 @@ export default function EventsPage() {
           <p className="text-xs font-black uppercase tracking-[0.25em] text-red-300">Events Hall</p>
           <h1 className="mt-2 text-4xl font-black leading-tight">Quizzes and tournaments, clean and simple.</h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-400">
-            Quizzes refresh every three days. Tournaments are automatic, staggered, and recorded like a realm chronicle so people can come back to read what happened.
+            Quizzes refresh every three days. Tournaments now require paid sign-up, use even bracket odds, and reveal results only after the event is complete.
           </p>
           <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-4">
             <Stat label="Gold" value={(realm.gold ?? 350).toLocaleString()} />
@@ -418,20 +421,10 @@ export default function EventsPage() {
 
           <aside className="space-y-5">
             <section className="border border-stone-700 bg-stone-950 p-5">
-              <h2 className="text-xl font-black">Predicted Odds</h2>
-              <div className="mt-4 space-y-3">
-                {odds.slice(0, 7).map((entry) => (
-                  <div key={entry.house}>
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <p className="font-black">{entry.house}</p>
-                      <p className="text-stone-400">{entry.chance}%</p>
-                    </div>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-stone-800">
-                      <div className="h-full bg-red-900" style={{ width: `${entry.chance}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <h2 className="text-xl font-black">Tournament Rule</h2>
+              <p className="mt-3 text-sm leading-6 text-stone-400">
+                Everyone who enters is matched in an even bracket. Each face-off is a 50/50 result, like heads or tails, until one champion remains.
+              </p>
             </section>
 
             <section className="border border-stone-700 bg-stone-950 p-5">
@@ -452,40 +445,61 @@ export default function EventsPage() {
         </div>
 
         <section className="mt-5 border border-stone-700 bg-stone-950 p-5">
-          <h2 className="text-2xl font-black">Tournament Chronicles</h2>
+          <h2 className="text-2xl font-black">Sign Up For The Next Tournament</h2>
           <p className="mt-2 text-sm leading-6 text-stone-400">
-            Everyone is entered automatically. The formula uses house strength, your renown, and artifacts, then writes a readable record for entertainment.
+            Pay the listed entry gold to register your house. Results and chronicles stay hidden until the tournament is finished.
           </p>
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             {tournaments.map((tournament) => {
               const window = getTournamentWindow(tournament, now);
-              const chronicle = buildChronicle(tournament, entrants, `${tournament.id}-${window.latestAt}`);
-              const recordKey = `${tournament.id}-${window.latestAt}`;
-              const recorded = Boolean(realm.tournamentRecords?.[recordKey]);
+              const signupKey = `${tournament.id}-${window.startsAt}`;
+              const recordKey = `${tournament.id}-${window.startsAt}`;
+              const signup = realm.tournamentSignups?.[signupKey];
+              const recorded = realm.tournamentRecords?.[recordKey];
+              const isOpen = now < window.startsAt;
+              const isDone = now >= window.endsAt;
+              const entrants = buildTournamentEntrants(realm, Boolean(signup));
+              const bracket = isDone ? buildBracket(tournament, entrants, `${tournament.id}-${window.startsAt}`) : null;
 
               return (
                 <article key={tournament.id} className="border border-stone-800 bg-black p-4">
                   <p className="text-xs font-black uppercase tracking-[0.25em] text-red-300">{tournament.type}</p>
                   <h3 className="mt-2 text-xl font-black">{tournament.name}</h3>
                   <div className="mt-3 grid gap-2 text-sm text-stone-400">
-                    <p>Next running: {formatDate(window.nextAt)}</p>
+                    <p>Starts: {formatDate(window.startsAt)}</p>
+                    <p>Ends: {formatDate(window.endsAt)}</p>
+                    <p>Entry: {tournament.entryGold} gold.</p>
                     <p>Prize: {tournament.prizeGold} gold and {tournament.prizeRenown} renown.</p>
-                    <p className="font-black text-stone-200">Projected champion: {chronicle.winner[0]}</p>
+                    <p>Current field: {entrants.length} houses.</p>
                   </div>
-                  <div className="mt-4 space-y-2 border-t border-stone-800 pt-4">
-                    {chronicle.rounds.slice(0, 5).map((line) => (
-                      <p key={line} className="text-sm leading-6 text-stone-300">
-                        {line}
-                      </p>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => recordTournament(tournament, window, chronicle)}
-                    disabled={recorded}
-                    className="mt-4 min-h-11 w-full rounded-md border border-stone-600 bg-stone-900 px-4 py-3 font-black text-stone-100 transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:border-stone-800 disabled:text-stone-600"
-                  >
-                    {recorded ? "Chronicle Recorded" : "Record Chronicle"}
-                  </button>
+
+                  {recorded && (
+                    <div className="mt-4 space-y-2 border-t border-stone-800 pt-4">
+                      <p className="font-black text-stone-100">Champion: {recorded.winner}</p>
+                      {recorded.rounds.slice(0, 5).map((line) => (
+                        <p key={line} className="text-sm leading-6 text-stone-300">{line}</p>
+                      ))}
+                    </div>
+                  )}
+
+                  {!recorded && isDone && bracket && (
+                    <button
+                      onClick={() => recordTournament(tournament, window, bracket, signup)}
+                      className="mt-4 min-h-11 w-full rounded-md border border-stone-600 bg-stone-900 px-4 py-3 font-black text-stone-100 transition hover:bg-stone-800"
+                    >
+                      Reveal Completed Bracket
+                    </button>
+                  )}
+
+                  {!recorded && !isDone && (
+                    <button
+                      onClick={() => signUpTournament(tournament, window)}
+                      disabled={!isOpen || Boolean(signup) || (realm.gold ?? 350) < tournament.entryGold}
+                      className="mt-4 min-h-11 w-full rounded-md border border-stone-600 bg-stone-900 px-4 py-3 font-black text-stone-100 transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:border-stone-800 disabled:text-stone-600"
+                    >
+                      {signup ? "Registered" : isOpen ? `Sign Up - ${tournament.entryGold} Gold` : "Registration Closed"}
+                    </button>
+                  )}
                 </article>
               );
             })}
