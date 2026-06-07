@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
+import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
@@ -215,9 +215,19 @@ export default function EventsPage() {
   const [message, setMessage] = useState("");
   const [answers, setAnswers] = useState({});
   const [now, setNow] = useState(0);
+  const [activities, setActivities] = useState([]);
   const quizCycle = getQuizCycle(now);
   const activeQuiz = quizSets[quizCycle.index];
   const completedQuiz = realm?.quizAttempts?.[quizCycle.key];
+  const quizCompletionCount = useMemo(
+    () =>
+      activities.filter(
+        (activity) =>
+          activity.type === "quiz" &&
+          (activity.meta?.quizKey === quizCycle.key || activity.body?.includes(activeQuiz.title))
+      ).length,
+    [activeQuiz.title, activities, quizCycle.key]
+  );
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -227,12 +237,16 @@ export default function EventsPage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRealm));
       setRealm(cloudRealm);
     });
+    loadRealmActivity(150).then(({ activities: loaded }) => setActivities(loaded));
     setNow(Date.now());
   }, []);
 
   useEffect(() => {
     setNow(Date.now());
-    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    const timer = setInterval(() => {
+      setNow(Date.now());
+      loadRealmActivity(150).then(({ activities: loaded }) => setActivities(loaded));
+    }, 30_000);
     return () => clearInterval(timer);
   }, []);
 
@@ -281,7 +295,14 @@ export default function EventsPage() {
       title: "A Quiz Was Completed",
       actor: realm?.houseName ? `House ${realm.houseName}` : "A realm player",
       body: `${activeQuiz.title}: ${correct}/10 correct. Reward: ${rewardGold} gold and ${rewardRenown} renown.`,
+      meta: {
+        quizKey: quizCycle.key,
+        quizTitle: activeQuiz.title,
+        score: correct,
+        total: activeQuiz.questions.length,
+      },
     }));
+    loadRealmActivity(150).then(({ activities: loaded }) => setActivities(loaded));
     setMessage(`Quiz scored ${correct}/10. You earned ${rewardGold} gold and ${rewardRenown} renown.`);
   }
 
@@ -381,7 +402,7 @@ export default function EventsPage() {
             <Stat label="Gold" value={(realm.gold ?? 350).toLocaleString()} />
             <Stat label="Renown" value={(realm.renown ?? 0).toLocaleString()} />
             <Stat label="Artifacts" value={(realm.artifactInventory || []).length} />
-            <Stat label="Quiz Reset" value={formatDuration(quizCycle.nextAt - now)} />
+            <Stat label="Quiz Done" value={quizCompletionCount.toLocaleString()} />
           </div>
           {message && <p className="mt-4 rounded-md border border-emerald-800 bg-emerald-950/40 p-3 text-sm font-bold text-emerald-300">{message}</p>}
         </div>
@@ -393,6 +414,7 @@ export default function EventsPage() {
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-stone-500">{activeQuiz.category}</p>
                 <h2 className="mt-2 text-2xl font-black">{activeQuiz.title}</h2>
                 <p className="mt-2 text-sm text-stone-400">10 questions. Each correct answer gives 10 gold and 2 renown.</p>
+                <p className="mt-1 text-sm text-stone-500">{quizCompletionCount} houses have completed this quiz cycle.</p>
               </div>
               {completedQuiz && (
                 <p className="rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-black text-stone-200">
@@ -401,42 +423,52 @@ export default function EventsPage() {
               )}
             </div>
 
-            <div className="mt-5 space-y-4">
-              {activeQuiz.questions.map((question, index) => {
-                const selected = answers[index] || completedQuiz?.answers?.[index];
-                return (
-                  <div key={question[0]} className="border border-stone-800 bg-black p-4">
-                    <h3 className="font-black">
-                      {index + 1}. {question[0]}
-                    </h3>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                      {question[1].map((option) => (
-                        <button
-                          key={option}
-                          onClick={() => chooseAnswer(index, option)}
-                          disabled={Boolean(completedQuiz)}
-                          className={`min-h-11 rounded-md border px-3 py-2 text-left text-sm font-bold transition disabled:cursor-not-allowed ${
-                            selected === option
-                              ? "border-red-300 bg-red-950/40 text-stone-100"
-                              : "border-stone-700 bg-stone-950 text-stone-300 hover:border-stone-400"
-                          }`}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            {completedQuiz ? (
+              <div className="mt-5 border border-stone-800 bg-black p-5">
+                <h3 className="text-xl font-black">Quiz sealed until the next raven.</h3>
+                <p className="mt-2 text-sm leading-6 text-stone-400">
+                  Your score was {completedQuiz.score}/10. The next quiz arrives in {formatDuration(quizCycle.nextAt - now)}.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="mt-5 space-y-4">
+                  {activeQuiz.questions.map((question, index) => {
+                    const selected = answers[index];
+                    return (
+                      <div key={question[0]} className="border border-stone-800 bg-black p-4">
+                        <h3 className="font-black">
+                          {index + 1}. {question[0]}
+                        </h3>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          {question[1].map((option) => (
+                            <button
+                              key={option}
+                              onClick={() => chooseAnswer(index, option)}
+                              className={`min-h-11 rounded-md border px-3 py-2 text-left text-sm font-bold transition ${
+                                selected === option
+                                  ? "border-red-300 bg-red-950/40 text-stone-100"
+                                  : "border-stone-700 bg-stone-950 text-stone-300 hover:border-stone-400"
+                              }`}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-            <button
-              onClick={submitQuiz}
-              disabled={Boolean(completedQuiz) || Object.keys(answers).length < activeQuiz.questions.length}
-              className="mt-5 min-h-12 w-full rounded-md border border-stone-500 bg-stone-900 px-5 py-3 font-black text-stone-100 transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:border-stone-800 disabled:bg-stone-950 disabled:text-stone-600"
-            >
-              {completedQuiz ? `Next Quiz in ${formatDuration(quizCycle.nextAt - now)}` : "Submit 10 Answers"}
-            </button>
+                <button
+                  onClick={submitQuiz}
+                  disabled={Object.keys(answers).length < activeQuiz.questions.length}
+                  className="mt-5 min-h-12 w-full rounded-md border border-stone-500 bg-stone-900 px-5 py-3 font-black text-stone-100 transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:border-stone-800 disabled:bg-stone-950 disabled:text-stone-600"
+                >
+                  Submit 10 Answers
+                </button>
+              </>
+            )}
           </section>
 
           <aside className="space-y-5">

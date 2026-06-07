@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
-import { loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
+import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
 
@@ -87,6 +87,7 @@ export default function ForumPage() {
   const [replyDrafts, setReplyDrafts] = useState({});
   const [message, setMessage] = useState("");
   const [now, setNow] = useState(0);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -100,6 +101,7 @@ export default function ForumPage() {
       setRealm(cloudRealm);
       setThreads(cloudRealm.forumThreads || starterThreads);
     });
+    getSessionUser().then(({ user: sessionUser }) => setUser(sessionUser));
   }, []);
 
   useEffect(() => {
@@ -145,9 +147,11 @@ export default function ForumPage() {
       title: draft.title.trim(),
       body: draft.body.trim(),
       author: authorName(realm),
+      authorUserId: user?.id || "",
       avatarUrl: realm.avatarUrl || "",
       createdAt: new Date().toISOString(),
       upvotes: 0,
+      upvotedBy: [],
       replies: [],
     };
 
@@ -196,8 +200,28 @@ export default function ForumPage() {
   }
 
   function upvoteThread(threadId) {
+    if (!user) {
+      setMessage("Sign in with a saved account before upvoting.");
+      return;
+    }
+
+    const targetThread = threads.find((thread) => thread.id === threadId);
+    if (!targetThread) return;
+
+    if (targetThread.authorUserId && targetThread.authorUserId === user.id) {
+      setMessage("You cannot upvote your own thread.");
+      return;
+    }
+
+    if ((targetThread.upvotedBy || []).includes(user.id)) {
+      setMessage("Your vote is already counted on this thread.");
+      return;
+    }
+
     const nextThreads = threads.map((thread) =>
-      thread.id === threadId ? { ...thread, upvotes: thread.upvotes + 1 } : thread
+      thread.id === threadId
+        ? { ...thread, upvotes: thread.upvotes + 1, upvotedBy: [...(thread.upvotedBy || []), user.id] }
+        : thread
     );
     saveForum(nextThreads, { renown: 1 });
     recordRealmActivity(buildActivity({
@@ -300,7 +324,11 @@ export default function ForumPage() {
                       {thread.author} / {timeAgo(thread.createdAt, now)}
                     </p>
                   </div>
-                  <button onClick={() => upvoteThread(thread.id)} className="gok-btn px-3 py-2 text-xs">
+                  <button
+                    onClick={() => upvoteThread(thread.id)}
+                    disabled={!user || (thread.authorUserId && thread.authorUserId === user.id) || (thread.upvotedBy || []).includes(user?.id)}
+                    className="gok-btn px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-45"
+                  >
                     Upvote {thread.upvotes}
                   </button>
                 </div>

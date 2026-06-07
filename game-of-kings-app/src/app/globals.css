@@ -292,38 +292,63 @@ button {
 
 .gok-activity-panel {
   background:
-    radial-gradient(circle at 30% 12%, rgba(174, 158, 121, 0.12), transparent 34%),
-    linear-gradient(180deg, rgba(23, 20, 17, 0.98), rgba(7, 7, 6, 0.98));
+    radial-gradient(circle at 30% 12%, rgba(194, 169, 109, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(35, 29, 20, 0.98), rgba(9, 7, 5, 0.98));
 }
 
 .gok-activity-panel .gok-activity-scroll {
-  border-color: rgba(122, 106, 76, 0.34);
+  position: relative;
+  border: 2px solid rgba(122, 92, 48, 0.7);
+  border-radius: 2px;
   background:
+    radial-gradient(circle at 50% 0%, rgba(255, 233, 170, 0.11), transparent 28%),
     linear-gradient(90deg, rgba(255, 255, 255, 0.018), transparent 9%, transparent 91%, rgba(255, 255, 255, 0.018)),
-    repeating-linear-gradient(0deg, rgba(126, 111, 79, 0.055) 0 1px, transparent 1px 6px),
-    linear-gradient(180deg, rgba(42, 34, 25, 0.92), rgba(13, 10, 8, 0.95));
+    repeating-linear-gradient(0deg, rgba(74, 51, 25, 0.13) 0 1px, transparent 1px 7px),
+    linear-gradient(180deg, rgba(118, 93, 55, 0.42), rgba(31, 22, 14, 0.92));
   box-shadow:
-    inset 0 0 24px rgba(0, 0, 0, 0.72),
-    inset 0 0 0 1px rgba(212, 199, 164, 0.06);
+    inset 0 0 36px rgba(0, 0, 0, 0.78),
+    inset 0 0 0 1px rgba(246, 224, 170, 0.1),
+    0 0 0 6px rgba(0, 0, 0, 0.22);
+}
+
+.gok-activity-panel .gok-activity-scroll::before,
+.gok-activity-panel .gok-activity-scroll::after {
+  content: "";
+  position: sticky;
+  z-index: 2;
+  display: block;
+  height: 0.55rem;
+  margin-inline: -0.1rem;
+  background:
+    linear-gradient(90deg, #2b1d10, #7a5a2e 12%, #302012 50%, #7a5a2e 88%, #2b1d10);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.gok-activity-panel .gok-activity-scroll::before {
+  top: 0;
+}
+
+.gok-activity-panel .gok-activity-scroll::after {
+  bottom: 0;
 }
 
 .gok-activity-panel .gok-activity-scroll article {
   background:
-    linear-gradient(180deg, rgba(17, 14, 10, 0.68), rgba(0, 0, 0, 0.18));
+    linear-gradient(180deg, rgba(37, 25, 12, 0.72), rgba(0, 0, 0, 0.22));
 }
 
 .gok-wax-seal {
   position: relative;
   z-index: 10;
   display: flex;
-  height: 4rem;
-  width: 4rem;
+  height: 5rem;
+  width: 5rem;
   align-items: center;
   justify-content: center;
-  margin: 1.1rem auto 0;
+  margin: 1.35rem auto 0;
   border-radius: 999px;
   color: rgba(235, 229, 213, 0.82);
-  font-size: 1.35rem;
+  font-size: 1.7rem;
   font-weight: 700;
   text-shadow: 0 1px 2px #000;
   box-shadow:
@@ -348,8 +373,8 @@ button {
 .gok-wax-seal span {
   position: relative;
   display: flex;
-  height: 2.45rem;
-  width: 2.45rem;
+  height: 3rem;
+  width: 3rem;
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(235, 229, 213, 0.32);

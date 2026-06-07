@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { rollArtifact } from "../../lib/artifacts";
 import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { claimCastleCloud, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
@@ -1859,6 +1860,7 @@ export default function MapPage() {
     const troopsLost = succeeded ? Math.ceil(raid.troopCost * 0.55) : raid.troopCost;
     const story = succeeded ? raid.success : raid.failure;
     const resultTitle = succeeded ? `${raid.title} Broken` : `${raid.title} Slipped Away`;
+    const foundArtifact = succeeded ? rollArtifact(0.01) : null;
 
     setCastleState((current) => ({
       ...current,
@@ -1869,6 +1871,9 @@ export default function MapPage() {
     }));
     setGold((current) => current + goldReward);
     setRenown((current) => current + renownReward);
+    if (foundArtifact) {
+      setArtifactInventory((current) => [...new Set([...current, foundArtifact])]);
+    }
     setRaidHistory((current) =>
       [
         {
@@ -1884,11 +1889,11 @@ export default function MapPage() {
         ...current,
       ].slice(0, 25)
     );
-    addEvent(`${resultTitle}: ${story} Reward: ${goldReward} gold, ${renownReward} renown. Troops lost: ${troopsLost}.`, "raid");
+    addEvent(`${resultTitle}: ${story} Reward: ${goldReward} gold, ${renownReward} renown. Troops lost: ${troopsLost}.${foundArtifact ? ` Rare artifact found: ${foundArtifact}.` : ""}`, "raid");
     logPublicActivity({
       type: "raid",
       title: resultTitle,
-      body: `${story} House ${houseName} gained ${goldReward} gold and ${renownReward} renown from ${seat.name}.`,
+      body: `${story} House ${houseName} gained ${goldReward} gold and ${renownReward} renown from ${seat.name}.${foundArtifact ? ` A 1% relic roll revealed ${foundArtifact}.` : ""}`,
     });
   }
 
@@ -1982,6 +1987,7 @@ export default function MapPage() {
     if (!war.resolved) return;
 
     if (war.winner === war.attacker && playerCastleIds.length < 2) {
+      const foundArtifact = rollArtifact(0.01);
       setCastleState((current) => ({
         ...current,
         [war.defenderId]: {
@@ -1991,11 +1997,14 @@ export default function MapPage() {
         },
       }));
       setRenown((current) => current + 55);
-      addEvent(`${war.defender} yielded to ${war.attacker}. +55 renown awarded.`, "war");
+      if (foundArtifact) {
+        setArtifactInventory((current) => [...new Set([...current, foundArtifact])]);
+      }
+      addEvent(`${war.defender} yielded to ${war.attacker}. +55 renown awarded.${foundArtifact ? ` Rare artifact found: ${foundArtifact}.` : ""}`, "war");
       logPublicActivity({
         type: "war",
         title: `${war.attacker} Won A Campaign`,
-        body: `${war.defender} yielded after the live battle resolved. +55 renown was awarded.`,
+        body: `${war.defender} yielded after the live battle resolved. +55 renown was awarded.${foundArtifact ? ` A 1% relic roll revealed ${foundArtifact}.` : ""}`,
       });
     } else {
       setRenown((current) => current + 12);

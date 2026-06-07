@@ -4,7 +4,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
+import { artifactVault, rollArtifact } from "../../lib/artifacts";
+import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
@@ -30,15 +31,6 @@ const npcHouses = [
   ["House Janos", "Lord Janos"],
   ["House Royce", "Lord Royce"],
   ["House Manderly", "Lord Manderly"],
-];
-
-const artifactVault = [
-  "Longclaw", "Dark Sister", "Blackfyre", "Heartsbane", "Ice", "Dawn", "Oathkeeper", "Widow's Wail", "Lady Forlorn", "Red Rain",
-  "Brightroar", "Lamentation", "Orphan-Maker", "Truth", "Vigilance", "Dragonbone Bow", "Dragon Eggs", "Aegon's Crown", "Jaehaerys' Crown", "Robb Stark's Crown",
-  "The Conqueror's Seal", "The Hand's Chain", "Targaryen Royal Signet", "Hightower Star Map", "Glass Candle", "Horn of Winter", "Dragonbinder", "Weirwood Crown",
-  "Valyrian Steel Dagger", "Catspaw Dagger", "Needle", "Robert's Warhammer", "Ruby Ford Rubies", "Rhaegar's Silver Harp", "The Painted Table", "The Iron Throne Shard",
-  "Nymeria's War Banner", "Rhoynar Sun Spear", "Golden Company Contract", "Blackfyre War Standard", "Faceless Iron Coin", "Maester's Valyrian Link", "Night's Watch Horn",
-  "Ravenry Master Key", "Oldtown Observatory Lens", "Dornish Treaty Scroll", "Kingsguard White Cloak", "Seastone Chair Fragment", "Driftwood Crown", "Ancient Royal Seal",
 ];
 
 function hashText(value) {
@@ -77,6 +69,16 @@ function buildEntrants(realm, signup, tournament) {
   const seeded = npcHouses.filter(([house]) => house !== player[0]);
   const targetSize = tournament.field === "team" ? 8 : 16;
   return (signup ? [player, ...seeded] : seeded).slice(0, targetSize);
+}
+
+function buildPublicEntrants(activities, tournamentId, startsAt) {
+  const startKey = new Date(startsAt).toISOString().slice(0, 10);
+  const entries = activities
+    .filter((activity) => activity.type === "tournament" && activity.meta?.action === "signup")
+    .filter((activity) => activity.meta?.tournamentId === tournamentId && activity.meta?.startKey === startKey)
+    .map((activity) => [activity.meta.house || activity.actor, activity.meta.ruler || activity.actor]);
+
+  return Array.from(new Map(entries.map((entry) => [entry[0], entry])).values());
 }
 
 function contestLine(type, winner, loser, seed) {
@@ -141,6 +143,7 @@ export default function TournamentsPage() {
   const [realm, setRealm] = useState({});
   const [message, setMessage] = useState("");
   const [now, setNow] = useState(0);
+  const [activities, setActivities] = useState([]);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -152,15 +155,22 @@ export default function TournamentsPage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRealm));
       setRealm(cloudRealm);
     });
+    loadRealmActivity(150).then(({ activities: loaded }) => setActivities(loaded));
   }, []);
 
   useEffect(() => {
     setNow(Date.now());
-    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    const timer = setInterval(() => {
+      setNow(Date.now());
+      loadRealmActivity(150).then(({ activities: loaded }) => setActivities(loaded));
+    }, 30_000);
     return () => clearInterval(timer);
   }, []);
 
-  const signedCount = useMemo(() => Object.keys(realm.tournamentSignups || {}).length, [realm.tournamentSignups]);
+  const signedCount = useMemo(
+    () => activities.filter((activity) => activity.type === "tournament" && activity.meta?.action === "signup").length,
+    [activities]
+  );
 
   function saveRealm(nextRealm) {
     setRealm(nextRealm);
@@ -211,7 +221,16 @@ export default function TournamentsPage() {
       title: "A House Entered The Lists",
       actor: houseName(realm),
       body: `${rulerName(realm)} registered for ${tournament.name}. Entry paid: ${tournament.entryGold} gold.`,
+      meta: {
+        action: "signup",
+        tournamentId: tournament.id,
+        tournament: tournament.name,
+        startKey: new Date(startsAt).toISOString().slice(0, 10),
+        house: houseName(realm),
+        ruler: rulerName(realm),
+      },
     }));
+    loadRealmActivity(150).then(({ activities: loaded }) => setActivities(loaded));
     setMessage(`${houseName(realm)} has entered ${tournament.name}. Entry paid: ${tournament.entryGold} gold.`);
   }
 
@@ -220,12 +239,14 @@ export default function TournamentsPage() {
     if (realm.tournamentRecords?.[recordKey]) return;
 
     const playerWon = Boolean(signup) && bracket.champion[0] === houseName(realm);
+    const foundArtifact = playerWon ? rollArtifact(0.01) : null;
     const nextArmor = playerWon ? [...(realm.armorInventory || []), tournament.armor] : realm.armorInventory || [];
     const nextRealm = {
       ...realm,
       gold: (realm.gold ?? 350) + (playerWon ? tournament.prizeGold : 0),
       renown: (realm.renown ?? 0) + (playerWon ? tournament.prizeRenown : signup ? 4 : 0),
       armorInventory: nextArmor,
+      artifactInventory: foundArtifact ? [...new Set([...(realm.artifactInventory || []), foundArtifact])] : realm.artifactInventory || [],
       tournamentRecords: {
         ...(realm.tournamentRecords || {}),
         [recordKey]: {
@@ -234,6 +255,7 @@ export default function TournamentsPage() {
           revealedAt: new Date(now).toISOString(),
           rounds: bracket.rounds,
           prizeArmor: playerWon ? tournament.armor : "",
+          rareArtifact: foundArtifact || "",
         },
       },
     };
@@ -244,7 +266,7 @@ export default function TournamentsPage() {
       title: `${tournament.name} Has A Champion`,
       actor: bracket.champion[0],
       body: playerWon
-        ? `${bracket.champion[1]} won ${tournament.prizeGold} gold, ${tournament.prizeRenown} renown, and ${tournament.armor}.`
+        ? `${bracket.champion[1]} won ${tournament.prizeGold} gold, ${tournament.prizeRenown} renown, and ${tournament.armor}.${foundArtifact ? ` A 1% relic roll revealed ${foundArtifact}.` : ""}`
         : `${bracket.champion[1]} won the bracket. Results are now posted in the tournament hall.`,
     }));
     setMessage(playerWon ? `You won ${tournament.name}. Armor awarded: ${tournament.armor}.` : `${bracket.champion[0]} won ${tournament.name}.`);
@@ -292,7 +314,9 @@ export default function TournamentsPage() {
               const recordKey = `${tournament.id}-${new Date(startsAt).toISOString().slice(0, 10)}`;
               const signup = realm.tournamentSignups?.[signupKey];
               const record = realm.tournamentRecords?.[recordKey];
-              const entrants = buildEntrants(realm, signup, tournament);
+              const publicEntrants = buildPublicEntrants(activities, tournament.id, startsAt);
+              const entrants = [...publicEntrants, ...buildEntrants(realm, signup, tournament)]
+                .filter((entry, index, all) => all.findIndex(([house]) => house === entry[0]) === index);
               const bracket = buildBracket(tournament, entrants, signupKey);
               const isFinished = now >= endsAt;
 
@@ -305,7 +329,7 @@ export default function TournamentsPage() {
                     <p>Ends: {formatDate(endsAt)}</p>
                     <p>Entry: {tournament.entryGold} gold.</p>
                     <p>Prize: {tournament.armor}, {tournament.prizeGold} gold, {tournament.prizeRenown} renown.</p>
-                    <p>Field: {entrants.length} {tournament.field === "team" ? "teams" : "houses"}.</p>
+                    <p>Public entries: {publicEntrants.length}. Field: {entrants.length} {tournament.field === "team" ? "teams" : "houses"}.</p>
                   </div>
 
                   <div className="relative z-10 mt-4 border border-[var(--gok-line)] bg-black/45 p-3">
