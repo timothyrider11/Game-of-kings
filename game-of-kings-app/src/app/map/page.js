@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { claimCastleCloud, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
@@ -1191,7 +1192,9 @@ const markerPositionOverrides = {
 
 const castles = [...coreCastles, ...extraCastles].map((castle) => {
   const position = markerPositionOverrides[castle.id];
-  return position ? { ...castle, left: position[0], top: position[1] } : castle;
+  const isMajor = coreCastles.some((coreCastle) => coreCastle.id === castle.id);
+  const nextCastle = { ...castle, tier: isMajor ? "major" : "holding" };
+  return position ? { ...nextCastle, left: position[0], top: position[1] } : nextCastle;
 });
 
 const initialThreads = [
@@ -1211,7 +1214,7 @@ const initialThreads = [
       {
         id: "reply-1",
         author: "House Ashford",
-        body: "We are sending grain and scouts to any new Reach houses.",
+        body: "We are watching the Reach roads and welcoming new houses to introduce themselves.",
         createdAt: new Date(Date.now() - 1000 * 60 * 24).toISOString(),
         upvotes: 6,
       },
@@ -1267,12 +1270,10 @@ const quizzes = [
 ];
 
 const eventTemplates = [
-  "A raven reports fresh market prices from Oldtown.",
-  "A border patrol near the Riverlands requested friendly supplies.",
-  "A council vote opened on road safety for traveling houses.",
-  "A tournament herald posted new brackets for the next melee.",
-  "Merchants in Lannisport adjusted trade rates after a busy hour.",
-  "Maesters recorded new gallery submissions from a castle archive.",
+  "A raven marked the economy ledger with a fresh timestamp.",
+  "The realm clock advanced and holdings were counted again.",
+  "Castle stewards updated troop and gold ledgers across the map.",
+  "The war table refreshed active campaigns and pending upgrades.",
 ];
 
 function createEmptyGallery() {
@@ -1284,7 +1285,7 @@ function createDefaultCastleState() {
     (state, castle) => ({
       ...state,
       [castle.id]: {
-        owner: castle.id === "kings-landing" ? "rider" : null,
+        owner: castle.id === "kings-landing" ? "rider" : castle.tier === "major" ? "ai" : null,
         reservedHouse: castle.id === "kings-landing" ? "House Rider" : "",
         troops: castle.militaryStrength,
         upgradeEndsAt: null,
@@ -1297,14 +1298,23 @@ function createDefaultCastleState() {
 }
 
 function protectReservedCastles(castleState) {
-  return {
-    ...castleState,
-    "kings-landing": {
-      ...(castleState["kings-landing"] || {}),
-      owner: "rider",
-      reservedHouse: "House Rider",
-    },
-  };
+  return castles.reduce((state, castle) => {
+    const current = state[castle.id] || {};
+    return {
+      ...state,
+      [castle.id]: {
+        ...current,
+        owner:
+          castle.id === "kings-landing"
+            ? "rider"
+            : castle.tier === "major" && !current.owner
+              ? "ai"
+              : current.owner || null,
+        reservedHouse: castle.id === "kings-landing" ? "House Rider" : current.reservedHouse || "",
+        troops: current.troops || castle.militaryStrength,
+      },
+    };
+  }, castleState);
 }
 
 function createDefaultGalleries() {
@@ -1691,6 +1701,11 @@ export default function MapPage() {
     );
   }
 
+  function logPublicActivity({ type, title, body }) {
+    const actor = houseName ? `House ${houseName}` : rulerName ? `${rulerTitle} ${rulerName}` : "A realm visitor";
+    recordRealmActivity(buildActivity({ type, title, body, actor }));
+  }
+
   function claimCastle() {
     if (!houseName.trim() || !canClaim) return;
 
@@ -1714,6 +1729,11 @@ export default function MapPage() {
     }));
     setRenown((current) => current + 75);
     addEvent(`House ${houseName} claimed ${selectedCastle.name}. The action was recorded at ${formatTime(now)}.`, "claim");
+    logPublicActivity({
+      type: "claim",
+      title: `${selectedCastle.name} Has A New Banner`,
+      body: `House ${houseName} claimed ${selectedCastle.name}. Words: "${houseMotto || "Words yet unspoken"}." Ruler: ${rulerTitle} ${rulerName || houseName}.`,
+    });
   }
 
   function checkIn() {
@@ -1723,6 +1743,11 @@ export default function MapPage() {
     setRenown((current) => current + 10);
     setLastCheckInDate(new Date(now).toISOString());
     addEvent("Daily check-in complete: +100 gold and +10 renown. The next check-in unlocks 24 hours from now.", "reward");
+    logPublicActivity({
+      type: "check-in",
+      title: "A House Answered The Realm Clock",
+      body: "+100 gold and +10 renown were recorded. The next raven unlocks after 24 hours.",
+    });
   }
 
   function startUpgrade() {
@@ -1740,6 +1765,11 @@ export default function MapPage() {
       },
     }));
     addEvent(`${selectedCastle.name} began Barracks Expansion. Completion: ${formatTime(endsAt)}.`, "upgrade");
+    logPublicActivity({
+      type: "upgrade",
+      title: `${selectedCastle.name} Began An Upgrade`,
+      body: `Barracks Expansion started and is expected to finish at ${formatTime(endsAt)}.`,
+    });
   }
 
   function recruitArmy() {
@@ -1754,11 +1784,25 @@ export default function MapPage() {
       },
     }));
     addEvent(`${selectedCastle.name} recruited 85 troops at ${formatTime(now)}.`, "military");
+    logPublicActivity({
+      type: "military",
+      title: `${selectedCastle.name} Raised Fresh Troops`,
+      body: "85 troops were added to the garrison ledger.",
+    });
   }
 
   function startWar(targetId) {
     const target = castles.find((castle) => castle.id === targetId);
-    if (!target || selectedState.owner !== "player" || selectedState.troops < 250) return;
+    if (
+      !target ||
+      target.id === "kings-landing" ||
+      target.tier !== "major" ||
+      playerCastleIds.length >= 2 ||
+      selectedState.owner !== "player" ||
+      selectedState.troops < 250
+    ) {
+      return;
+    }
 
     const targetState = castleState[targetId];
     const duration = 30 * MINUTE + target.wealth * 2 * MINUTE;
@@ -1785,12 +1829,17 @@ export default function MapPage() {
     }));
     setWars((current) => [war, ...current].slice(0, 18));
     addEvent(`${selectedCastle.name} declared a real-time campaign against ${target.name}.`, "war");
+    logPublicActivity({
+      type: "war",
+      title: "A Campaign Has Begun",
+      body: `${selectedCastle.name} declared a live campaign against ${target.name}. The result will resolve by the realm clock.`,
+    });
   }
 
   function finishResolvedWar(war) {
     if (!war.resolved) return;
 
-    if (war.winner === war.attacker) {
+    if (war.winner === war.attacker && playerCastleIds.length < 2) {
       setCastleState((current) => ({
         ...current,
         [war.defenderId]: {
@@ -1801,9 +1850,19 @@ export default function MapPage() {
       }));
       setRenown((current) => current + 55);
       addEvent(`${war.defender} yielded to ${war.attacker}. +55 renown awarded.`, "war");
+      logPublicActivity({
+        type: "war",
+        title: `${war.attacker} Won A Campaign`,
+        body: `${war.defender} yielded after the live battle resolved. +55 renown was awarded.`,
+      });
     } else {
       setRenown((current) => current + 12);
       addEvent(`${war.defender} held against ${war.attacker}. The campaign ended with honor.`, "war");
+      logPublicActivity({
+        type: "war",
+        title: `${war.defender} Held The Walls`,
+        body: `${war.defender} resisted ${war.attacker}. The campaign ended with honor.`,
+      });
     }
 
     setWars((current) => current.filter((item) => item.id !== war.id));
@@ -1895,25 +1954,34 @@ export default function MapPage() {
     setJoinedTournaments([]);
   }
 
-  const neighboringTargets = selectedCastle.neighbors
+  const directTargets = selectedCastle.neighbors
     .map((id) => castles.find((castle) => castle.id === id))
     .filter(Boolean);
+  const neighboringTargets = (directTargets.length ? directTargets : castles)
+    .filter((castle) => castle.id !== selectedCastle.id && castle.id !== "kings-landing")
+    .filter((castle) => castle.tier === "major" && castleState[castle.id]?.owner !== "player")
+    .sort((first, second) => {
+      const firstDistance = Math.hypot(first.left - selectedCastle.left, first.top - selectedCastle.top);
+      const secondDistance = Math.hypot(second.left - selectedCastle.left, second.top - selectedCastle.top);
+      return firstDistance - secondDistance;
+    })
+    .slice(0, 6);
 
   return (
     <main className="min-h-screen bg-[#070707] text-stone-100">
-      <section className="sticky top-0 z-40 border-b border-stone-800 bg-black/95 px-3 py-3 backdrop-blur md:static md:px-4 md:py-4">
-        <div className="mx-auto flex max-w-[1600px] flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+      <section className="sticky top-0 z-40 border-b border-stone-800 bg-black/95 px-3 py-2 backdrop-blur md:static md:px-4">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <Link href="/" className="text-xs font-black uppercase tracking-[0.28em] text-amber-300">
               Game of Kings
             </Link>
-            <h1 className="mt-1 text-2xl font-black leading-tight md:text-5xl">Living Westeros Map</h1>
-            <p className="mt-2 hidden max-w-3xl text-sm leading-6 text-stone-400 sm:block">
-              No turns. The economy, wars, upgrades, votes, forums, tournaments, and galleries are timestamped and keep moving in real time.
+            <h1 className="mt-1 text-xl font-black leading-tight md:text-3xl">Living Westeros Map</h1>
+            <p className="mt-1 hidden max-w-3xl text-xs leading-5 text-stone-500 sm:block">
+              Claim one holding, build your house, then fight toward one AI-held major castle.
             </p>
           </div>
 
-          <div className="grid grid-cols-5 gap-1 overflow-x-auto pb-1 text-center md:gap-2 xl:min-w-[780px]">
+          <div className="grid grid-cols-5 gap-1 overflow-x-auto pb-1 text-center md:gap-2 xl:min-w-[560px]">
             <Stat label="Gold" value={gold.toLocaleString()} />
             <Stat label="Renown" value={renown.toLocaleString()} />
             <Stat label="Holdings" value={playerCastles.length} />

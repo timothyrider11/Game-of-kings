@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
@@ -151,6 +152,12 @@ export default function ForumPage() {
     };
 
     saveForum([nextThread, ...threads], { gold: 15, renown: 8 });
+    recordRealmActivity(buildActivity({
+      type: "forum",
+      title: "A New Scroll Was Posted",
+      actor: authorName(realm),
+      body: `${nextThread.title} was posted in ${forumSections.find((section) => section.id === activeSection)?.name}. +15 gold and +8 renown.`,
+    }));
     setDraft({ title: "", body: "" });
     setMessage("Thread posted: +15 gold and +8 renown.");
   }
@@ -178,6 +185,12 @@ export default function ForumPage() {
     );
 
     saveForum(nextThreads, { gold: 5, renown: 3 });
+    recordRealmActivity(buildActivity({
+      type: "forum",
+      title: "A Reply Entered The Forum",
+      actor: authorName(realm),
+      body: "+5 gold and +3 renown were awarded for discussion participation.",
+    }));
     setReplyDrafts((current) => ({ ...current, [threadId]: "" }));
     setMessage("Reply posted: +5 gold and +3 renown.");
   }
@@ -187,6 +200,12 @@ export default function ForumPage() {
       thread.id === threadId ? { ...thread, upvotes: thread.upvotes + 1 } : thread
     );
     saveForum(nextThreads, { renown: 1 });
+    recordRealmActivity(buildActivity({
+      type: "forum",
+      title: "A Vote Was Cast",
+      actor: authorName(realm),
+      body: "+1 renown was awarded for taking part in the discussion board.",
+    }));
     setMessage("Vote counted: +1 renown for participating.");
   }
 

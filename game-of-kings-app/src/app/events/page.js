@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
@@ -275,6 +276,12 @@ export default function EventsPage() {
     };
 
     saveRealm(nextRealm);
+    recordRealmActivity(buildActivity({
+      type: "quiz",
+      title: "A Quiz Was Completed",
+      actor: realm?.houseName ? `House ${realm.houseName}` : "A realm player",
+      body: `${activeQuiz.title}: ${correct}/10 correct. Reward: ${rewardGold} gold and ${rewardRenown} renown.`,
+    }));
     setMessage(`Quiz scored ${correct}/10. You earned ${rewardGold} gold and ${rewardRenown} renown.`);
   }
 
@@ -458,65 +465,16 @@ export default function EventsPage() {
         </div>
 
         <section className="mt-5 border border-stone-700 bg-stone-950 p-5">
-          <h2 className="text-2xl font-black">Sign Up For The Next Tournament</h2>
-          <p className="mt-2 text-sm leading-6 text-stone-400">
-            Pay the listed entry gold to register your house. Results and chronicles stay hidden until the tournament is finished.
+          <h2 className="text-2xl font-black">Tournament Grounds</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">
+            Tournament signups, bracket previews, Friday reveals, armor prizes, and chronicles now live in the dedicated tournament hall.
           </p>
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
-            {tournaments.map((tournament) => {
-              const window = getTournamentWindow(tournament, now);
-              const signupKey = `${tournament.id}-${window.startsAt}`;
-              const recordKey = `${tournament.id}-${window.startsAt}`;
-              const signup = realm.tournamentSignups?.[signupKey];
-              const recorded = realm.tournamentRecords?.[recordKey];
-              const isOpen = now < window.startsAt;
-              const isDone = now >= window.endsAt;
-              const entrants = buildTournamentEntrants(realm, Boolean(signup));
-              const bracket = isDone ? buildBracket(tournament, entrants, `${tournament.id}-${window.startsAt}`) : null;
-
-              return (
-                <article key={tournament.id} className="border border-stone-800 bg-black p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.25em] text-red-300">{tournament.type}</p>
-                  <h3 className="mt-2 text-xl font-black">{tournament.name}</h3>
-                  <div className="mt-3 grid gap-2 text-sm text-stone-400">
-                    <p>Starts: {formatDate(window.startsAt)}</p>
-                    <p>Ends: {formatDate(window.endsAt)}</p>
-                    <p>Entry: {tournament.entryGold} gold.</p>
-                    <p>Prize: {tournament.prizeGold} gold and {tournament.prizeRenown} renown.</p>
-                    <p>Current field: {entrants.length} houses.</p>
-                  </div>
-
-                  {recorded && (
-                    <div className="mt-4 space-y-2 border-t border-stone-800 pt-4">
-                      <p className="font-black text-stone-100">Champion: {recorded.winner}</p>
-                      {recorded.rounds.slice(0, 5).map((line) => (
-                        <p key={line} className="text-sm leading-6 text-stone-300">{line}</p>
-                      ))}
-                    </div>
-                  )}
-
-                  {!recorded && isDone && bracket && (
-                    <button
-                      onClick={() => recordTournament(tournament, window, bracket, signup)}
-                      className="mt-4 min-h-11 w-full rounded-md border border-stone-600 bg-stone-900 px-4 py-3 font-black text-stone-100 transition hover:bg-stone-800"
-                    >
-                      Reveal Completed Bracket
-                    </button>
-                  )}
-
-                  {!recorded && !isDone && (
-                    <button
-                      onClick={() => signUpTournament(tournament, window)}
-                      disabled={!isOpen || Boolean(signup) || (realm.gold ?? 350) < tournament.entryGold}
-                      className="mt-4 min-h-11 w-full rounded-md border border-stone-600 bg-stone-900 px-4 py-3 font-black text-stone-100 transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:border-stone-800 disabled:text-stone-600"
-                    >
-                      {signup ? "Registered" : isOpen ? `Sign Up - ${tournament.entryGold} Gold` : "Registration Closed"}
-                    </button>
-                  )}
-                </article>
-              );
-            })}
-          </div>
+          <Link
+            href="/tournaments"
+            className="mt-5 inline-flex min-h-12 items-center justify-center rounded-md border border-stone-600 bg-stone-900 px-5 py-3 font-black text-stone-100 transition hover:bg-stone-800"
+          >
+            Enter Tournament Grounds
+          </Link>
         </section>
       </section>
     </main>

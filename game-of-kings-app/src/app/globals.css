@@ -283,6 +283,26 @@ button {
   pointer-events: none;
 }
 
+.gok-activity-scroll {
+  max-height: 23.5rem;
+  overflow-y: auto;
+  scrollbar-color: rgba(196, 193, 184, 0.34) rgba(0, 0, 0, 0.35);
+  scrollbar-width: thin;
+}
+
+.gok-activity-scroll::-webkit-scrollbar {
+  width: 0.6rem;
+}
+
+.gok-activity-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.gok-activity-scroll::-webkit-scrollbar-thumb {
+  background: rgba(196, 193, 184, 0.28);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+}
+
 @media (max-width: 900px) {
   .gok-coast {
     width: 72%;

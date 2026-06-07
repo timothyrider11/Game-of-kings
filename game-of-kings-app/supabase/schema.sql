@@ -45,6 +45,17 @@ create table if not exists public.admin_ledger (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.realm_activity (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  type text not null default 'realm',
+  title text not null,
+  body text not null default '',
+  actor text not null default 'The Realm',
+  meta jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 create or replace function public.touch_updated_at()
 returns trigger
 language plpgsql
@@ -138,6 +149,7 @@ alter table public.profiles enable row level security;
 alter table public.player_realms enable row level security;
 alter table public.castle_claims enable row level security;
 alter table public.admin_ledger enable row level security;
+alter table public.realm_activity enable row level security;
 
 drop policy if exists "Profiles are readable by players" on public.profiles;
 create policy "Profiles are readable by players"
@@ -207,6 +219,24 @@ create policy "Admins write admin ledger"
 on public.admin_ledger for insert
 to authenticated
 with check (public.is_admin());
+
+drop policy if exists "Realm activity is public" on public.realm_activity;
+create policy "Realm activity is public"
+on public.realm_activity for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "Players record realm activity" on public.realm_activity;
+create policy "Players record realm activity"
+on public.realm_activity for insert
+to authenticated
+with check (user_id is null or user_id = auth.uid());
+
+drop policy if exists "Admins moderate realm activity" on public.realm_activity;
+create policy "Admins moderate realm activity"
+on public.realm_activity for delete
+to authenticated
+using (public.is_admin());
 
 -- After your own account exists, run this once with your auth user id:
 -- update public.profiles set role = 'admin' where user_id = 'YOUR-AUTH-USER-ID';

@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import RealmAudio from "../components/RealmAudio";
+/* eslint-disable react-hooks/set-state-in-effect */
 
-const realmStats = [
-  { label: "Active Houses", value: "128" },
-  { label: "Castles Claimed", value: "37" },
-  { label: "Aid Sent Today", value: "2.4k" },
-  { label: "Realm Points", value: "91k" },
-];
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import RealmAudio from "../components/RealmAudio";
+import { formatActivityTime, loadRealmActivity, readLocalActivities } from "../lib/realm-activity";
+
+const STORAGE_KEY = "game_of_kings_living_realm";
 
 const livingSystems = [
   ["37 Castle Map", "Explore a full Westeros map with major castles, settlements, panels, stats, and galleries."],
@@ -18,20 +17,6 @@ const livingSystems = [
   ["Daily Quizzes", "Answer trivia for gold, renown, collectibles, and event momentum."],
   ["Tournaments", "Join melees, archery contests, naval battles, and trivia championships."],
   ["Artifacts", "Collect relics like legendary blades, royal seals, dragon eggs, and ancient crowns."],
-];
-
-const leaderboard = [
-  { house: "House Ashford", role: "Most Helpful", points: "12,840" },
-  { house: "House Thornwake", role: "Best Defenders", points: "10,410" },
-  { house: "House Ironvale", role: "Army Builder", points: "9,775" },
-  { house: "House Rider", role: "Rising House", points: "8,120" },
-];
-
-const activities = [
-  "House Ashford sent grain to a northern ally.",
-  "Three new houses joined the Crownlands watch.",
-  "A border skirmish ended with both sides signing a truce.",
-  "The Riverlands awarded bonus points for scouting reports.",
 ];
 
 const mapNames = [
@@ -44,6 +29,53 @@ const mapNames = [
 ];
 
 export default function HomePage() {
+  const [realm, setRealm] = useState({});
+  const [activities, setActivities] = useState([]);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        setRealm(JSON.parse(stored));
+      } catch {
+        setRealm({});
+      }
+    }
+
+    setActivities(readLocalActivities());
+    loadRealmActivity(80).then(({ activities: loaded }) => setActivities(loaded));
+
+    function refreshActivity() {
+      setCurrentTime(Date.now());
+      loadRealmActivity(80).then(({ activities: loaded }) => setActivities(loaded));
+    }
+
+    setCurrentTime(Date.now());
+    window.addEventListener("gok:activity", refreshActivity);
+    const timer = setInterval(refreshActivity, 60_000);
+    return () => {
+      window.removeEventListener("gok:activity", refreshActivity);
+      clearInterval(timer);
+    };
+  }, []);
+
+  const realmStats = useMemo(
+    () => [
+      { label: "Your House", value: realm.houseName ? `House ${realm.houseName}` : "Unfounded" },
+      { label: "Gold", value: (realm.gold ?? 350).toLocaleString() },
+      { label: "Renown", value: (realm.renown ?? 0).toLocaleString() },
+      { label: "Logged Actions", value: activities.length.toLocaleString() },
+    ],
+    [activities.length, realm.gold, realm.houseName, realm.renown]
+  );
+  const recentActors = useMemo(() => {
+    const cutoff = currentTime - 30 * 60 * 1000;
+    return [...new Set(activities.filter((activity) => new Date(activity.createdAt).getTime() >= cutoff).map((activity) => activity.actor))]
+      .filter(Boolean)
+      .slice(0, 6);
+  }, [activities, currentTime]);
+
   return (
     <main className="gok-page">
       <RealmAudio />
@@ -126,21 +158,50 @@ export default function HomePage() {
               <span className="gok-status px-3 py-1 text-xs">Online</span>
             </div>
 
-            <div className="relative z-10 mt-6 space-y-0 border border-[rgba(196,193,184,0.13)]">
-              {activities.map((activity) => (
-                <p
-                  key={activity}
-                  className="border-b border-[rgba(196,193,184,0.1)] bg-black/25 p-4 text-sm leading-6 text-[rgba(210,205,194,0.78)] last:border-b-0"
-                >
-                  {activity}
-                </p>
-              ))}
+            <div className="gok-activity-scroll relative z-10 mt-6 border border-[rgba(196,193,184,0.13)]">
+              {activities.length === 0 ? (
+                <article className="border-b border-[rgba(196,193,184,0.1)] bg-black/25 p-4 text-sm leading-6 text-[rgba(210,205,194,0.78)]">
+                  <p className="font-bold text-[var(--gok-silver)]">No realm activity yet.</p>
+                  <p className="mt-1 text-[var(--gok-dim)]">Claim a castle, check in, post in the forum, or enter a tournament to write the first notice.</p>
+                </article>
+              ) : (
+                activities.map((activity) => (
+                  <article
+                    key={activity.id}
+                    className="border-b border-[rgba(196,193,184,0.1)] bg-black/25 p-4 text-sm leading-6 text-[rgba(210,205,194,0.78)] last:border-b-0"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-bold text-[var(--gok-silver)]">{activity.title}</p>
+                      <span className="shrink-0 text-[0.68rem] uppercase tracking-[0.16em] text-[var(--gok-dim)]">
+                        {formatActivityTime(activity.createdAt)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[var(--gok-parchment)]">{activity.actor}</p>
+                    {activity.body && <p className="mt-1 text-[var(--gok-dim)]">{activity.body}</p>}
+                  </article>
+                ))
+              )}
             </div>
 
             <Link href="/map" className="gok-btn relative z-10 mt-6 flex w-full px-5 py-4">
               <span className="gok-shield" />
               Clock In For Points
             </Link>
+
+            <div className="relative z-10 mt-5 border border-[rgba(196,193,184,0.13)] bg-black/25 p-4">
+              <p className="gok-eyebrow text-[0.62rem]">Who&apos;s In The Realm</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {recentActors.length === 0 ? (
+                  <span className="text-sm text-[var(--gok-dim)]">No recent banners spotted.</span>
+                ) : (
+                  recentActors.map((actor) => (
+                    <span key={actor} className="border border-[var(--gok-line)] bg-black/45 px-3 py-2 text-xs text-[var(--gok-parchment)]">
+                      {actor}
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
           </aside>
         </div>
       </section>
@@ -195,43 +256,6 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-7xl gap-8 px-5 py-14 md:px-10 md:py-20 lg:grid-cols-[minmax(0,1fr)_420px]">
-        <div>
-          <p className="gok-eyebrow">Leaderboard</p>
-          <h2 className="mt-4 text-4xl font-normal uppercase tracking-[0.08em] text-[var(--gok-silver)] md:text-6xl">
-            Win by being useful.
-          </h2>
-          <p className="gok-copy mt-5 max-w-2xl text-lg leading-8">
-            The best houses are not only the strongest armies. Helpful houses can rise through
-            aid, activity, scouting, and steady realm service.
-          </p>
-          <Link href="/map" className="gok-btn mt-8 px-7 py-4">
-            <span className="gok-shield" />
-            Join The Board
-          </Link>
-        </div>
-
-        <div className="gok-panel p-5">
-          {leaderboard.map((entry, index) => (
-            <div
-              key={entry.house}
-              className="relative z-10 flex items-center justify-between gap-4 border-b border-[rgba(196,193,184,0.12)] py-4 last:border-b-0"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center border border-[var(--gok-line-strong)] bg-black/40 text-sm font-bold text-[var(--gok-silver)]">
-                  {index + 1}
-                </span>
-                <div>
-                  <p className="font-bold text-[var(--gok-silver)]">{entry.house}</p>
-                  <p className="text-sm text-[var(--gok-dim)]">{entry.role}</p>
-                </div>
-              </div>
-              <p className="font-bold text-[var(--gok-parchment)]">{entry.points}</p>
-            </div>
-          ))}
         </div>
       </section>
 

@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
 import {
   loadCloudRealm,
   loadProfile,
@@ -73,7 +74,7 @@ export default function AccountPage() {
     if (result.error) {
       setMessage(result.error);
     } else {
-      setMessage(mode === "sign-up" ? "Account created. Check your raven cage and send the raven back with verification." : "Signed in.");
+      setMessage(mode === "sign-up" ? "Account created. Check your raven cage and send the raven back with verification." : "Signed in. Your realm can now save to your account.");
     }
 
     setBusy(false);
@@ -94,6 +95,12 @@ export default function AccountPage() {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRealm));
     await saveCloudRealm(nextRealm);
+    await recordRealmActivity(buildActivity({
+      type: "account",
+      title: "A Profile Was Updated",
+      actor: username || rulerName || "A realm player",
+      body: `${rulerTitle} ${rulerName || username || "Unknown"} refreshed their account banner.`,
+    }));
     setMessage(error || "Profile saved.");
     setBusy(false);
   }
