@@ -1111,7 +1111,7 @@ const markerPositionOverrides = {
   "banefort": [19.55, 60.42],
   "kings-landing": [55.18, 72.7],
   "eelwood": [54.41, 75.93],
-  "dragonstone": [69.9, 68.65],
+  "dragonstone": [66.55, 66.08],
   "crakehall": [13.31, 74.84],
   "golden-tooth": [26.0, 76.82],
   "haystack-hall": [62.58, 76.26],

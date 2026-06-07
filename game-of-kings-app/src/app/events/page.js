@@ -84,17 +84,6 @@ const realmHouses = [
   ["House Janos", "Lord Janos", 74],
 ];
 
-const artifacts = [
-  ["longclaw", "Longclaw", "Valyrian Steel"],
-  ["dark-sister", "Dark Sister", "Legendary Blade"],
-  ["blackfyre", "Blackfyre", "Lost Kingsblade"],
-  ["heartsbane", "Heartsbane", "Valyrian Steel"],
-  ["dragon-eggs", "Dragon Eggs", "Mythic Relic"],
-  ["ancient-crown", "Ancient Crown", "Royal Relic"],
-  ["royal-seal", "Royal Seal", "Political Relic"],
-  ["lost-relic", "Lost Relic", "Mystery"],
-];
-
 const newcomerGiveaway = {
   id: "prince-that-was-promised-dragon-egg",
   name: "The Prince That Was Promised Giveaway",
@@ -553,20 +542,6 @@ export default function EventsPage() {
               </p>
             </section>
 
-            <section className="border border-stone-700 bg-stone-950 p-5">
-              <h2 className="text-xl font-black">Artifacts</h2>
-              <div className="mt-4 grid gap-2">
-                {artifacts.slice(0, 6).map((artifact) => {
-                  const owned = (realm.artifactInventory || []).includes(artifact[0]);
-                  return (
-                    <div key={artifact[0]} className={`border p-3 ${owned ? "border-stone-400 bg-stone-800" : "border-stone-800 bg-black"}`}>
-                      <p className="text-xs font-black uppercase tracking-wider text-stone-500">{artifact[2]}</p>
-                      <h3 className="mt-1 font-black">{artifact[1]}</h3>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
           </aside>
         </div>
 
