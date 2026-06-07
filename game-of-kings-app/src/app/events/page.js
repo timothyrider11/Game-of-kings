@@ -95,6 +95,14 @@ const artifacts = [
   ["lost-relic", "Lost Relic", "Mystery"],
 ];
 
+const newcomerGiveaway = {
+  id: "prince-that-was-promised-dragon-egg",
+  name: "The Prince That Was Promised Giveaway",
+  prize: "Hatchable Dragon Egg",
+  description:
+    "A cosmetic and lore-only artifact. The hatchling begins as a baby dragon for weeks before growing into a young dragon for display in your house archive.",
+};
+
 function hashText(value) {
   return value.split("").reduce((hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0, 17);
 }
@@ -331,6 +339,48 @@ export default function EventsPage() {
     setMessage(`Signed up for ${tournament.name}. Entry paid: ${tournament.entryGold} gold.`);
   }
 
+  function enterGiveaway() {
+    if (!realm.houseName?.trim()) {
+      setMessage("Found your house before entering the giveaway.");
+      return;
+    }
+
+    const entries = realm.giveawayEntries || {};
+    if (entries[newcomerGiveaway.id]) {
+      setMessage("Your house is already entered for The Prince That Was Promised Giveaway.");
+      return;
+    }
+
+    const nextRealm = {
+      ...realm,
+      giveawayEntries: {
+        ...entries,
+        [newcomerGiveaway.id]: {
+          giveaway: newcomerGiveaway.name,
+          prize: newcomerGiveaway.prize,
+          house: `House ${realm.houseName}`,
+          enteredAt: new Date(now).toISOString(),
+          status: "entered",
+        },
+      },
+    };
+
+    saveRealm(nextRealm);
+    recordRealmActivity(buildActivity({
+      type: "giveaway",
+      title: "A House Entered The Dragon Egg Draw",
+      actor: `House ${realm.houseName}`,
+      body: `${newcomerGiveaway.name}: ${newcomerGiveaway.prize} entry recorded. Cosmetic and lore-only, no battle effect.`,
+      meta: {
+        action: "giveaway-entry",
+        giveawayId: newcomerGiveaway.id,
+        prize: newcomerGiveaway.prize,
+      },
+    }));
+    loadRealmActivity(150).then(({ activities: loaded }) => setActivities(loaded));
+    setMessage("Entry recorded for The Prince That Was Promised Giveaway.");
+  }
+
   function recordTournament(tournament, window, bracket, signup) {
     const recordKey = `${tournament.id}-${window.startsAt}`;
     const recorded = realm.tournamentRecords || {};
@@ -473,6 +523,23 @@ export default function EventsPage() {
 
           <aside className="space-y-5">
             <section className="border border-stone-700 bg-stone-950 p-5">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-red-300">Newcomer Contest</p>
+              <h2 className="mt-2 text-xl font-black">{newcomerGiveaway.name}</h2>
+              <div className="mt-4 flex justify-center">
+                <DragonEggMark />
+              </div>
+              <p className="mt-4 text-sm leading-6 text-stone-400">{newcomerGiveaway.description}</p>
+              <p className="mt-3 text-sm font-black text-stone-200">Prize: {newcomerGiveaway.prize}</p>
+              <button
+                onClick={enterGiveaway}
+                disabled={Boolean(realm.giveawayEntries?.[newcomerGiveaway.id])}
+                className="mt-4 min-h-12 w-full rounded-md border border-stone-500 bg-stone-900 px-5 py-3 font-black text-stone-100 transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:border-stone-800 disabled:bg-stone-950 disabled:text-stone-600"
+              >
+                {realm.giveawayEntries?.[newcomerGiveaway.id] ? "Entered" : "Enter Giveaway"}
+              </button>
+            </section>
+
+            <section className="border border-stone-700 bg-stone-950 p-5">
               <h2 className="text-xl font-black">Tournament Rule</h2>
               <p className="mt-3 text-sm leading-6 text-stone-400">
                 Everyone who enters is matched in an even bracket. Each face-off is a 50/50 result, like heads or tails, until one champion remains.
@@ -518,6 +585,19 @@ function Stat({ label, value }) {
     <div className="border border-stone-800 bg-black p-3">
       <p className="text-xs font-bold uppercase tracking-wider text-stone-500">{label}</p>
       <p className="mt-1 text-xl font-black">{value}</p>
+    </div>
+  );
+}
+
+function DragonEggMark() {
+  return (
+    <div className="relative h-40 w-40">
+      <div className="absolute inset-x-8 bottom-4 h-28 rounded-[52%_52%_45%_45%] border border-stone-400/60 bg-[radial-gradient(circle_at_38%_28%,rgba(190,190,176,0.32),transparent_20%),radial-gradient(circle_at_65%_62%,rgba(89,17,20,0.5),transparent_34%),linear-gradient(145deg,#101513,#26332e_42%,#070807)] shadow-[inset_0_0_28px_rgba(0,0,0,.88),0_20px_45px_rgba(0,0,0,.75)]" />
+      <div className="absolute left-11 top-6 h-16 w-16 rotate-[-18deg] rounded-full border border-stone-500/45 bg-black/25" />
+      <div className="absolute right-10 top-16 h-14 w-14 rotate-[18deg] rounded-full border border-red-950/70 bg-red-950/25" />
+      <div className="absolute left-7 top-4 h-16 w-20 rotate-[-28deg] rounded-[80%_10%_80%_10%] border border-stone-500/40 bg-[linear-gradient(135deg,rgba(183,179,168,.75),rgba(21,23,22,.15))]" />
+      <div className="absolute right-5 top-8 h-14 w-20 rotate-[28deg] rounded-[10%_80%_10%_80%] border border-stone-500/40 bg-[linear-gradient(225deg,rgba(183,179,168,.68),rgba(21,23,22,.15))]" />
+      <div className="absolute bottom-0 left-1/2 h-8 w-28 -translate-x-1/2 rounded-full bg-black/70 blur-sm" />
     </div>
   );
 }

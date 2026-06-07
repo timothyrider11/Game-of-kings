@@ -25,9 +25,9 @@ export default function TestPage() {
     console.log("ERROR:", error);
 
     if (error) {
-      alert("Error saving!");
+      alert("Error updating!");
     } else {
-      alert("Saved successfully!");
+      alert("Updated successfully!");
     }
   }
 
@@ -37,7 +37,7 @@ export default function TestPage() {
         onClick={saveTest}
         className="bg-emerald-700 px-8 py-4 rounded-xl text-xl font-bold"
       >
-        Save Test Player
+        Update Test Player
       </button>
     </main>
   );

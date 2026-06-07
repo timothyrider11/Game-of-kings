@@ -4,9 +4,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { saveCloudRealm } from "../../lib/realm-cloud";
-
-const STORAGE_KEY = "game_of_kings_living_realm";
+import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
+import { isRoyalEmail, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
 
 const tinctures = [
   ["Iron Black", "#070807", "A hard black field for grim, old houses."],
@@ -224,6 +223,7 @@ export default function HouseFounderPage() {
   const [selectedLayerId, setSelectedLayerId] = useState(defaultSigil.layers[0].id);
   const [savedMessage, setSavedMessage] = useState("");
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [sessionEmail, setSessionEmail] = useState("");
 
   const background = useMemo(() => getFieldBackground(sigil), [sigil]);
   const layers = sigil.layers?.length ? sigil.layers : defaultSigil.layers;
@@ -244,7 +244,7 @@ export default function HouseFounderPage() {
         ...current,
         houseName: houseName.trim(),
         houseMotto: houseMotto.trim(),
-        rulerTitle,
+        rulerTitle: normalizeRulerTitle(rulerTitle, sessionEmail),
         rulerName: rulerName.trim(),
         houseSigil: {
           ...sigil,
@@ -254,9 +254,28 @@ export default function HouseFounderPage() {
         },
       })
     );
-  }, [hasLoaded, houseName, houseMotto, rulerName, rulerTitle, selectedCharge, selectedField, selectedLayer.charge, sigil]);
+  }, [hasLoaded, houseName, houseMotto, rulerName, rulerTitle, selectedCharge, selectedField, selectedLayer.charge, sessionEmail, sigil]);
 
   useEffect(() => {
+    getSessionUser().then(({ user }) => {
+      const email = user?.email || "";
+      setSessionEmail(email);
+      if (!user) return;
+
+      loadCloudRealm().then(({ realm }) => {
+        if (!realm) return;
+        const royal = isRoyalEmail(email);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
+        const normalized = normalizeSigil(realm.houseSigil || {});
+        setHouseName(realm.houseName || (royal ? "Rider" : ""));
+        setHouseMotto(realm.houseMotto || (royal ? "Loyalty Never Dies" : ""));
+        setRulerTitle(normalizeRulerTitle(realm.rulerTitle || "Lord", email));
+        setRulerName(realm.rulerName || (royal ? "Rider" : ""));
+        setSigil(normalized);
+        setSelectedLayerId(normalized.layers[0].id);
+      });
+    });
+
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) {
       setHasLoaded(true);
@@ -269,7 +288,7 @@ export default function HouseFounderPage() {
 
       setHouseName(data.houseName || "");
       setHouseMotto(data.houseMotto || "");
-      setRulerTitle(data.rulerTitle || "Lord");
+      setRulerTitle(normalizeRulerTitle(data.rulerTitle || "Lord", ""));
       setRulerName(data.rulerName || "");
       const normalized = normalizeSigil(savedSigil);
       setSigil(normalized);
@@ -284,11 +303,12 @@ export default function HouseFounderPage() {
     const stored = localStorage.getItem(STORAGE_KEY);
     const current = stored ? JSON.parse(stored) : {};
     const chargeName = getById(charges, selectedLayer.charge)[1];
+    const safeTitle = normalizeRulerTitle(rulerTitle, sessionEmail);
     const nextRealm = {
       ...current,
       houseName: houseName.trim(),
       houseMotto: houseMotto.trim(),
-      rulerTitle,
+      rulerTitle: safeTitle,
       rulerName: rulerName.trim(),
       houseSigil: {
         ...sigil,
@@ -301,6 +321,7 @@ export default function HouseFounderPage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRealm));
 
     const { error } = await saveCloudRealm(nextRealm);
+    setRulerTitle(safeTitle);
     setSavedMessage(
       error && !error.includes("Not signed in")
         ? `House updated locally. Account update needs attention: ${error}`
@@ -388,11 +409,7 @@ export default function HouseFounderPage() {
                 onChange={(event) => setRulerTitle(event.target.value)}
                 className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-4 py-3 outline-none focus:border-[var(--gok-line-strong)]"
               >
-                <option>Lord</option>
-                <option>Lady</option>
-                <option>King</option>
-                <option>Queen</option>
-                <option>Ser</option>
+                {(isRoyalEmail(sessionEmail) ? ROYAL_TITLES : PUBLIC_TITLES).map((title) => <option key={title}>{title}</option>)}
               </select>
               <input
                 value={rulerName}

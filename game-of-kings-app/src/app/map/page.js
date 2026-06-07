@@ -1,14 +1,14 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity, react-hooks/immutability, react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { rollArtifact } from "../../lib/artifacts";
 import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
-import { claimCastleCloud, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
+import { claimCastleCloud, getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
+import { isRoyalEmail, normalizeRulerTitle, STORAGE_KEY } from "../../lib/realm-identity";
 
-const STORAGE_KEY = "game_of_kings_living_realm";
 const REALM_VERSION = 4;
 const MINUTE = 60_000;
 const DAY_MS = 24 * 60 * MINUTE;
@@ -1386,6 +1386,19 @@ function protectReservedCastles(castleState) {
   }, castleState);
 }
 
+function applyRoyalOwnership(castleState, email = "") {
+  const kingLanding = castleState["kings-landing"] || {};
+  return {
+    ...castleState,
+    "kings-landing": {
+      ...kingLanding,
+      owner: isRoyalEmail(email) ? "player" : "rider",
+      reservedHouse: "House Rider",
+      troops: Math.max(kingLanding.troops || 0, 1200),
+    },
+  };
+}
+
 function createDefaultGalleries() {
   return castles.reduce(
     (state, castle) => ({
@@ -1443,7 +1456,8 @@ function scoreCastle(castle, castleState) {
 export default function MapPage() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [now, setNow] = useState(Date.now());
-  const [zoom, setZoom] = useState(0.32);
+  const [zoom, setZoom] = useState(0.95);
+  const [sessionEmail, setSessionEmail] = useState("");
   const [activeTab, setActiveTab] = useState("realm");
   const [selectedCastleId, setSelectedCastleId] = useState("winterfell");
   const [castlePopupOpen, setCastlePopupOpen] = useState(false);
@@ -1545,15 +1559,16 @@ export default function MapPage() {
     );
   }, [forumSearch, threads]);
 
-  function applyRealmData(data) {
+  function applyRealmData(data, emailOverride = sessionEmail) {
     const offlineResult = resolveOfflineProgress(data);
 
-    setHouseName(data.houseName || "");
-    setHouseMotto(data.houseMotto || "");
-    setRulerTitle(data.rulerTitle || "Lord");
-    setRulerName(data.rulerName || "");
+    const royal = isRoyalEmail(emailOverride);
+    setHouseName(data.houseName || (royal ? "Rider" : ""));
+    setHouseMotto(data.houseMotto || (royal ? "Loyalty Never Dies" : ""));
+    setRulerTitle(normalizeRulerTitle(data.rulerTitle || "Lord", emailOverride));
+    setRulerName(data.rulerName || (royal ? "Rider" : ""));
     setHouseSigil(data.houseSigil || sigils[0]);
-    setCastleState(protectReservedCastles(offlineResult.castleState));
+    setCastleState(applyRoyalOwnership(protectReservedCastles(offlineResult.castleState), emailOverride));
     setGalleries({ ...createDefaultGalleries(), ...(data.galleries || {}) });
     setGold(offlineResult.gold);
     setRenown(offlineResult.renown);
@@ -1570,6 +1585,18 @@ export default function MapPage() {
   }
 
   useEffect(() => {
+    getSessionUser().then(({ user }) => {
+      const email = user?.email || "";
+      setSessionEmail(email);
+      if (!user) return;
+
+      loadCloudRealm().then(({ realm }) => {
+        if (!realm) return;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
+        applyRealmData(realm, email);
+      });
+    });
+
     const stored = localStorage.getItem(STORAGE_KEY);
 
     if (stored) {
@@ -1580,13 +1607,16 @@ export default function MapPage() {
       }
     }
 
-    loadCloudRealm().then(({ realm }) => {
-      if (!realm) return;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
-      applyRealmData(realm);
-    });
-
     setHasLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    function handleRealmCleared() {
+      resetRealm();
+    }
+
+    window.addEventListener("gok:realm-cleared", handleRealmCleared);
+    return () => window.removeEventListener("gok:realm-cleared", handleRealmCleared);
   }, []);
 
   useEffect(() => {
@@ -1625,7 +1655,7 @@ export default function MapPage() {
       savedAt: new Date(now).toISOString(),
       houseName,
       houseMotto,
-      rulerTitle,
+      rulerTitle: normalizeRulerTitle(rulerTitle, sessionEmail),
       rulerName,
       houseSigil,
       castleState,
@@ -1693,7 +1723,7 @@ export default function MapPage() {
     );
 
     return {
-      castleState: protectReservedCastles(Object.fromEntries(
+      castleState: applyRoyalOwnership(protectReservedCastles(Object.fromEntries(
         Object.entries(storedState).map(([castleId, state]) => [
           castleId,
           state.upgradeEndsAt && state.upgradeEndsAt <= Date.now()
@@ -1706,7 +1736,7 @@ export default function MapPage() {
               }
             : state,
         ])
-      )),
+      )), sessionEmail),
       gold: (data.gold ?? 350) + earnedGold,
       renown: (data.renown ?? 0) + earnedRenown,
       lastResolvedAt: Date.now(),
@@ -2204,7 +2234,7 @@ export default function MapPage() {
                   <input
                     aria-label="Map zoom"
                     type="range"
-                    min="0.28"
+                    min="0.5"
                     max="2.4"
                     step="0.05"
                     value={zoom}
@@ -2222,7 +2252,7 @@ export default function MapPage() {
               </p>
             </div>
 
-            <div className="h-[58vh] overflow-auto bg-[#10100e] overscroll-contain md:h-[72vh]">
+            <div className="h-[62vh] overflow-auto bg-[#10100e] overscroll-contain md:h-[78vh]">
               <div
                 className="relative origin-top-left"
                 style={{
@@ -2429,7 +2459,7 @@ export default function MapPage() {
               href="/account"
               className="mt-2 block min-h-11 rounded-md border border-stone-700 px-4 py-3 text-center font-black text-stone-300 transition hover:border-amber-300 hover:text-amber-200"
             >
-              Account Save
+              Account Sync
             </Link>
           </Panel>
 

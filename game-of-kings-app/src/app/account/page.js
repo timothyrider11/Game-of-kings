@@ -14,9 +14,8 @@ import {
   signUpWithPassword,
   upsertProfile,
 } from "../../lib/realm-cloud";
+import { clearLocalRealm, isRoyalEmail, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
 import { supabase } from "../../lib/supabase";
-
-const STORAGE_KEY = "game_of_kings_living_realm";
 
 export default function AccountPage() {
   const [mode, setMode] = useState("sign-in");
@@ -56,7 +55,7 @@ export default function AccountPage() {
 
       setUsername(profile.username || "");
       setRulerName(profile.ruler_name || "");
-      setRulerTitle(profile.ruler_title || "Lord");
+      setRulerTitle(normalizeRulerTitle(profile.ruler_title || "Lord", user.email));
       setAvatarUrl(profile.avatar_url || "");
     });
   }, [user]);
@@ -68,13 +67,17 @@ export default function AccountPage() {
 
     const result =
       mode === "sign-up"
-        ? await signUpWithPassword({ email, password, username, rulerName, rulerTitle, avatarUrl })
+        ? await signUpWithPassword({ email, password, username, rulerName, rulerTitle: normalizeRulerTitle(rulerTitle, email), avatarUrl })
         : await signInWithPassword(email, password);
 
     if (result.error) {
       setMessage(result.error);
     } else {
-      setMessage(mode === "sign-up" ? "Account created. Check your raven cage and send the raven back with verification." : "Signed in. Your realm can now save to your account.");
+      if (mode === "sign-in") {
+        const { realm } = await loadCloudRealm();
+        if (realm) localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
+      }
+      setMessage(mode === "sign-up" ? "Account created. Check your raven cage and send the raven back with verification." : "Signed in. Your account realm has been restored.");
     }
 
     setBusy(false);
@@ -83,14 +86,15 @@ export default function AccountPage() {
   async function saveProfile(event) {
     event.preventDefault();
     setBusy(true);
-    const { error } = await upsertProfile({ username, rulerName, rulerTitle, avatarUrl });
+    const safeTitle = normalizeRulerTitle(rulerTitle, user?.email);
+    const { error } = await upsertProfile({ username, rulerName, rulerTitle: safeTitle, avatarUrl });
     const stored = localStorage.getItem(STORAGE_KEY);
     const realm = stored ? JSON.parse(stored) : {};
     const nextRealm = {
       ...realm,
       username,
       rulerName,
-      rulerTitle,
+      rulerTitle: safeTitle,
       avatarUrl,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRealm));
@@ -99,9 +103,10 @@ export default function AccountPage() {
       type: "account",
       title: "A Profile Was Updated",
       actor: username || rulerName || "A realm player",
-      body: `${rulerTitle} ${rulerName || username || "Unknown"} refreshed their account banner.`,
+      body: `${safeTitle} ${rulerName || username || "Unknown"} refreshed their account banner.`,
     }));
-    setMessage(error || "Profile saved.");
+    setRulerTitle(safeTitle);
+    setMessage(error || "Profile updated.");
     setBusy(false);
   }
 
@@ -110,7 +115,7 @@ export default function AccountPage() {
     const stored = localStorage.getItem(STORAGE_KEY);
 
     if (!stored) {
-      setMessage("No local realm save found yet.");
+      setMessage("No local realm profile found yet.");
       setBusy(false);
       return;
     }
@@ -120,11 +125,11 @@ export default function AccountPage() {
       ...realm,
       username,
       rulerName,
-      rulerTitle,
+      rulerTitle: normalizeRulerTitle(rulerTitle, user?.email),
       avatarUrl,
     });
 
-    setMessage(error || "Realm saved to your account.");
+    setMessage(error || "Account realm updated.");
     setBusy(false);
   }
 
@@ -135,7 +140,7 @@ export default function AccountPage() {
     if (error) {
       setMessage(error);
     } else if (!realm) {
-      setMessage("No cloud realm save found yet.");
+      setMessage("No account realm found yet.");
     } else {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
       setMessage("Cloud realm loaded onto this device.");
@@ -147,6 +152,16 @@ export default function AccountPage() {
   async function handleSignOut() {
     setBusy(true);
     const { error } = await signOut();
+    if (!error) {
+      clearLocalRealm();
+      setUser(null);
+      setUsername("");
+      setRulerName("");
+      setRulerTitle("Lord");
+      setAvatarUrl("");
+      setEmail("");
+      setPassword("");
+    }
     setMessage(error || "Signed out.");
     setBusy(false);
   }
@@ -229,11 +244,7 @@ export default function AccountPage() {
                     onChange={(event) => setRulerTitle(event.target.value)}
                     className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-4 outline-none focus:border-[var(--gok-line-strong)]"
                   >
-                    <option>Lord</option>
-                    <option>Lady</option>
-                    <option>King</option>
-                    <option>Queen</option>
-                    <option>Ser</option>
+                    {PUBLIC_TITLES.map((title) => <option key={title}>{title}</option>)}
                   </select>
                   <input
                     value={rulerName}
@@ -287,11 +298,7 @@ export default function AccountPage() {
                   onChange={(event) => setRulerTitle(event.target.value)}
                   className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-4 outline-none focus:border-[var(--gok-line-strong)]"
                 >
-                  <option>Lord</option>
-                  <option>Lady</option>
-                  <option>King</option>
-                  <option>Queen</option>
-                  <option>Ser</option>
+                  {(isRoyalEmail(user.email) ? ROYAL_TITLES : PUBLIC_TITLES).map((title) => <option key={title}>{title}</option>)}
                 </select>
                 <input
                   value={rulerName}

@@ -6,8 +6,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import RealmAudio from "../components/RealmAudio";
 import { formatActivityTime, loadRealmActivity, readLocalActivities } from "../lib/realm-activity";
-
-const STORAGE_KEY = "game_of_kings_living_realm";
+import { getSessionUser, loadCloudRealm } from "../lib/realm-cloud";
+import { STORAGE_KEY } from "../lib/realm-identity";
 
 const livingSystems = [
   ["37 Castle Map", "Explore a full Westeros map with major castles, settlements, panels, stats, and galleries."],
@@ -34,14 +34,29 @@ export default function HomePage() {
   const [currentTime, setCurrentTime] = useState(0);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setRealm(JSON.parse(stored));
-      } catch {
+    getSessionUser().then(({ user }) => {
+      if (!user) {
         setRealm({});
+        return;
       }
-    }
+
+      loadCloudRealm().then(({ realm: cloudRealm }) => {
+        if (cloudRealm) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRealm));
+          setRealm(cloudRealm);
+          return;
+        }
+
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          try {
+            setRealm(JSON.parse(stored));
+          } catch {
+            setRealm({});
+          }
+        }
+      });
+    });
 
     setActivities(readLocalActivities());
     loadRealmActivity(80).then(({ activities: loaded }) => setActivities(loaded));
