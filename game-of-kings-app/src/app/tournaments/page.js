@@ -284,6 +284,7 @@ export default function TournamentsPage() {
         <Link href="/" className="gok-brand text-xl">Game of Kings</Link>
         <div className="flex gap-3">
           <Link href="/events" className="gok-nav-link">Events</Link>
+          <Link href="/artifacts" className="gok-nav-link">Artifacts</Link>
           <Link href="/forum" className="gok-nav-link">Forum</Link>
           <Link href="/map" className="gok-nav-link">Map</Link>
         </div>

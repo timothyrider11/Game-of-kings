@@ -8,7 +8,7 @@ export function isRoyalEmail(email = "") {
 }
 
 export function normalizeRulerTitle(title = "Lord", email = "") {
-  if (isRoyalEmail(email)) return ROYAL_TITLES.includes(title) ? title : "King";
+  if (isRoyalEmail(email)) return "King";
   return PUBLIC_TITLES.includes(title) ? title : "Lord";
 }
 

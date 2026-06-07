@@ -437,6 +437,9 @@ export default function EventsPage() {
             <Link href="/tournaments" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
               Tournaments
             </Link>
+            <Link href="/artifacts" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
+              Artifacts
+            </Link>
             <Link href="/forum" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
               Forum
             </Link>

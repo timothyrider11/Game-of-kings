@@ -1018,6 +1018,7 @@ const printedMapLocations = [
   ["duskendale", "Duskendale", "Crownlands", 59.8, 68.6],
   ["sharp-point", "Sharp Point", "Crownlands", 69.0, 68.8],
   ["stonedance", "Stonedance", "Crownlands", 70.2, 71.0],
+  ["eelwood", "Eelwood", "Crownlands", 54.4, 75.9],
   ["haystack-hall", "Haystack Hall", "Stormlands", 59.6, 76.8],
   ["evenfall-hall", "Evenfall Hall", "Stormlands", 72.0, 78.0],
   ["bronzegate", "Bronzegate", "Stormlands", 55.5, 78.7],
@@ -1140,7 +1141,9 @@ const markerPositionOverrides = {
   "kayce": [11.6, 68.32],
   "the-crag": [18.75, 63.65],
   "banefort": [19.55, 60.42],
-  "kings-landing": [54.41, 75.93],
+  "kings-landing": [55.18, 72.7],
+  "eelwood": [54.41, 75.93],
+  "dragonstone": [69.9, 68.65],
   "crakehall": [13.31, 74.84],
   "golden-tooth": [26.0, 76.82],
   "haystack-hall": [62.58, 76.26],
@@ -1184,10 +1187,10 @@ const markerPositionOverrides = {
   "sandstone": [34.56, 95.39],
   "hellholt": [42.42, 95.35],
   "vaith": [55.89, 94.86],
-  "godsgrace": [68.34, 95.51],
-  "sunspear": [78.23, 91.74],
+  "godsgrace": [64.9, 94.7],
+  "sunspear": [71.85, 93.16],
   "saltshore": [60.02, 96.49],
-  "lemonwood": [71.85, 93.16],
+  "lemonwood": [68.34, 95.51],
   "sunhouse": [22.11, 95.59],
 };
 
@@ -1577,6 +1580,7 @@ export default function MapPage() {
   );
   const hasPlayerCastle = playerCastleIds.length > 0;
   const canClaim = isSignedIn && Boolean(houseName.trim()) && !hasPlayerCastle && !selectedState.owner;
+  const isRoyalAdmin = isRoyalEmail(sessionEmail);
   const economyPerHour = playerCastles.reduce(
     (total, castle) => total + castle.wealth * 18 + Math.floor(castle.population / 2000),
     0
@@ -1954,6 +1958,13 @@ export default function MapPage() {
     });
   }
 
+  function refreshCastleClaims() {
+    loadCastleClaims().then(({ claims }) => {
+      setCastleState((current) => applyPublicClaims(current, claims || [], sessionUserId, sessionEmail));
+      addEvent("Royal admin refreshed public castle claims from the realm ledger.", "admin");
+    });
+  }
+
   function checkIn() {
     if (!canCheckIn) return;
 
@@ -2028,7 +2039,7 @@ export default function MapPage() {
     logPublicActivity({
       type: "quest",
       title: resultTitle,
-      body: `${story} House ${houseName} gained ${goldReward} gold and ${renownReward} renown from ${seat.name}.${foundArtifact ? ` A 1% relic roll revealed ${foundArtifact}.` : ""}`,
+      body: `${story} House ${houseName} gained ${goldReward} gold and ${renownReward} renown from ${seat.name}.${foundArtifact ? ` A unique realm artifact was revealed: ${foundArtifact}.` : ""}`,
       meta: foundArtifact ? { artifact: foundArtifact, chance: 0.01, source: "quest" } : { source: "quest" },
     });
   }
@@ -2311,6 +2322,12 @@ export default function MapPage() {
                   Tournaments
                 </Link>
                 <Link
+                  href="/artifacts"
+                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
+                >
+                  Artifacts
+                </Link>
+                <Link
                   href="/forum"
                   className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
                 >
@@ -2463,6 +2480,39 @@ export default function MapPage() {
         </div>
 
         <aside className="space-y-3 md:space-y-4">
+          {isRoyalAdmin && (
+            <Panel>
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">Royal Admin</p>
+              <h2 className="mt-2 text-2xl font-black">King&apos;s Landing Controls</h2>
+              <p className="mt-2 text-sm leading-6 text-stone-400">
+                Royal account active. House Rider owns King&apos;s Landing, and your title is locked as King.
+              </p>
+              <div className="mt-4 grid gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedCastleId("kings-landing");
+                    setCastlePopupOpen(true);
+                  }}
+                  className="min-h-11 rounded-md bg-amber-400 px-4 py-3 text-sm font-black text-stone-950 transition hover:bg-amber-300"
+                >
+                  Open King&apos;s Landing
+                </button>
+                <button
+                  onClick={refreshCastleClaims}
+                  className="min-h-11 rounded-md border border-stone-700 px-4 py-3 text-sm font-black text-stone-300 transition hover:border-amber-300 hover:text-amber-200"
+                >
+                  Refresh Castle Claims
+                </button>
+                <Link
+                  href="/artifacts"
+                  className="min-h-11 rounded-md border border-stone-700 px-4 py-3 text-center text-sm font-black text-stone-300 transition hover:border-amber-300 hover:text-amber-200"
+                >
+                  View Artifact Vault
+                </Link>
+              </div>
+            </Panel>
+          )}
+
           <Panel>
             <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-300">Online World</p>
             <h2 className="mt-2 text-2xl font-black">Realm Clock</h2>
@@ -2501,7 +2551,7 @@ export default function MapPage() {
               </span>
             </div>
             <p className="mt-2 text-sm leading-6 text-stone-400">
-              Ride out for instant story results, gold, renown, and a 1% chance at a unique realm artifact. No turns, no waiting.
+              Ride out for instant story results, gold, renown, and a chance at a unique realm artifact. No turns, no waiting.
             </p>
             <div className="mt-4 space-y-3">
               {activeRaids.map((raid) => {
@@ -2764,7 +2814,7 @@ function CastlePopup({
               )}
             </div>
 
-            {images.length > 1 && (
+            {images.length > 3 && (
               <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
                 {images.map((image, index) => (
                   <button

@@ -121,6 +121,9 @@ export default function HomePage() {
             <Link href="/tournaments" className="gok-nav-link hidden sm:inline">
               Tournaments
             </Link>
+            <Link href="/artifacts" className="gok-nav-link hidden sm:inline">
+              Artifacts
+            </Link>
             <Link href="/forum" className="gok-nav-link hidden sm:inline">
               Forum
             </Link>
