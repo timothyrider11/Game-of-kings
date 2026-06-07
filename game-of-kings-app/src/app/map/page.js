@@ -1326,7 +1326,7 @@ export default function MapPage() {
   const [selectedCastleId, setSelectedCastleId] = useState("winterfell");
   const [castlePopupOpen, setCastlePopupOpen] = useState(false);
   const [hoveredCastleId, setHoveredCastleId] = useState(null);
-  const [galleryType, setGalleryType] = useState("exterior");
+  const [galleryType] = useState("exterior");
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [fullscreenImage, setFullscreenImage] = useState(null);
   const [houseName, setHouseName] = useState("");
@@ -1386,10 +1386,6 @@ export default function MapPage() {
   const canCheckIn = !checkInReadyAt || checkInRemaining === 0;
   const activeWars = wars.filter((war) => war.endsAt > now);
   const completedWars = wars.filter((war) => war.endsAt <= now).slice(0, 4);
-  const selectedGallery = [
-    ...(localCastleGalleries[selectedCastle.id]?.[galleryType] || []),
-    ...(galleries[selectedCastle.id]?.[galleryType] || []),
-  ];
   const selectedCastleImages = useMemo(
     () => getCastleImages(selectedCastle.id, galleries),
     [selectedCastle.id, galleries]
@@ -2018,7 +2014,7 @@ export default function MapPage() {
           </div>
 
           {activeTab === "realm" && (
-            <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+            <section>
               <Panel>
                 <CastlePanel
                   castle={selectedCastle}
@@ -2033,30 +2029,6 @@ export default function MapPage() {
                   targets={neighboringTargets}
                   castleState={castleState}
                   onWar={startWar}
-                />
-              </Panel>
-
-              <Panel>
-                <GalleryPanel
-                  castle={selectedCastle}
-                  galleryType={galleryType}
-                  setGalleryType={(type) => {
-                    setGalleryType(type);
-                    setGalleryIndex(0);
-                  }}
-                  selectedGallery={selectedGallery}
-                  galleryIndex={galleryIndex}
-                  setGalleryIndex={setGalleryIndex}
-                  onUploadClick={() => fileInputRef.current?.click()}
-                  onFullscreen={setFullscreenImage}
-                />
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={uploadGalleryImages}
                 />
               </Panel>
             </section>
@@ -2185,16 +2157,24 @@ export default function MapPage() {
           state={selectedState}
           houseName={houseName}
           images={selectedCastleImages}
+          galleryIndex={galleryIndex}
+          setGalleryIndex={setGalleryIndex}
           canClaim={canClaim}
           onClaim={claimCastle}
           onClose={() => setCastlePopupOpen(false)}
           onFullscreen={setFullscreenImage}
-          onOpenGallery={() => {
-            setCastlePopupOpen(false);
-            setActiveTab("realm");
-          }}
+          onUploadClick={() => fileInputRef.current?.click()}
         />
       )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={uploadGalleryImages}
+      />
 
       {fullscreenImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4">
@@ -2211,8 +2191,21 @@ export default function MapPage() {
   );
 }
 
-function CastlePopup({ castle, state, houseName, images, canClaim, onClaim, onClose, onFullscreen, onOpenGallery }) {
-  const heroImage = images[0];
+function CastlePopup({
+  castle,
+  state,
+  houseName,
+  images,
+  galleryIndex,
+  setGalleryIndex,
+  canClaim,
+  onClaim,
+  onClose,
+  onFullscreen,
+  onUploadClick,
+}) {
+  const safeIndex = images.length ? galleryIndex % images.length : 0;
+  const heroImage = images[safeIndex];
   const owner = state.owner === "player" ? `House ${houseName || "Unknown"}` : state.reservedHouse || castle.house;
   const currentLord = state.owner === "player" ? houseName || "Player Lord" : state.reservedHouse ? "King Rider" : castle.lord;
 
@@ -2248,6 +2241,26 @@ function CastlePopup({ castle, state, houseName, images, canClaim, onClaim, onCl
           >
             x Back to Map
           </button>
+
+          {images.length > 1 && (
+            <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2 rounded-md border border-stone-700 bg-black/80 p-2">
+              <button
+                onClick={() => setGalleryIndex((safeIndex - 1 + images.length) % images.length)}
+                className="rounded border border-stone-600 px-3 py-2 text-xs font-black text-stone-200 transition hover:bg-stone-800"
+              >
+                Previous
+              </button>
+              <span className="min-w-12 text-center text-xs font-black text-stone-300">
+                {safeIndex + 1} / {images.length}
+              </span>
+              <button
+                onClick={() => setGalleryIndex((safeIndex + 1) % images.length)}
+                className="rounded border border-stone-600 px-3 py-2 text-xs font-black text-stone-200 transition hover:bg-stone-800"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -2272,12 +2285,28 @@ function CastlePopup({ castle, state, houseName, images, canClaim, onClaim, onCl
                 </button>
               )}
               <button
-                onClick={onOpenGallery}
+                onClick={onUploadClick}
                 className="min-h-11 rounded-md border border-stone-600 bg-stone-900 px-5 py-3 text-sm font-black text-stone-100 transition hover:bg-stone-800"
               >
-                Open Image Windows
+                Add Castle Image
               </button>
             </div>
+
+            {images.length > 1 && (
+              <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+                {images.map((image, index) => (
+                  <button
+                    key={`${image.src}-${index}`}
+                    onClick={() => setGalleryIndex(index)}
+                    className={`h-16 w-24 shrink-0 overflow-hidden rounded border ${
+                      index === safeIndex ? "border-amber-300" : "border-stone-800"
+                    }`}
+                  >
+                    <img src={image.src} alt={image.name} className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="grid gap-2">
@@ -2287,7 +2316,7 @@ function CastlePopup({ castle, state, houseName, images, canClaim, onClaim, onCl
             <Info label="Population" value={castle.population.toLocaleString()} />
             <Info label="Wealth" value={`${castle.wealth}/10`} />
             <Info label="Power Score" value={scoreCastle(castle, state).toLocaleString()} />
-            <Info label="Gallery Slots" value="Exterior, Interior, Banners, Maps, Artwork" />
+            <Info label="Castle Images" value={images.length ? `${images.length} available` : "None added yet"} />
           </div>
         </div>
       </section>
@@ -2361,74 +2390,6 @@ function CastlePanel({ castle, state, houseName, canClaim, onClaim, onRecruit, o
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function GalleryPanel({ castle, galleryType, setGalleryType, selectedGallery, galleryIndex, setGalleryIndex, onUploadClick, onFullscreen }) {
-  const activeImage = selectedGallery[galleryIndex];
-
-  return (
-    <div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">Castle Gallery</p>
-          <h2 className="mt-2 text-2xl font-black">{castle.name}</h2>
-        </div>
-        <button
-          onClick={onUploadClick}
-          className="min-h-11 rounded-md bg-amber-400 px-4 py-2 text-sm font-black text-stone-950 transition hover:bg-amber-300"
-        >
-          Upload Images
-        </button>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {galleryTypes.map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setGalleryType(key)}
-            className={`min-h-10 rounded-md px-3 py-2 text-xs font-black ${
-              galleryType === key ? "bg-stone-100 text-stone-950" : "bg-black text-stone-400"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-4 border border-stone-800 bg-black">
-        {activeImage ? (
-          <button onClick={() => onFullscreen(activeImage)} className="block w-full">
-            <img src={activeImage.src} alt={activeImage.name} className="h-56 w-full object-cover sm:h-72" />
-          </button>
-        ) : (
-          <div className="flex h-56 items-center justify-center p-6 text-center text-sm text-stone-500 sm:h-72">
-            No images yet. Upload exterior shots, interiors, banners, maps, or historical artwork for this castle.
-            Local files can also be organized under public/castles/castle-id/.
-          </div>
-        )}
-      </div>
-
-      {selectedGallery.length > 0 && (
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <button
-            onClick={() => setGalleryIndex((galleryIndex - 1 + selectedGallery.length) % selectedGallery.length)}
-            className="rounded-md bg-stone-800 px-3 py-2 text-sm font-black"
-          >
-            Previous
-          </button>
-          <span className="text-sm font-bold text-stone-400">
-            {galleryIndex + 1} / {selectedGallery.length}
-          </span>
-          <button
-            onClick={() => setGalleryIndex((galleryIndex + 1) % selectedGallery.length)}
-            className="rounded-md bg-stone-800 px-3 py-2 text-sm font-black"
-          >
-            Next
-          </button>
-        </div>
-      )}
     </div>
   );
 }
