@@ -1362,7 +1362,6 @@ function scoreCastle(castle, castleState) {
 }
 
 export default function MapPage() {
-  const fileInputRef = useRef(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [zoom, setZoom] = useState(0.32);
@@ -1370,7 +1369,6 @@ export default function MapPage() {
   const [selectedCastleId, setSelectedCastleId] = useState("winterfell");
   const [castlePopupOpen, setCastlePopupOpen] = useState(false);
   const [hoveredCastleId, setHoveredCastleId] = useState(null);
-  const [galleryType] = useState("exterior");
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [fullscreenImage, setFullscreenImage] = useState(null);
   const [houseName, setHouseName] = useState("");
@@ -1811,38 +1809,6 @@ export default function MapPage() {
     setWars((current) => current.filter((item) => item.id !== war.id));
   }
 
-  function uploadGalleryImages(event) {
-    const files = Array.from(event.target.files || []);
-    if (!files.length) return;
-
-    files.forEach((file) => {
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        setGalleries((current) => ({
-          ...current,
-          [selectedCastle.id]: {
-            ...current[selectedCastle.id],
-            [galleryType]: [
-              ...(current[selectedCastle.id]?.[galleryType] || []),
-              {
-                id: `${selectedCastle.id}-${galleryType}-${Date.now()}-${file.name}`,
-                name: file.name,
-                src: reader.result,
-                uploadedAt: new Date().toISOString(),
-              },
-            ],
-          },
-        }));
-        addEvent(`${selectedCastle.name} received a new ${galleryType} gallery image.`, "gallery");
-      };
-
-      reader.readAsDataURL(file);
-    });
-
-    event.target.value = "";
-  }
-
   function createThread(event) {
     event.preventDefault();
     if (!threadDraft.title.trim() || !threadDraft.body.trim()) return;
@@ -2252,18 +2218,8 @@ export default function MapPage() {
           onClaim={claimCastle}
           onClose={() => setCastlePopupOpen(false)}
           onFullscreen={setFullscreenImage}
-          onUploadClick={() => fileInputRef.current?.click()}
         />
       )}
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={uploadGalleryImages}
-      />
 
       {fullscreenImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4">
@@ -2293,7 +2249,6 @@ function CastlePopup({
   onClaim,
   onClose,
   onFullscreen,
-  onUploadClick,
 }) {
   const safeIndex = images.length ? galleryIndex % images.length : 0;
   const heroImage = images[safeIndex];
@@ -2359,7 +2314,7 @@ function CastlePopup({
             <p className="text-xs font-black uppercase tracking-[0.25em] text-stone-500">Lore</p>
             <p className="mt-3 text-base leading-7 text-stone-300">{castle.summary}</p>
             <p className="mt-4 text-sm leading-6 text-stone-500">
-              This location is part of the living realm: claims, wars, upgrades, gallery uploads, and house activity are timestamped as the world keeps moving.
+              This location is part of the living realm: claims, wars, upgrades, castle archives, and house activity are timestamped as the world keeps moving.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
@@ -2375,12 +2330,6 @@ function CastlePopup({
                   Claim Castle
                 </button>
               )}
-              <button
-                onClick={onUploadClick}
-                className="min-h-11 rounded-md border border-stone-600 bg-stone-900 px-5 py-3 text-sm font-black text-stone-100 transition hover:bg-stone-800"
-              >
-                Add Castle Image
-              </button>
             </div>
 
             {images.length > 1 && (

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import RealmAudio from "../components/RealmAudio";
 
 const realmStats = [
   { label: "Active Houses", value: "128" },
@@ -45,6 +46,7 @@ const mapNames = [
 export default function HomePage() {
   return (
     <main className="gok-page">
+      <RealmAudio />
       <section className="gok-hero">
         <div className="gok-coast" />
         <div className="gok-map" />
