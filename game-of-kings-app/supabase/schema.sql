@@ -208,6 +208,12 @@ to authenticated
 using (user_id = auth.uid() or public.is_admin())
 with check (user_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Players abandon own castle claim" on public.castle_claims;
+create policy "Players abandon own castle claim"
+on public.castle_claims for delete
+to authenticated
+using (user_id = auth.uid() or public.is_admin());
+
 drop policy if exists "Admins read admin ledger" on public.admin_ledger;
 create policy "Admins read admin ledger"
 on public.admin_ledger for select

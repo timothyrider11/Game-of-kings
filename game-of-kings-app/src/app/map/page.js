@@ -1,12 +1,12 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/purity, react-hooks/immutability, react-hooks/exhaustive-deps */
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { rollArtifact } from "../../lib/artifacts";
 import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
-import { claimCastleCloud, getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
+import { abandonCastleCloud, claimCastleCloud, getSessionUser, loadCastleClaims, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 import { isRoyalEmail, normalizeRulerTitle, STORAGE_KEY } from "../../lib/realm-identity";
 
 const REALM_VERSION = 4;
@@ -1399,6 +1399,27 @@ function applyRoyalOwnership(castleState, email = "") {
   };
 }
 
+function applyPublicClaims(castleState, claims = [], currentUserId = "", email = "") {
+  const claimedState = claims.reduce((state, claim) => {
+    if (!claim.castle_id || claim.castle_id === "kings-landing") return state;
+    const current = state[claim.castle_id] || {};
+
+    return {
+      ...state,
+      [claim.castle_id]: {
+        ...current,
+        owner: claim.user_id && claim.user_id === currentUserId ? "player" : "claimed",
+        claimedByUserId: claim.user_id || "",
+        claimedHouse: claim.house_name || "",
+        rulerName: claim.ruler_name || "",
+        reservedHouse: claim.reserved_house || current.reservedHouse || "",
+      },
+    };
+  }, castleState);
+
+  return applyRoyalOwnership(claimedState, email);
+}
+
 function createDefaultGalleries() {
   return castles.reduce(
     (state, castle) => ({
@@ -1453,11 +1474,36 @@ function scoreCastle(castle, castleState) {
   return castleState.troops + castle.wealth * 150 + Math.floor(castle.population / 120);
 }
 
+function getCastleOwnerText({ state, castle, houseName }) {
+  if (state.owner === "player") return `House ${houseName || "Unknown"} owns this castle.`;
+  if (state.owner === "claimed") return `${state.claimedHouse || state.reservedHouse || "Another house"} owns this castle.`;
+  if (state.reservedHouse) return `${state.reservedHouse} owns this castle.`;
+  if (state.owner === "ai") return `${castle.house} controls this castle.`;
+  return "This castle is unclaimed.";
+}
+
+function getCastleLordText({ state, castle, rulerTitle, rulerName, houseName }) {
+  if (state.owner === "player") return `${rulerTitle} ${rulerName || houseName || "Unknown"}`;
+  if (state.owner === "claimed") return state.rulerName || "A sworn ruler";
+  if (state.reservedHouse) return "King Rider";
+  return castle.lord;
+}
+
+function getClaimDialogue({ isSignedIn, houseName, hasPlayerCastle, state }) {
+  if (!isSignedIn) return "Sign in to claim a castle and keep it tied to your account.";
+  if (!houseName.trim()) return "Found your house before claiming a castle.";
+  if (hasPlayerCastle) return "Your house already owns a castle. Abandon that seat before claiming another.";
+  if (state.owner) return "This castle already has a ruler.";
+  return "This castle is open. Claim it for your house.";
+}
+
 export default function MapPage() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [zoom, setZoom] = useState(0.95);
   const [sessionEmail, setSessionEmail] = useState("");
+  const [sessionUserId, setSessionUserId] = useState("");
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const [activeTab, setActiveTab] = useState("realm");
   const [selectedCastleId, setSelectedCastleId] = useState("winterfell");
   const [castlePopupOpen, setCastlePopupOpen] = useState(false);
@@ -1529,7 +1575,8 @@ export default function MapPage() {
     () => getCastleImages(selectedCastle.id, galleries),
     [selectedCastle.id, galleries]
   );
-  const canClaim = playerCastleIds.length === 0 && !selectedState.owner;
+  const hasPlayerCastle = playerCastleIds.length > 0;
+  const canClaim = isSignedIn && Boolean(houseName.trim()) && !hasPlayerCastle && !selectedState.owner;
   const economyPerHour = playerCastles.reduce(
     (total, castle) => total + castle.wealth * 18 + Math.floor(castle.population / 2000),
     0
@@ -1559,7 +1606,7 @@ export default function MapPage() {
     );
   }, [forumSearch, threads]);
 
-  function applyRealmData(data, emailOverride = sessionEmail) {
+  function applyRealmData(data, emailOverride = sessionEmail, userIdOverride = sessionUserId, publicClaims = []) {
     const offlineResult = resolveOfflineProgress(data);
 
     const royal = isRoyalEmail(emailOverride);
@@ -1568,7 +1615,7 @@ export default function MapPage() {
     setRulerTitle(normalizeRulerTitle(data.rulerTitle || "Lord", emailOverride));
     setRulerName(data.rulerName || (royal ? "Rider" : ""));
     setHouseSigil(data.houseSigil || sigils[0]);
-    setCastleState(applyRoyalOwnership(protectReservedCastles(offlineResult.castleState), emailOverride));
+    setCastleState(applyPublicClaims(protectReservedCastles(offlineResult.castleState), publicClaims, userIdOverride, emailOverride));
     setGalleries({ ...createDefaultGalleries(), ...(data.galleries || {}) });
     setGold(offlineResult.gold);
     setRenown(offlineResult.renown);
@@ -1587,28 +1634,52 @@ export default function MapPage() {
   useEffect(() => {
     getSessionUser().then(({ user }) => {
       const email = user?.email || "";
+      const userId = user?.id || "";
       setSessionEmail(email);
-      if (!user) return;
+      setSessionUserId(userId);
+      setIsSignedIn(Boolean(user));
 
-      loadCloudRealm().then(({ realm }) => {
-        if (!realm) return;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
-        applyRealmData(realm, email);
-      });
-    });
-
-    const stored = localStorage.getItem(STORAGE_KEY);
-
-    if (stored) {
-      try {
-        applyRealmData(JSON.parse(stored));
-      } catch {
+      if (!user) {
         localStorage.removeItem(STORAGE_KEY);
+        resetRealm();
+        loadCastleClaims().then(({ claims }) => {
+          if (!claims?.length) return;
+          setCastleState((current) => applyPublicClaims(current, claims, "", ""));
+        });
+        setHasLoaded(true);
+        return;
       }
-    }
 
-    setHasLoaded(true);
+      const stored = localStorage.getItem(STORAGE_KEY);
+
+      if (stored) {
+        try {
+          applyRealmData(JSON.parse(stored), email, userId);
+        } catch {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+
+      Promise.all([loadCloudRealm(), loadCastleClaims()]).then(([{ realm }, { claims }]) => {
+        if (!realm) {
+          if (claims?.length) {
+            setCastleState((current) => applyPublicClaims(current, claims, userId, email));
+          }
+          return;
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
+        applyRealmData(realm, email, userId, claims);
+      });
+      setHasLoaded(true);
+    });
   }, []);
+
+  useEffect(() => {
+    loadCastleClaims().then(({ claims }) => {
+      if (!claims?.length) return;
+      setCastleState((current) => applyPublicClaims(current, claims, sessionUserId, sessionEmail));
+    });
+  }, [sessionEmail, sessionUserId]);
 
   useEffect(() => {
     function handleRealmCleared() {
@@ -1838,6 +1909,9 @@ export default function MapPage() {
       [selectedCastle.id]: {
         ...current[selectedCastle.id],
         owner: "player",
+        claimedByUserId: sessionUserId,
+        claimedHouse: `House ${houseName}`,
+        rulerName: `${rulerTitle} ${rulerName || houseName}`,
         troops: Math.max(current[selectedCastle.id].troops, selectedCastle.militaryStrength + 200),
       },
     }));
@@ -1847,6 +1921,36 @@ export default function MapPage() {
       type: "claim",
       title: `${selectedCastle.name} Has A New Banner`,
       body: `House ${houseName} claimed ${selectedCastle.name}. Words: "${houseMotto || "Words yet unspoken"}." Ruler: ${rulerTitle} ${rulerName || houseName}.`,
+    });
+  }
+
+  function abandonCastle() {
+    const seat = playerCastles[0];
+    if (!seat || seat.id === "kings-landing") return;
+
+    abandonCastleCloud(seat.id).then(({ error }) => {
+      if (error && !error.includes("Not signed in")) {
+        addEvent(`Cloud abandon note for ${seat.name}: ${error}`, "claim");
+      }
+    });
+
+    setCastleState((current) => ({
+      ...current,
+      [seat.id]: {
+        ...current[seat.id],
+        owner: null,
+        claimedByUserId: "",
+        claimedHouse: "",
+        rulerName: "",
+        reservedHouse: "",
+      },
+    }));
+    setWars((current) => current.filter((war) => war.attackerId !== seat.id && war.defenderId !== seat.id));
+    addEvent(`House ${houseName} abandoned ${seat.name}. The castle is open for claim again.`, "claim");
+    logPublicActivity({
+      type: "claim",
+      title: `${seat.name} Was Abandoned`,
+      body: `House ${houseName} lowered its banner. ${seat.name} is now open for a new claimant.`,
     });
   }
 
@@ -2320,6 +2424,8 @@ export default function MapPage() {
                   rulerTitle={rulerTitle}
                   rulerName={rulerName}
                   canClaim={canClaim}
+                  isSignedIn={isSignedIn}
+                  hasPlayerCastle={hasPlayerCastle}
                   onClaim={claimCastle}
                   onRecruit={recruitArmy}
                   onUpgrade={startUpgrade}
@@ -2366,12 +2472,18 @@ export default function MapPage() {
                 {canCheckIn ? "Daily Check-In" : `Ready in ${formatDuration(checkInRemaining)}`}
               </button>
               <button
-                onClick={resetRealm}
-                className="min-h-11 rounded-md border border-stone-700 px-4 py-3 text-sm font-black text-stone-300 transition hover:border-red-400 hover:text-red-300"
+                onClick={abandonCastle}
+                disabled={!playerCastles.length || playerCastles[0]?.id === "kings-landing"}
+                className="min-h-11 rounded-md border border-stone-700 px-4 py-3 text-sm font-black text-stone-300 transition hover:border-red-400 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-45"
               >
-                Reset Local Realm
+                Abandon Castle
               </button>
             </div>
+            {!isSignedIn && (
+              <p className="mt-3 text-xs leading-5 text-stone-500">
+                Visitors can browse the realm. Sign in to claim a castle, check in, raid camps, and keep progress.
+              </p>
+            )}
           </Panel>
 
           <Panel>
@@ -2440,13 +2552,17 @@ export default function MapPage() {
                 </div>
                 <p className="text-sm text-stone-400">
                   {playerCastles.length
-                    ? `Seat: ${playerCastles[0].name}.`
-                    : "Now click a castle and claim it as your only seat."}
+                    ? `Seat: ${playerCastles[0].name}. House ${houseName} owns this castle.`
+                    : isSignedIn
+                      ? "Now click an unclaimed castle and claim it as your only seat."
+                      : "Sign in to claim a castle and keep it tied to your account."}
                 </p>
               </div>
             ) : (
               <p className="mt-3 text-sm leading-6 text-stone-400">
-                Make your house first, then come back to the map and claim one castle.
+                {isSignedIn
+                  ? "Make your house first, then come back to the map and claim one castle."
+                  : "Visitors can inspect castles, lore, and activity. Sign in to found a house and claim a castle."}
               </p>
             )}
             <Link
@@ -2513,6 +2629,8 @@ export default function MapPage() {
           houseName={houseName}
           rulerTitle={rulerTitle}
           rulerName={rulerName}
+          isSignedIn={isSignedIn}
+          hasPlayerCastle={hasPlayerCastle}
           images={selectedCastleImages}
           galleryIndex={galleryIndex}
           setGalleryIndex={setGalleryIndex}
@@ -2544,6 +2662,8 @@ function CastlePopup({
   houseName,
   rulerTitle,
   rulerName,
+  isSignedIn,
+  hasPlayerCastle,
   images,
   galleryIndex,
   setGalleryIndex,
@@ -2554,8 +2674,9 @@ function CastlePopup({
 }) {
   const safeIndex = images.length ? galleryIndex % images.length : 0;
   const heroImage = images[safeIndex];
-  const owner = state.owner === "player" ? `House ${houseName || "Unknown"}` : state.reservedHouse || castle.house;
-  const currentLord = state.owner === "player" ? `${rulerTitle} ${rulerName || houseName || "Unknown"}` : state.reservedHouse ? "King Rider" : castle.lord;
+  const owner = getCastleOwnerText({ state, castle, houseName });
+  const currentLord = getCastleLordText({ state, castle, rulerTitle, rulerName, houseName });
+  const claimDialogue = getClaimDialogue({ isSignedIn, houseName, hasPlayerCastle, state });
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center sm:p-5">
@@ -2616,8 +2737,13 @@ function CastlePopup({
             <p className="text-xs font-black uppercase tracking-[0.25em] text-stone-500">Lore</p>
             <p className="mt-3 text-base leading-7 text-stone-300">{castle.summary}</p>
             <p className="mt-4 text-sm leading-6 text-stone-500">
-              This location is part of the living realm: claims, wars, upgrades, castle archives, and house activity are timestamped as the world keeps moving.
+              {owner} This location is part of the living realm: claims, wars, upgrades, castle archives, and house activity are timestamped as the world keeps moving.
             </p>
+            {!canClaim && (
+              <p className="mt-3 border border-stone-800 bg-black/45 p-3 text-sm leading-6 text-stone-400">
+                {claimDialogue}
+              </p>
+            )}
 
             <div className="mt-5 flex flex-wrap gap-2">
               {canClaim && (
@@ -2652,7 +2778,7 @@ function CastlePopup({
           </div>
 
           <div className="grid gap-2">
-            <Info label="House Name" value={owner} />
+            <Info label="Ownership" value={owner} />
             <Info label="Current Lord" value={currentLord} />
             <Info label="Military" value={state.troops.toLocaleString()} />
             <Info label="Population" value={castle.population.toLocaleString()} />
@@ -2666,8 +2792,11 @@ function CastlePopup({
   );
 }
 
-function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim, onClaim, onRecruit, onUpgrade, gold, now, targets, castleState, onWar }) {
+function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim, isSignedIn, hasPlayerCastle, onClaim, onRecruit, onUpgrade, gold, now, targets, castleState, onWar }) {
   const upgradeRemaining = state.upgradeEndsAt ? Math.max(0, Math.ceil((state.upgradeEndsAt - now) / 1000)) : 0;
+  const owner = getCastleOwnerText({ state, castle, houseName });
+  const currentLord = getCastleLordText({ state, castle, rulerTitle, rulerName, houseName });
+  const claimDialogue = getClaimDialogue({ isSignedIn, houseName, hasPlayerCastle, state });
 
   return (
     <div>
@@ -2676,6 +2805,12 @@ function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim
           <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">{castle.region}</p>
           <h2 className="mt-2 text-2xl font-black leading-tight md:text-3xl">{castle.name}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">{castle.summary}</p>
+          <p className="mt-3 max-w-3xl border border-stone-800 bg-black/45 p-3 text-sm font-bold leading-6 text-stone-300">
+            {owner}
+          </p>
+          {!canClaim && (
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-500">{claimDialogue}</p>
+          )}
         </div>
         {canClaim && (
           <button
@@ -2689,8 +2824,8 @@ function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Info label="House Name" value={state.owner === "player" ? `House ${houseName}` : state.reservedHouse || castle.house} />
-        <Info label="Current Lord" value={state.owner === "player" ? `${rulerTitle} ${rulerName || houseName || "Unknown"}` : state.reservedHouse ? "King Rider" : castle.lord} />
+        <Info label="Ownership" value={owner} />
+        <Info label="Current Lord" value={currentLord} />
         <Info label="Military" value={state.troops.toLocaleString()} />
         <Info label="Population" value={castle.population.toLocaleString()} />
         <Info label="Wealth" value={`${castle.wealth}/10`} />

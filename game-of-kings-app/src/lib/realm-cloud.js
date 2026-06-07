@@ -125,6 +125,17 @@ export async function saveCloudRealm(realmData) {
   return { error: error?.message || null };
 }
 
+export async function loadCastleClaims() {
+  if (!supabase) return { claims: [], error: CLOUD_DISABLED_MESSAGE };
+
+  const { data, error } = await supabase
+    .from("castle_claims")
+    .select("castle_id,user_id,house_name,ruler_name,reserved_house,claimed_at")
+    .order("claimed_at", { ascending: false });
+
+  return { claims: data || [], error: error?.message || null };
+}
+
 export async function claimCastleCloud({ castleId, houseName, rulerName }) {
   if (!supabase) return { error: CLOUD_DISABLED_MESSAGE };
 
@@ -137,6 +148,21 @@ export async function claimCastleCloud({ castleId, houseName, rulerName }) {
     house_name: houseName,
     ruler_name: rulerName || "",
   });
+
+  return { error: error?.message || null };
+}
+
+export async function abandonCastleCloud(castleId) {
+  if (!supabase) return { error: CLOUD_DISABLED_MESSAGE };
+
+  const { user, error: userError } = await getSessionUser();
+  if (userError || !user) return { error: userError || "Not signed in." };
+
+  const { error } = await supabase
+    .from("castle_claims")
+    .delete()
+    .eq("castle_id", castleId)
+    .eq("user_id", user.id);
 
   return { error: error?.message || null };
 }
