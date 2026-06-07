@@ -67,6 +67,9 @@ export default function HomePage() {
             <Link href="/events" className="gok-nav-link hidden sm:inline">
               Events
             </Link>
+            <Link href="/account" className="gok-nav-link hidden sm:inline">
+              Account
+            </Link>
             <Link href="#realm-life" className="gok-nav-link hidden md:inline">
               Realm Life
             </Link>

@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
 
@@ -204,6 +205,8 @@ function normalizeSigil(savedSigil = {}) {
 export default function HouseFounderPage() {
   const [houseName, setHouseName] = useState("");
   const [houseMotto, setHouseMotto] = useState("");
+  const [rulerTitle, setRulerTitle] = useState("Lord");
+  const [rulerName, setRulerName] = useState("");
   const [sigil, setSigil] = useState(defaultSigil);
   const [selectedLayerId, setSelectedLayerId] = useState(defaultSigil.layers[0].id);
   const [savedMessage, setSavedMessage] = useState("");
@@ -224,6 +227,8 @@ export default function HouseFounderPage() {
 
       setHouseName(data.houseName || "");
       setHouseMotto(data.houseMotto || "");
+      setRulerTitle(data.rulerTitle || "Lord");
+      setRulerName(data.rulerName || "");
       const normalized = normalizeSigil(savedSigil);
       setSigil(normalized);
       setSelectedLayerId(normalized.layers[0].id);
@@ -232,26 +237,34 @@ export default function HouseFounderPage() {
     }
   }, []);
 
-  function saveHouse() {
+  async function saveHouse() {
     const stored = localStorage.getItem(STORAGE_KEY);
     const current = stored ? JSON.parse(stored) : {};
     const chargeName = getById(charges, selectedLayer.charge)[1];
+    const nextRealm = {
+      ...current,
+      houseName: houseName.trim(),
+      houseMotto: houseMotto.trim(),
+      rulerTitle,
+      rulerName: rulerName.trim(),
+      houseSigil: {
+        ...sigil,
+        name: chargeName,
+        description: selectedCharge[2],
+        fieldDescription: selectedField[2],
+      },
+    };
 
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        ...current,
-        houseName: houseName.trim(),
-        houseMotto: houseMotto.trim(),
-        houseSigil: {
-          ...sigil,
-          name: chargeName,
-          description: selectedCharge[2],
-          fieldDescription: selectedField[2],
-        },
-      })
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRealm));
+
+    const { error } = await saveCloudRealm(nextRealm);
+    setSavedMessage(
+      error && !error.includes("Not signed in")
+        ? `House saved locally. Cloud save needs attention: ${error}`
+        : error
+          ? "House saved locally. Sign in on the Account page to save it to your account."
+          : "House saved to this device and your account."
     );
-    setSavedMessage("House saved. Your sigil is ready for the realm.");
   }
 
   function updateSelectedLayer(key, value) {
@@ -301,6 +314,9 @@ export default function HouseFounderPage() {
             <Link href="/events" className="gok-btn px-4 py-2 text-xs">
               Events
             </Link>
+            <Link href="/account" className="gok-btn px-4 py-2 text-xs">
+              Account
+            </Link>
           </div>
         </div>
       </nav>
@@ -323,6 +339,25 @@ export default function HouseFounderPage() {
               placeholder="House name"
               className="min-h-12 w-full border border-[var(--gok-line)] bg-black/70 px-4 py-3 outline-none focus:border-[var(--gok-line-strong)]"
             />
+            <div className="grid gap-3 sm:grid-cols-[120px_minmax(0,1fr)]">
+              <select
+                value={rulerTitle}
+                onChange={(event) => setRulerTitle(event.target.value)}
+                className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-4 py-3 outline-none focus:border-[var(--gok-line-strong)]"
+              >
+                <option>Lord</option>
+                <option>Lady</option>
+                <option>King</option>
+                <option>Queen</option>
+                <option>Ser</option>
+              </select>
+              <input
+                value={rulerName}
+                onChange={(event) => setRulerName(event.target.value)}
+                placeholder="Ruler name"
+                className="min-h-12 w-full border border-[var(--gok-line)] bg-black/70 px-4 py-3 outline-none focus:border-[var(--gok-line-strong)]"
+              />
+            </div>
             <input
               value={houseMotto}
               onChange={(event) => setHouseMotto(event.target.value)}
@@ -340,7 +375,7 @@ export default function HouseFounderPage() {
 
           <button
             onClick={saveHouse}
-            disabled={!houseName.trim()}
+            disabled={!houseName.trim() || !rulerName.trim()}
             className="gok-btn gok-btn-blood relative z-10 mt-5 w-full px-5 py-3 disabled:cursor-not-allowed disabled:opacity-45"
           >
             Save House
@@ -369,6 +404,9 @@ export default function HouseFounderPage() {
               <SigilPreview sigil={sigil} background={background} layers={layers} />
               <div className="mt-4 text-center">
                 <h3 className="text-2xl font-normal text-[var(--gok-silver)]">House {houseName || "Unnamed"}</h3>
+                <p className="mt-1 text-sm text-[var(--gok-parchment)]">
+                  {rulerTitle} {rulerName || "Unnamed"}
+                </p>
                 <p className="mt-1 text-[var(--gok-dim)]">&quot;{houseMotto || "Our Words"}&quot;</p>
               </div>
             </div>

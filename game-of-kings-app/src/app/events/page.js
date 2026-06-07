@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -220,6 +221,11 @@ export default function EventsPage() {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     setRealm(stored ? JSON.parse(stored) : {});
+    loadCloudRealm().then(({ realm: cloudRealm }) => {
+      if (!cloudRealm) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRealm));
+      setRealm(cloudRealm);
+    });
     setNow(Date.now());
   }, []);
 
@@ -236,6 +242,7 @@ export default function EventsPage() {
   function saveRealm(nextRealm) {
     setRealm(nextRealm);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRealm));
+    saveCloudRealm(nextRealm);
   }
 
   function chooseAnswer(questionIndex, option) {

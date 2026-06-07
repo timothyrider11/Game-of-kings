@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { claimCastleCloud, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
 const REALM_VERSION = 4;
@@ -1374,6 +1375,8 @@ export default function MapPage() {
   const [fullscreenImage, setFullscreenImage] = useState(null);
   const [houseName, setHouseName] = useState("");
   const [houseMotto, setHouseMotto] = useState("");
+  const [rulerTitle, setRulerTitle] = useState("Lord");
+  const [rulerName, setRulerName] = useState("");
   const [houseSigil, setHouseSigil] = useState(sigils[0]);
   const [castleState, setCastleState] = useState(createDefaultCastleState);
   const [galleries, setGalleries] = useState(createDefaultGalleries);
@@ -1403,6 +1406,7 @@ export default function MapPage() {
   const [completedQuizzes, setCompletedQuizzes] = useState([]);
   const [artifactInventory, setArtifactInventory] = useState([]);
   const [joinedTournaments, setJoinedTournaments] = useState([]);
+  const lastCloudSaveRef = useRef(0);
 
   const selectedCastle = useMemo(
     () => castles.find((castle) => castle.id === selectedCastleId) || castles[0],
@@ -1452,34 +1456,45 @@ export default function MapPage() {
     );
   }, [forumSearch, threads]);
 
+  function applyRealmData(data) {
+    const offlineResult = resolveOfflineProgress(data);
+
+    setHouseName(data.houseName || "");
+    setHouseMotto(data.houseMotto || "");
+    setRulerTitle(data.rulerTitle || "Lord");
+    setRulerName(data.rulerName || "");
+    setHouseSigil(data.houseSigil || sigils[0]);
+    setCastleState(protectReservedCastles(offlineResult.castleState));
+    setGalleries({ ...createDefaultGalleries(), ...(data.galleries || {}) });
+    setGold(offlineResult.gold);
+    setRenown(offlineResult.renown);
+    setLastCheckInDate(data.lastCheckInDate || "");
+    setLastResolvedAt(offlineResult.lastResolvedAt);
+    setWorldEvents(offlineResult.worldEvents);
+    setWars(offlineResult.wars);
+    setThreads(data.threads || initialThreads);
+    setCompletedQuizzes(data.completedQuizzes || []);
+    setArtifactInventory(data.artifactInventory || []);
+    setJoinedTournaments(data.joinedTournaments || []);
+    setSelectedCastleId(data.selectedCastleId || "winterfell");
+  }
+
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
 
     if (stored) {
       try {
-        const data = JSON.parse(stored);
-        const offlineResult = resolveOfflineProgress(data);
-
-        setHouseName(data.houseName || "");
-        setHouseMotto(data.houseMotto || "");
-        setHouseSigil(data.houseSigil || sigils[0]);
-        setCastleState(protectReservedCastles(offlineResult.castleState));
-        setGalleries({ ...createDefaultGalleries(), ...(data.galleries || {}) });
-        setGold(offlineResult.gold);
-        setRenown(offlineResult.renown);
-        setLastCheckInDate(data.lastCheckInDate || "");
-        setLastResolvedAt(offlineResult.lastResolvedAt);
-        setWorldEvents(offlineResult.worldEvents);
-        setWars(offlineResult.wars);
-        setThreads(data.threads || initialThreads);
-        setCompletedQuizzes(data.completedQuizzes || []);
-        setArtifactInventory(data.artifactInventory || []);
-        setJoinedTournaments(data.joinedTournaments || []);
-        setSelectedCastleId(data.selectedCastleId || "winterfell");
+        applyRealmData(JSON.parse(stored));
       } catch {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
+
+    loadCloudRealm().then(({ realm }) => {
+      if (!realm) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
+      applyRealmData(realm);
+    });
 
     setHasLoaded(true);
   }, []);
@@ -1515,29 +1530,35 @@ export default function MapPage() {
   useEffect(() => {
     if (!hasLoaded) return;
 
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        version: REALM_VERSION,
-        savedAt: new Date(now).toISOString(),
-        houseName,
-        houseMotto,
-        houseSigil,
-        castleState,
-        galleries,
-        gold,
-        renown,
-        lastCheckInDate,
-        lastResolvedAt,
-        worldEvents,
-        wars,
-        threads,
-        completedQuizzes,
-        artifactInventory,
-        joinedTournaments,
-        selectedCastleId,
-      })
-    );
+    const realmSnapshot = {
+      version: REALM_VERSION,
+      savedAt: new Date(now).toISOString(),
+      houseName,
+      houseMotto,
+      rulerTitle,
+      rulerName,
+      houseSigil,
+      castleState,
+      galleries,
+      gold,
+      renown,
+      lastCheckInDate,
+      lastResolvedAt,
+      worldEvents,
+      wars,
+      threads,
+      completedQuizzes,
+      artifactInventory,
+      joinedTournaments,
+      selectedCastleId,
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(realmSnapshot));
+
+    if (Date.now() - lastCloudSaveRef.current > 15_000) {
+      lastCloudSaveRef.current = Date.now();
+      saveCloudRealm(realmSnapshot);
+    }
   }, [
     artifactInventory,
     castleState,
@@ -1553,6 +1574,8 @@ export default function MapPage() {
     lastResolvedAt,
     now,
     renown,
+    rulerName,
+    rulerTitle,
     selectedCastleId,
     threads,
     wars,
@@ -1672,6 +1695,16 @@ export default function MapPage() {
 
   function claimCastle() {
     if (!houseName.trim() || !canClaim) return;
+
+    claimCastleCloud({
+      castleId: selectedCastle.id,
+      houseName: `House ${houseName}`,
+      rulerName: `${rulerTitle} ${rulerName || houseName}`,
+    }).then(({ error }) => {
+      if (error && !error.includes("Not signed in")) {
+        addEvent(`Cloud claim note for ${selectedCastle.name}: ${error}`, "claim");
+      }
+    });
 
     setCastleState((current) => ({
       ...current,
@@ -2063,6 +2096,8 @@ export default function MapPage() {
                   castle={selectedCastle}
                   state={selectedState}
                   houseName={houseName}
+                  rulerTitle={rulerTitle}
+                  rulerName={rulerName}
                   canClaim={canClaim}
                   onClaim={claimCastle}
                   onRecruit={recruitArmy}
@@ -2129,7 +2164,10 @@ export default function MapPage() {
                   />
                   <div>
                     <h2 className="font-black">House {houseName}</h2>
-                    <p className="text-sm text-stone-400">{houseMotto || "No words declared."}</p>
+                    <p className="text-sm text-stone-400">
+                      {rulerTitle} {rulerName || houseName}
+                    </p>
+                    <p className="text-sm text-stone-500">{houseMotto || "No words declared."}</p>
                   </div>
                 </div>
                 <p className="text-sm text-stone-400">
@@ -2148,6 +2186,12 @@ export default function MapPage() {
               className="mt-4 block min-h-11 rounded-md bg-amber-400 px-4 py-3 text-center font-black text-stone-950 transition hover:bg-amber-300"
             >
               {houseName ? "Edit House Founder" : "Create House"}
+            </Link>
+            <Link
+              href="/account"
+              className="mt-2 block min-h-11 rounded-md border border-stone-700 px-4 py-3 text-center font-black text-stone-300 transition hover:border-amber-300 hover:text-amber-200"
+            >
+              Account Save
             </Link>
           </Panel>
 
@@ -2199,6 +2243,8 @@ export default function MapPage() {
           castle={selectedCastle}
           state={selectedState}
           houseName={houseName}
+          rulerTitle={rulerTitle}
+          rulerName={rulerName}
           images={selectedCastleImages}
           galleryIndex={galleryIndex}
           setGalleryIndex={setGalleryIndex}
@@ -2238,6 +2284,8 @@ function CastlePopup({
   castle,
   state,
   houseName,
+  rulerTitle,
+  rulerName,
   images,
   galleryIndex,
   setGalleryIndex,
@@ -2250,7 +2298,7 @@ function CastlePopup({
   const safeIndex = images.length ? galleryIndex % images.length : 0;
   const heroImage = images[safeIndex];
   const owner = state.owner === "player" ? `House ${houseName || "Unknown"}` : state.reservedHouse || castle.house;
-  const currentLord = state.owner === "player" ? houseName || "Player Lord" : state.reservedHouse ? "King Rider" : castle.lord;
+  const currentLord = state.owner === "player" ? `${rulerTitle} ${rulerName || houseName || "Unknown"}` : state.reservedHouse ? "King Rider" : castle.lord;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center sm:p-5">
@@ -2367,7 +2415,7 @@ function CastlePopup({
   );
 }
 
-function CastlePanel({ castle, state, houseName, canClaim, onClaim, onRecruit, onUpgrade, gold, now, targets, castleState, onWar }) {
+function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim, onClaim, onRecruit, onUpgrade, gold, now, targets, castleState, onWar }) {
   const upgradeRemaining = state.upgradeEndsAt ? Math.max(0, Math.ceil((state.upgradeEndsAt - now) / 1000)) : 0;
 
   return (
@@ -2391,7 +2439,7 @@ function CastlePanel({ castle, state, houseName, canClaim, onClaim, onRecruit, o
 
       <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Info label="House Name" value={state.owner === "player" ? `House ${houseName}` : state.reservedHouse || castle.house} />
-        <Info label="Current Lord" value={state.owner === "player" ? houseName || "Player Lord" : state.reservedHouse ? "King Rider" : castle.lord} />
+        <Info label="Current Lord" value={state.owner === "player" ? `${rulerTitle} ${rulerName || houseName || "Unknown"}` : state.reservedHouse ? "King Rider" : castle.lord} />
         <Info label="Military" value={state.troops.toLocaleString()} />
         <Info label="Population" value={castle.population.toLocaleString()} />
         <Info label="Wealth" value={`${castle.wealth}/10`} />
