@@ -101,6 +101,24 @@ const charges = [
   ["skull", "Skull", "Fear, mortality, vengeance, and grim warnings."],
 ];
 
+const sheetChargeOptions = [
+  ["sheet-spear", "Spear"], ["sheet-pike", "Pike"], ["sheet-halberd", "Halberd"], ["sheet-trident", "War Trident"],
+  ["sheet-mace", "Morning Star"], ["sheet-chain-flail", "Chain Flail"], ["sheet-war-flag", "War Flag"],
+  ["sheet-longsword", "Longsword"], ["sheet-arming-sword", "Arming Sword"], ["sheet-dagger", "Dagger"], ["sheet-curved-sword", "Curved Sword"], ["sheet-sabre", "Sabre"], ["sheet-warhammer", "War Hammer"], ["sheet-battleaxe", "Battle Axe"],
+  ["sheet-bow", "War Bow"], ["sheet-crossbow", "Crossbow"], ["sheet-arrow", "Arrow"], ["sheet-helmet", "Knight Helm"], ["sheet-horned-helm", "Horned Helm"], ["sheet-winged-helm", "Winged Helm"], ["sheet-visored-helm", "Visored Helm"],
+  ["sheet-axe", "Axe"], ["sheet-crossed-maces", "Crossed Maces"], ["sheet-flail", "Flail"], ["sheet-bomb", "Firepot"], ["sheet-banner", "Banner"], ["sheet-swallowtail", "Swallowtail"], ["sheet-gonfalon", "Gonfalon"], ["sheet-hanging-banner", "Hanging Banner"],
+  ["sheet-heater-shield", "Heater Shield"], ["sheet-kite-shield", "Kite Shield"], ["sheet-point-shield", "Point Shield"], ["sheet-ring-shield", "Round Gate Shield"],
+  ["sheet-crown-open", "Open Crown"], ["sheet-crown-royal", "Royal Crown"], ["sheet-crown-iron", "Iron Crown"], ["sheet-crown-thin", "Thin Crown"],
+  ["sheet-castle", "Castle"], ["sheet-fleur", "Fleur de Lis"], ["sheet-tower", "Tower Crest"], ["sheet-gem", "Gem"], ["sheet-sword-point", "Pointed Sword"], ["sheet-crossbow-bolts", "Bolted Crossbow"], ["sheet-spiked-mace", "Spiked Mace"], ["sheet-pennant", "Pennant"],
+  ["sheet-anvil", "Anvil"], ["sheet-hammer-tool", "Craft Hammer"], ["sheet-key", "Key"], ["sheet-goblet", "Goblet"], ["sheet-horn", "Horn"], ["sheet-lockbox", "Lockbox"], ["sheet-well", "Well"],
+  ["sheet-cross", "Faith Cross"], ["sheet-faith-axe", "Faith Axe"], ["sheet-bishop", "Septon Hood"], ["sheet-cauldron", "Cauldron"], ["sheet-scroll", "Scroll"], ["sheet-hood", "Hooded Mask"], ["sheet-pointed-hood", "Pointed Hood"], ["sheet-warship", "Warship"], ["sheet-siege-engine", "Siege Engine"],
+  ["sheet-fortress", "Fortress"], ["sheet-wall-tower", "Wall Tower"], ["sheet-tall-tower", "Tall Tower"], ["sheet-gatehouse", "Gatehouse"], ["sheet-watchtower", "Watchtower"],
+  ["sheet-laurel-frame", "Laurel Frame"], ["sheet-ornate-frame", "Ornate Frame"], ["sheet-round-frame", "Round Frame"], ["sheet-arrow-long", "Long Arrow"], ["sheet-marker-flag", "Marker Flag"], ["sheet-torch", "Torch"],
+  ["sheet-barrel-helm", "Barrel Helm"], ["sheet-face-helm", "Face Helm"], ["sheet-ghost", "Ghost"], ["sheet-pillar", "Pillar"], ["sheet-scroll-paper", "Scroll Paper"], ["sheet-rampart", "Rampart"], ["sheet-quill", "Quill Seal"], ["sheet-wings", "Wings"], ["sheet-crossed-spears", "Crossed Spears"], ["sheet-gallows", "Gallows"],
+].map(([id, label]) => [id, label, "A custom heraldic line-art charge from your sigil sheet.", `/sigils/charges/${id}.png`]);
+
+const chargeOptions = [...charges, ...sheetChargeOptions];
+
 const defaultSigil = {
   name: "Wolf",
   charge: "wolf",
@@ -132,6 +150,14 @@ const defaultSigil = {
 
 function getById(list, id) {
   return list.find(([itemId]) => itemId === id) || list[0];
+}
+
+function getChargeById(id) {
+  return chargeOptions.find(([itemId]) => itemId === id) || chargeOptions[0];
+}
+
+function isSheetCharge(id) {
+  return id?.startsWith("sheet-");
 }
 
 function getFieldBackground(sigil) {
@@ -179,7 +205,7 @@ function updateSigilValue(setSigil, key, value) {
   setSigil((sigil) => ({
     ...sigil,
     [key]: value,
-    name: key === "charge" ? getById(charges, value)[1] : sigil.name,
+    name: key === "charge" ? getChargeById(value)[1] : sigil.name,
   }));
 }
 
@@ -228,7 +254,7 @@ export default function HouseFounderPage() {
   const background = useMemo(() => getFieldBackground(sigil), [sigil]);
   const layers = sigil.layers?.length ? sigil.layers : defaultSigil.layers;
   const selectedLayer = layers.find((layer) => layer.id === selectedLayerId) || layers[0];
-  const selectedCharge = getById(charges, selectedLayer.charge);
+  const selectedCharge = getChargeById(selectedLayer.charge);
   const selectedField = getById(fieldLayouts, sigil.field);
 
   useEffect(() => {
@@ -236,7 +262,7 @@ export default function HouseFounderPage() {
 
     const stored = localStorage.getItem(STORAGE_KEY);
     const current = stored ? JSON.parse(stored) : {};
-    const chargeName = getById(charges, selectedLayer.charge)[1];
+    const chargeName = getChargeById(selectedLayer.charge)[1];
 
     localStorage.setItem(
       STORAGE_KEY,
@@ -302,7 +328,7 @@ export default function HouseFounderPage() {
   async function saveHouse() {
     const stored = localStorage.getItem(STORAGE_KEY);
     const current = stored ? JSON.parse(stored) : {};
-    const chargeName = getById(charges, selectedLayer.charge)[1];
+    const chargeName = getChargeById(selectedLayer.charge)[1];
     const safeTitle = normalizeRulerTitle(rulerTitle, sessionEmail);
     const nextRealm = {
       ...current,
@@ -483,13 +509,35 @@ export default function HouseFounderPage() {
                   </ControlBlock>
                 </div>
 
-                <ControlBlock title="Emblem Objects">
+                <ControlBlock title="Classic Emblem Objects">
                   <div className="grid grid-cols-4 gap-2 md:grid-cols-6 xl:grid-cols-8">
                     {charges.map(([id, label, description]) => (
                       <button
                         key={id}
                         onClick={() => updateSelectedLayer("charge", id)}
                         className={`min-h-[4.7rem] overflow-hidden border px-1.5 py-2 text-[0.68rem] font-bold leading-tight transition ${
+                          selectedLayer.charge === id
+                            ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
+                            : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
+                        }`}
+                        title={description}
+                      >
+                        <span className="mx-auto mb-1 block h-8 w-8">
+                          <ChargeIcon type={id} color="currentColor" />
+                        </span>
+                        <span className="block break-words text-center">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </ControlBlock>
+
+                <ControlBlock title="Sigil Sheet Charges">
+                  <div className="grid grid-cols-4 gap-2 md:grid-cols-6 xl:grid-cols-8">
+                    {sheetChargeOptions.map(([id, label, description]) => (
+                      <button
+                        key={id}
+                        onClick={() => updateSelectedLayer("charge", id)}
+                        className={`min-h-[4.7rem] overflow-hidden border px-1.5 py-2 text-[0.62rem] font-bold leading-tight transition ${
                           selectedLayer.charge === id
                             ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
                             : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
@@ -526,7 +574,7 @@ export default function HouseFounderPage() {
                             : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)]"
                         }`}
                       >
-                        <span>{index + 1}. {getById(charges, layer.charge)[1]}</span>
+                        <span>{index + 1}. {getChargeById(layer.charge)[1]}</span>
                         <span className="h-4 w-4 border border-black/50" style={{ backgroundColor: layer.color }} />
                       </button>
                     ))}
@@ -677,6 +725,20 @@ function RangeControl({ label, value, min, max, onChange }) {
 }
 
 function ChargeIcon({ type, color }) {
+  if (isSheetCharge(type)) {
+    return (
+      <span
+        aria-hidden="true"
+        className="block h-full w-full"
+        style={{
+          backgroundColor: color,
+          WebkitMask: `url(/sigils/charges/${type}.png) center / contain no-repeat`,
+          mask: `url(/sigils/charges/${type}.png) center / contain no-repeat`,
+        }}
+      />
+    );
+  }
+
   const common = {
     fill: color,
     stroke: "rgba(0,0,0,.55)",

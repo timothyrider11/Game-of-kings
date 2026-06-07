@@ -1,0 +1,412 @@
+[
+  {
+    "id": "sheet-spear",
+    "label": "Spear",
+    "src": "/sigils/charges/sheet-spear.png"
+  },
+  {
+    "id": "sheet-pike",
+    "label": "Pike",
+    "src": "/sigils/charges/sheet-pike.png"
+  },
+  {
+    "id": "sheet-halberd",
+    "label": "Halberd",
+    "src": "/sigils/charges/sheet-halberd.png"
+  },
+  {
+    "id": "sheet-trident",
+    "label": "War Trident",
+    "src": "/sigils/charges/sheet-trident.png"
+  },
+  {
+    "id": "sheet-mace",
+    "label": "Morning Star",
+    "src": "/sigils/charges/sheet-mace.png"
+  },
+  {
+    "id": "sheet-chain-flail",
+    "label": "Chain Flail",
+    "src": "/sigils/charges/sheet-chain-flail.png"
+  },
+  {
+    "id": "sheet-war-flag",
+    "label": "War Flag",
+    "src": "/sigils/charges/sheet-war-flag.png"
+  },
+  {
+    "id": "sheet-longsword",
+    "label": "Longsword",
+    "src": "/sigils/charges/sheet-longsword.png"
+  },
+  {
+    "id": "sheet-arming-sword",
+    "label": "Arming Sword",
+    "src": "/sigils/charges/sheet-arming-sword.png"
+  },
+  {
+    "id": "sheet-dagger",
+    "label": "Dagger",
+    "src": "/sigils/charges/sheet-dagger.png"
+  },
+  {
+    "id": "sheet-curved-sword",
+    "label": "Curved Sword",
+    "src": "/sigils/charges/sheet-curved-sword.png"
+  },
+  {
+    "id": "sheet-sabre",
+    "label": "Sabre",
+    "src": "/sigils/charges/sheet-sabre.png"
+  },
+  {
+    "id": "sheet-warhammer",
+    "label": "War Hammer",
+    "src": "/sigils/charges/sheet-warhammer.png"
+  },
+  {
+    "id": "sheet-battleaxe",
+    "label": "Battle Axe",
+    "src": "/sigils/charges/sheet-battleaxe.png"
+  },
+  {
+    "id": "sheet-bow",
+    "label": "War Bow",
+    "src": "/sigils/charges/sheet-bow.png"
+  },
+  {
+    "id": "sheet-crossbow",
+    "label": "Crossbow",
+    "src": "/sigils/charges/sheet-crossbow.png"
+  },
+  {
+    "id": "sheet-arrow",
+    "label": "Arrow",
+    "src": "/sigils/charges/sheet-arrow.png"
+  },
+  {
+    "id": "sheet-helmet",
+    "label": "Knight Helm",
+    "src": "/sigils/charges/sheet-helmet.png"
+  },
+  {
+    "id": "sheet-horned-helm",
+    "label": "Horned Helm",
+    "src": "/sigils/charges/sheet-horned-helm.png"
+  },
+  {
+    "id": "sheet-winged-helm",
+    "label": "Winged Helm",
+    "src": "/sigils/charges/sheet-winged-helm.png"
+  },
+  {
+    "id": "sheet-visored-helm",
+    "label": "Visored Helm",
+    "src": "/sigils/charges/sheet-visored-helm.png"
+  },
+  {
+    "id": "sheet-axe",
+    "label": "Axe",
+    "src": "/sigils/charges/sheet-axe.png"
+  },
+  {
+    "id": "sheet-crossed-maces",
+    "label": "Crossed Maces",
+    "src": "/sigils/charges/sheet-crossed-maces.png"
+  },
+  {
+    "id": "sheet-flail",
+    "label": "Flail",
+    "src": "/sigils/charges/sheet-flail.png"
+  },
+  {
+    "id": "sheet-bomb",
+    "label": "Firepot",
+    "src": "/sigils/charges/sheet-bomb.png"
+  },
+  {
+    "id": "sheet-banner",
+    "label": "Banner",
+    "src": "/sigils/charges/sheet-banner.png"
+  },
+  {
+    "id": "sheet-swallowtail",
+    "label": "Swallowtail",
+    "src": "/sigils/charges/sheet-swallowtail.png"
+  },
+  {
+    "id": "sheet-gonfalon",
+    "label": "Gonfalon",
+    "src": "/sigils/charges/sheet-gonfalon.png"
+  },
+  {
+    "id": "sheet-hanging-banner",
+    "label": "Hanging Banner",
+    "src": "/sigils/charges/sheet-hanging-banner.png"
+  },
+  {
+    "id": "sheet-heater-shield",
+    "label": "Heater Shield",
+    "src": "/sigils/charges/sheet-heater-shield.png"
+  },
+  {
+    "id": "sheet-kite-shield",
+    "label": "Kite Shield",
+    "src": "/sigils/charges/sheet-kite-shield.png"
+  },
+  {
+    "id": "sheet-point-shield",
+    "label": "Point Shield",
+    "src": "/sigils/charges/sheet-point-shield.png"
+  },
+  {
+    "id": "sheet-ring-shield",
+    "label": "Round Gate Shield",
+    "src": "/sigils/charges/sheet-ring-shield.png"
+  },
+  {
+    "id": "sheet-crown-open",
+    "label": "Open Crown",
+    "src": "/sigils/charges/sheet-crown-open.png"
+  },
+  {
+    "id": "sheet-crown-royal",
+    "label": "Royal Crown",
+    "src": "/sigils/charges/sheet-crown-royal.png"
+  },
+  {
+    "id": "sheet-crown-iron",
+    "label": "Iron Crown",
+    "src": "/sigils/charges/sheet-crown-iron.png"
+  },
+  {
+    "id": "sheet-crown-thin",
+    "label": "Thin Crown",
+    "src": "/sigils/charges/sheet-crown-thin.png"
+  },
+  {
+    "id": "sheet-castle",
+    "label": "Castle",
+    "src": "/sigils/charges/sheet-castle.png"
+  },
+  {
+    "id": "sheet-fleur",
+    "label": "Fleur de Lis",
+    "src": "/sigils/charges/sheet-fleur.png"
+  },
+  {
+    "id": "sheet-tower",
+    "label": "Tower Crest",
+    "src": "/sigils/charges/sheet-tower.png"
+  },
+  {
+    "id": "sheet-gem",
+    "label": "Gem",
+    "src": "/sigils/charges/sheet-gem.png"
+  },
+  {
+    "id": "sheet-sword-point",
+    "label": "Pointed Sword",
+    "src": "/sigils/charges/sheet-sword-point.png"
+  },
+  {
+    "id": "sheet-crossbow-bolts",
+    "label": "Bolted Crossbow",
+    "src": "/sigils/charges/sheet-crossbow-bolts.png"
+  },
+  {
+    "id": "sheet-spiked-mace",
+    "label": "Spiked Mace",
+    "src": "/sigils/charges/sheet-spiked-mace.png"
+  },
+  {
+    "id": "sheet-pennant",
+    "label": "Pennant",
+    "src": "/sigils/charges/sheet-pennant.png"
+  },
+  {
+    "id": "sheet-anvil",
+    "label": "Anvil",
+    "src": "/sigils/charges/sheet-anvil.png"
+  },
+  {
+    "id": "sheet-hammer-tool",
+    "label": "Craft Hammer",
+    "src": "/sigils/charges/sheet-hammer-tool.png"
+  },
+  {
+    "id": "sheet-key",
+    "label": "Key",
+    "src": "/sigils/charges/sheet-key.png"
+  },
+  {
+    "id": "sheet-goblet",
+    "label": "Goblet",
+    "src": "/sigils/charges/sheet-goblet.png"
+  },
+  {
+    "id": "sheet-horn",
+    "label": "Horn",
+    "src": "/sigils/charges/sheet-horn.png"
+  },
+  {
+    "id": "sheet-lockbox",
+    "label": "Lockbox",
+    "src": "/sigils/charges/sheet-lockbox.png"
+  },
+  {
+    "id": "sheet-well",
+    "label": "Well",
+    "src": "/sigils/charges/sheet-well.png"
+  },
+  {
+    "id": "sheet-cross",
+    "label": "Faith Cross",
+    "src": "/sigils/charges/sheet-cross.png"
+  },
+  {
+    "id": "sheet-faith-axe",
+    "label": "Faith Axe",
+    "src": "/sigils/charges/sheet-faith-axe.png"
+  },
+  {
+    "id": "sheet-bishop",
+    "label": "Septon Hood",
+    "src": "/sigils/charges/sheet-bishop.png"
+  },
+  {
+    "id": "sheet-cauldron",
+    "label": "Cauldron",
+    "src": "/sigils/charges/sheet-cauldron.png"
+  },
+  {
+    "id": "sheet-scroll",
+    "label": "Scroll",
+    "src": "/sigils/charges/sheet-scroll.png"
+  },
+  {
+    "id": "sheet-hood",
+    "label": "Hooded Mask",
+    "src": "/sigils/charges/sheet-hood.png"
+  },
+  {
+    "id": "sheet-pointed-hood",
+    "label": "Pointed Hood",
+    "src": "/sigils/charges/sheet-pointed-hood.png"
+  },
+  {
+    "id": "sheet-warship",
+    "label": "Warship",
+    "src": "/sigils/charges/sheet-warship.png"
+  },
+  {
+    "id": "sheet-siege-engine",
+    "label": "Siege Engine",
+    "src": "/sigils/charges/sheet-siege-engine.png"
+  },
+  {
+    "id": "sheet-fortress",
+    "label": "Fortress",
+    "src": "/sigils/charges/sheet-fortress.png"
+  },
+  {
+    "id": "sheet-wall-tower",
+    "label": "Wall Tower",
+    "src": "/sigils/charges/sheet-wall-tower.png"
+  },
+  {
+    "id": "sheet-tall-tower",
+    "label": "Tall Tower",
+    "src": "/sigils/charges/sheet-tall-tower.png"
+  },
+  {
+    "id": "sheet-gatehouse",
+    "label": "Gatehouse",
+    "src": "/sigils/charges/sheet-gatehouse.png"
+  },
+  {
+    "id": "sheet-watchtower",
+    "label": "Watchtower",
+    "src": "/sigils/charges/sheet-watchtower.png"
+  },
+  {
+    "id": "sheet-laurel-frame",
+    "label": "Laurel Frame",
+    "src": "/sigils/charges/sheet-laurel-frame.png"
+  },
+  {
+    "id": "sheet-ornate-frame",
+    "label": "Ornate Frame",
+    "src": "/sigils/charges/sheet-ornate-frame.png"
+  },
+  {
+    "id": "sheet-round-frame",
+    "label": "Round Frame",
+    "src": "/sigils/charges/sheet-round-frame.png"
+  },
+  {
+    "id": "sheet-arrow-long",
+    "label": "Long Arrow",
+    "src": "/sigils/charges/sheet-arrow-long.png"
+  },
+  {
+    "id": "sheet-marker-flag",
+    "label": "Marker Flag",
+    "src": "/sigils/charges/sheet-marker-flag.png"
+  },
+  {
+    "id": "sheet-torch",
+    "label": "Torch",
+    "src": "/sigils/charges/sheet-torch.png"
+  },
+  {
+    "id": "sheet-barrel-helm",
+    "label": "Barrel Helm",
+    "src": "/sigils/charges/sheet-barrel-helm.png"
+  },
+  {
+    "id": "sheet-face-helm",
+    "label": "Face Helm",
+    "src": "/sigils/charges/sheet-face-helm.png"
+  },
+  {
+    "id": "sheet-ghost",
+    "label": "Ghost",
+    "src": "/sigils/charges/sheet-ghost.png"
+  },
+  {
+    "id": "sheet-pillar",
+    "label": "Pillar",
+    "src": "/sigils/charges/sheet-pillar.png"
+  },
+  {
+    "id": "sheet-scroll-paper",
+    "label": "Scroll Paper",
+    "src": "/sigils/charges/sheet-scroll-paper.png"
+  },
+  {
+    "id": "sheet-rampart",
+    "label": "Rampart",
+    "src": "/sigils/charges/sheet-rampart.png"
+  },
+  {
+    "id": "sheet-quill",
+    "label": "Quill Seal",
+    "src": "/sigils/charges/sheet-quill.png"
+  },
+  {
+    "id": "sheet-wings",
+    "label": "Wings",
+    "src": "/sigils/charges/sheet-wings.png"
+  },
+  {
+    "id": "sheet-crossed-spears",
+    "label": "Crossed Spears",
+    "src": "/sigils/charges/sheet-crossed-spears.png"
+  },
+  {
+    "id": "sheet-gallows",
+    "label": "Gallows",
+    "src": "/sigils/charges/sheet-gallows.png"
+  }
+]
