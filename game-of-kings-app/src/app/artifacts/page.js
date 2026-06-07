@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { artifactCatalog } from "../../lib/artifacts";
+import { artifactCatalog, staticArtifactPossessions } from "../../lib/artifacts";
 import { loadRealmActivity } from "../../lib/realm-activity";
 
 function buildPossessionLedger(activities) {
@@ -14,7 +14,7 @@ function buildPossessionLedger(activities) {
       ...ledger,
       [artifact]: activity.actor || "An unknown house",
     };
-  }, {});
+  }, { ...staticArtifactPossessions });
 }
 
 export default function ArtifactsPage() {

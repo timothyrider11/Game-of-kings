@@ -110,17 +110,22 @@ export const artifactCatalog = [
 
 export const artifactVault = artifactCatalog.map((artifact) => artifact.name);
 
+export const staticArtifactPossessions = {
+  Dawn: "King Rider",
+};
+
 export function rollArtifact(chance = 0.01) {
   if (Math.random() >= chance) return null;
   return artifactVault[Math.floor(Math.random() * artifactVault.length)];
 }
 
 export function getClaimedArtifacts(activities = []) {
-  return new Set(
-    activities
+  return new Set([
+    ...Object.keys(staticArtifactPossessions),
+    ...activities
       .map((activity) => activity.meta?.artifact || activity.meta?.rareArtifact || "")
-      .filter(Boolean)
-  );
+      .filter(Boolean),
+  ]);
 }
 
 export function rollUnclaimedArtifact(chance = 0.01, activities = []) {
