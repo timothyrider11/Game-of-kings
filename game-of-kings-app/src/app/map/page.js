@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 const STORAGE_KEY = "game_of_kings_living_realm";
 const REALM_VERSION = 4;
 const MINUTE = 60_000;
+const DAY_MS = 24 * 60 * MINUTE;
 const ECONOMY_TICK_MS = 5 * MINUTE;
 
 const galleryTypes = [
@@ -1211,24 +1212,6 @@ const quizzes = [
   },
 ];
 
-const artifactCatalog = [
-  ["longclaw", "Longclaw", "Valyrian Steel", "Won through tournaments and northern quests."],
-  ["dark-sister", "Dark Sister", "Legendary Blade", "Rare drop from royal and dragon events."],
-  ["blackfyre", "Blackfyre", "Lost Kingsblade", "Auction relic with massive prestige value."],
-  ["heartsbane", "Heartsbane", "Valyrian Steel", "Tournament reward from the Reach."],
-  ["dragon-eggs", "Dragon Eggs", "Mythic Relic", "Seasonal event reward."],
-  ["ancient-crown", "Ancient Crown", "Royal Relic", "Earned through elections and influence."],
-  ["royal-seal", "Royal Seal", "Political Relic", "Granted to top council contributors."],
-  ["lost-relic", "Lost Relic", "Mystery", "Found in quests, galleries, and rare drops."],
-];
-
-const tournamentCatalog = [
-  ["dragonstone-melee", "Dragonstone Grand Melee", "Melee", 45, 260, "Legendary Artifact Chance"],
-  ["winterfell-archery", "Winterfell Archery Championship", "Archery", 25, 130, "Unique Banner"],
-  ["kings-landing-trivia", "King's Landing Royal Tournament", "Trivia Championship", 15, 95, "Exclusive Title"],
-  ["blackwater-naval", "Blackwater Naval Trial", "Naval Battles", 35, 180, "Gold Purse"],
-];
-
 const eventTemplates = [
   "A raven reports fresh market prices from Oldtown.",
   "A border patrol near the Riverlands requested friendly supplies.",
@@ -1247,7 +1230,8 @@ function createDefaultCastleState() {
     (state, castle) => ({
       ...state,
       [castle.id]: {
-        owner: null,
+        owner: castle.id === "kings-landing" ? "rider" : null,
+        reservedHouse: castle.id === "kings-landing" ? "House Rider" : "",
         troops: castle.militaryStrength,
         upgradeEndsAt: null,
         upgradeStartedAt: null,
@@ -1256,6 +1240,17 @@ function createDefaultCastleState() {
     }),
     {}
   );
+}
+
+function protectReservedCastles(castleState) {
+  return {
+    ...castleState,
+    "kings-landing": {
+      ...(castleState["kings-landing"] || {}),
+      owner: "rider",
+      reservedHouse: "House Rider",
+    },
+  };
 }
 
 function createDefaultGalleries() {
@@ -1284,6 +1279,16 @@ function formatTime(value) {
   });
 }
 
+function formatDuration(milliseconds) {
+  const totalMinutes = Math.max(1, Math.ceil(milliseconds / MINUTE));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours <= 0) return `${minutes}m`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}m`;
+}
+
 function timeAgo(value, now) {
   const seconds = Math.max(1, Math.floor((now - new Date(value).getTime()) / 1000));
   if (seconds < 60) return `${seconds}s ago`;
@@ -1306,7 +1311,7 @@ export default function MapPage() {
   const fileInputRef = useRef(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [now, setNow] = useState(Date.now());
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(0.32);
   const [activeTab, setActiveTab] = useState("realm");
   const [selectedCastleId, setSelectedCastleId] = useState("winterfell");
   const [castlePopupOpen, setCastlePopupOpen] = useState(false);
@@ -1365,7 +1370,10 @@ export default function MapPage() {
     () => castles.filter((castle) => playerCastleIds.includes(castle.id)),
     [playerCastleIds]
   );
-  const checkedInToday = lastCheckInDate === new Date(now).toISOString().slice(0, 10);
+  const lastCheckInTime = lastCheckInDate ? new Date(lastCheckInDate).getTime() : 0;
+  const checkInReadyAt = Number.isFinite(lastCheckInTime) && lastCheckInTime > 0 ? lastCheckInTime + DAY_MS : 0;
+  const checkInRemaining = Math.max(0, checkInReadyAt - now);
+  const canCheckIn = !checkInReadyAt || checkInRemaining === 0;
   const activeWars = wars.filter((war) => war.endsAt > now);
   const completedWars = wars.filter((war) => war.endsAt <= now).slice(0, 4);
   const selectedGallery = [
@@ -1376,29 +1384,11 @@ export default function MapPage() {
     () => getCastleImages(selectedCastle.id, galleries),
     [selectedCastle.id, galleries]
   );
-  const canClaim = playerCastleIds.length === 0 && selectedState.owner !== "player";
+  const canClaim = playerCastleIds.length === 0 && !selectedState.owner;
   const economyPerHour = playerCastles.reduce(
     (total, castle) => total + castle.wealth * 18 + Math.floor(castle.population / 2000),
     0
   );
-
-  const leaderboard = useMemo(() => {
-    const playerScore =
-      gold + renown * 14 + playerCastles.length * 900 + artifactInventory.length * 600;
-    const entries = [
-      {
-        house: houseName ? `House ${houseName}` : "Your Future House",
-        title: playerCastles.length ? "Living Realm House" : "Unclaimed",
-        score: playerScore,
-      },
-      { house: "House Ashford", title: "Peacekeepers", score: 18450 },
-      { house: "House Thornwake", title: "Tournament Hosts", score: 16900 },
-      { house: "House Ironvale", title: "Army Builders", score: 14220 },
-      { house: "House Greenmoor", title: "Forum Elders", score: 12680 },
-    ];
-
-    return entries.sort((a, b) => b.score - a.score).map((entry, index) => ({ ...entry, rank: index + 1 }));
-  }, [artifactInventory.length, gold, houseName, playerCastles.length, renown]);
 
   const filteredThreads = useMemo(() => {
     const query = forumSearch.trim().toLowerCase();
@@ -1424,7 +1414,7 @@ export default function MapPage() {
         setHouseName(data.houseName || "");
         setHouseMotto(data.houseMotto || "");
         setHouseSigil(data.houseSigil || sigils[0]);
-        setCastleState(offlineResult.castleState);
+        setCastleState(protectReservedCastles(offlineResult.castleState));
         setGalleries({ ...createDefaultGalleries(), ...(data.galleries || {}) });
         setGold(offlineResult.gold);
         setRenown(offlineResult.renown);
@@ -1449,6 +1439,24 @@ export default function MapPage() {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    function closeCastleView(event) {
+      if (event.key !== "Escape") return;
+
+      if (fullscreenImage) {
+        setFullscreenImage(null);
+        return;
+      }
+
+      if (castlePopupOpen) {
+        setCastlePopupOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", closeCastleView);
+    return () => window.removeEventListener("keydown", closeCastleView);
+  }, [castlePopupOpen, fullscreenImage]);
 
   useEffect(() => {
     if (!hasLoaded) return;
@@ -1503,7 +1511,7 @@ export default function MapPage() {
   ]);
 
   function resolveOfflineProgress(data) {
-    const storedState = { ...createDefaultCastleState(), ...(data.castleState || {}) };
+    const storedState = protectReservedCastles({ ...createDefaultCastleState(), ...(data.castleState || {}) });
     const storedEvents = data.worldEvents || [];
     const storedWars = data.wars || [];
     const savedAt = data.lastResolvedAt || new Date(data.savedAt || Date.now()).getTime();
@@ -1521,7 +1529,7 @@ export default function MapPage() {
     );
 
     return {
-      castleState: Object.fromEntries(
+      castleState: protectReservedCastles(Object.fromEntries(
         Object.entries(storedState).map(([castleId, state]) => [
           castleId,
           state.upgradeEndsAt && state.upgradeEndsAt <= Date.now()
@@ -1534,7 +1542,7 @@ export default function MapPage() {
               }
             : state,
         ])
-      ),
+      )),
       gold: (data.gold ?? 350) + earnedGold,
       renown: (data.renown ?? 0) + earnedRenown,
       lastResolvedAt: Date.now(),
@@ -1629,12 +1637,12 @@ export default function MapPage() {
   }
 
   function checkIn() {
-    if (checkedInToday) return;
+    if (!canCheckIn) return;
 
-    setGold((current) => current + 120);
-    setRenown((current) => current + 24);
-    setLastCheckInDate(new Date(now).toISOString().slice(0, 10));
-    addEvent("Daily check-in complete: +120 gold, +24 renown, and your house remains active.", "reward");
+    setGold((current) => current + 100);
+    setRenown((current) => current + 10);
+    setLastCheckInDate(new Date(now).toISOString());
+    addEvent("Daily check-in complete: +100 gold and +10 renown. The next check-in unlocks 24 hours from now.", "reward");
   }
 
   function startUpgrade() {
@@ -1753,39 +1761,6 @@ export default function MapPage() {
     event.target.value = "";
   }
 
-  function answerQuiz(quiz, answer) {
-    if (completedQuizzes.includes(quiz.id)) return;
-
-    if (answer === quiz.answer) {
-      setGold((current) => current + quiz.rewardGold);
-      setRenown((current) => current + quiz.rewardRenown);
-      addEvent(`${quiz.category} answered correctly: +${quiz.rewardGold} gold and +${quiz.rewardRenown} renown.`, "quiz");
-    } else {
-      addEvent(`${quiz.category} attempt recorded. Try another quiz for rewards.`, "quiz");
-    }
-
-    setCompletedQuizzes((current) => [...current, quiz.id]);
-  }
-
-  function joinTournament(tournament) {
-    if (joinedTournaments.includes(tournament[0]) || gold < tournament[3]) return;
-
-    setGold((current) => current - tournament[3]);
-    setRenown((current) => current + tournament[4]);
-    setJoinedTournaments((current) => [...current, tournament[0]]);
-
-    const artifactDrop = Math.random() > 0.45;
-    if (artifactDrop) {
-      const artifact = artifactCatalog[Math.floor(Math.random() * artifactCatalog.length)];
-      setArtifactInventory((current) =>
-        current.includes(artifact[0]) ? current : [...current, artifact[0]]
-      );
-      addEvent(`${tournament[1]} awarded ${artifact[1]} to your collection.`, "tournament");
-    } else {
-      addEvent(`${tournament[1]} joined: +${tournament[4]} renown and ${tournament[5]} chance recorded.`, "tournament");
-    }
-  }
-
   function createThread(event) {
     event.preventDefault();
     if (!threadDraft.title.trim() || !threadDraft.body.trim()) return;
@@ -1858,7 +1833,7 @@ export default function MapPage() {
     setHouseName("");
     setHouseMotto("");
     setHouseSigil(sigils[0]);
-    setCastleState(createDefaultCastleState());
+    setCastleState(protectReservedCastles(createDefaultCastleState()));
     setGalleries(createDefaultGalleries());
     setGold(350);
     setRenown(0);
@@ -1956,7 +1931,7 @@ export default function MapPage() {
                   <input
                     aria-label="Map zoom"
                     type="range"
-                    min="0.7"
+                    min="0.28"
                     max="2.4"
                     step="0.05"
                     value={zoom}
@@ -1978,8 +1953,8 @@ export default function MapPage() {
               <div
                 className="relative origin-top-left"
                 style={{
-                  width: `${Math.max(150, 100 * zoom)}%`,
-                  minWidth: `${Math.max(150, 100 * zoom)}%`,
+                  width: `${Math.max(28, 100 * zoom)}%`,
+                  minWidth: `${Math.max(28, 100 * zoom)}%`,
                 }}
               >
                 <img
@@ -2011,7 +1986,7 @@ export default function MapPage() {
                       style={{
                         left: pct(castle.left),
                         top: pct(castle.top),
-                        transform: `translate(-50%, -50%) scale(${1 / zoom})`,
+                        transform: `translate(-50%, -50%) scale(${Math.min(1, 1 / zoom)})`,
                         transformOrigin: "center",
                       }}
                     >
@@ -2104,10 +2079,10 @@ export default function MapPage() {
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button
                 onClick={checkIn}
-                disabled={checkedInToday}
+                disabled={!canCheckIn}
                 className="min-h-11 rounded-md bg-emerald-700 px-4 py-3 text-sm font-black transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
               >
-                {checkedInToday ? "Checked In" : "Daily Check-In"}
+                {canCheckIn ? "Daily Check-In" : `Ready in ${formatDuration(checkInRemaining)}`}
               </button>
               <button
                 onClick={resetRealm}
@@ -2191,42 +2166,6 @@ export default function MapPage() {
             </div>
           </Panel>
 
-          <Panel>
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-black">Leaderboard</h2>
-              <span className="text-xs font-black text-amber-300">Renown</span>
-            </div>
-            <div className="mt-4 space-y-3">
-              {leaderboard.map((entry) => (
-                <div key={entry.house} className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-400 text-sm font-black text-stone-950">
-                      {entry.rank}
-                    </span>
-                    <div>
-                      <p className="font-black">{entry.house}</p>
-                      <p className="text-xs text-stone-500">{entry.title}</p>
-                    </div>
-                  </div>
-                  <p className="font-black text-amber-300">{entry.score.toLocaleString()}</p>
-                </div>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel>
-            <h2 className="text-xl font-black">World Feed</h2>
-            <div className="mt-4 max-h-[420px] space-y-3 overflow-auto pr-1">
-              {worldEvents.map((event) => (
-                <div key={event.id} className="border border-stone-800 bg-black p-3">
-                  <p className="text-sm leading-6 text-stone-300">{event.text}</p>
-                  <p className="mt-2 text-xs font-bold uppercase tracking-wider text-stone-600">
-                    {event.type} / {timeAgo(event.at, now)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Panel>
         </aside>
       </section>
 
@@ -2264,8 +2203,8 @@ export default function MapPage() {
 
 function CastlePopup({ castle, state, houseName, images, canClaim, onClaim, onClose, onFullscreen, onOpenGallery }) {
   const heroImage = images[0];
-  const owner = state.owner === "player" ? `House ${houseName || "Unknown"}` : castle.house;
-  const currentLord = state.owner === "player" ? houseName || "Player Lord" : castle.lord;
+  const owner = state.owner === "player" ? `House ${houseName || "Unknown"}` : state.reservedHouse || castle.house;
+  const currentLord = state.owner === "player" ? houseName || "Player Lord" : state.reservedHouse ? "King Rider" : castle.lord;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center sm:p-5">
@@ -2294,9 +2233,10 @@ function CastlePopup({ castle, state, houseName, images, canClaim, onClaim, onCl
 
           <button
             onClick={onClose}
-            className="absolute right-3 top-3 rounded-md bg-black/80 px-4 py-2 text-sm font-black text-stone-100 transition hover:bg-stone-100 hover:text-stone-950"
+            aria-label="Back to map"
+            className="absolute right-3 top-3 rounded-md border border-stone-500 bg-black/85 px-3 py-2 text-sm font-black text-stone-100 transition hover:bg-stone-100 hover:text-stone-950"
           >
-            Close
+            x Back to Map
           </button>
         </div>
 
@@ -2368,8 +2308,8 @@ function CastlePanel({ castle, state, houseName, canClaim, onClaim, onRecruit, o
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Info label="House Name" value={state.owner === "player" ? `House ${houseName}` : castle.house} />
-        <Info label="Current Lord" value={state.owner === "player" ? houseName || "Player Lord" : castle.lord} />
+        <Info label="House Name" value={state.owner === "player" ? `House ${houseName}` : state.reservedHouse || castle.house} />
+        <Info label="Current Lord" value={state.owner === "player" ? houseName || "Player Lord" : state.reservedHouse ? "King Rider" : castle.lord} />
         <Info label="Military" value={state.troops.toLocaleString()} />
         <Info label="Population" value={castle.population.toLocaleString()} />
         <Info label="Wealth" value={`${castle.wealth}/10`} />
