@@ -2,7 +2,6 @@
 
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import SiteNav from "../../components/SiteNav";
 import { getQuizCycle, quizQuestionBank } from "../../lib/quiz-bank";
@@ -68,10 +67,40 @@ function getPlayerHouse(realm) {
   return [houseName, lordName, 100];
 }
 
-function buildTournamentEntrants(realm, signup) {
+function startKeyForWindow(window) {
+  return new Date(window.startsAt).toISOString().slice(0, 10);
+}
+
+function buildPublicTournamentEntrants(activities, tournament, window) {
+  const startKey = startKeyForWindow(window);
+  const entries = activities
+    .filter((activity) => activity.type === "tournament" && activity.meta?.action === "signup")
+    .filter((activity) => activity.meta?.tournamentId === tournament.id && activity.meta?.startKey === startKey)
+    .map((activity) => [activity.meta.house || activity.actor, activity.meta.ruler || activity.actor, 100]);
+
+  return Array.from(new Map(entries.map((entry) => [entry[0], entry])).values());
+}
+
+function buildTournamentEntrants(realm, signup, publicEntrants = []) {
   const playerHouse = getPlayerHouse(realm);
-  const npcs = realmHouses.filter(([house]) => house !== playerHouse[0]).slice(0, 7);
-  return signup ? [playerHouse, ...npcs] : npcs;
+  const playerEntry = signup ? [playerHouse] : [];
+  const realEntrants = [...publicEntrants, ...playerEntry].filter(
+    (entry, index, all) => all.findIndex(([house]) => house === entry[0]) === index
+  );
+  const standInsNeeded = Math.max(0, 8 - realEntrants.length);
+  const standIns = realmHouses.filter(([house]) => !realEntrants.some(([entrantHouse]) => entrantHouse === house)).slice(0, standInsNeeded);
+  return [...realEntrants, ...standIns].slice(0, 8);
+}
+
+function buildFirstRoundPairings(entrants, cycleKey) {
+  const shuffled = [...entrants].sort((a, b) => hashText(`${cycleKey}-${a[0]}`) - hashText(`${cycleKey}-${b[0]}`));
+  const pairs = [];
+
+  for (let index = 0; index < shuffled.length; index += 2) {
+    pairs.push([shuffled[index], shuffled[index + 1] || shuffled[0]]);
+  }
+
+  return pairs;
 }
 
 function readGiveawayLocks() {
@@ -320,6 +349,21 @@ export default function EventsPage() {
         },
       },
     });
+    recordRealmActivity(buildActivity({
+      type: "tournament",
+      title: "A House Entered The Lists",
+      actor: getPlayerHouse(realm)[0],
+      body: `${getPlayerHouse(realm)[1]} registered for ${tournament.name}. Entry paid: ${tournament.entryGold} gold.`,
+      meta: {
+        action: "signup",
+        tournamentId: tournament.id,
+        tournament: tournament.name,
+        startKey: startKeyForWindow(window),
+        house: getPlayerHouse(realm)[0],
+        ruler: getPlayerHouse(realm)[1],
+      },
+    }));
+    loadRealmActivity(150).then(({ activities: loaded }) => setActivities(loaded));
     setMessage(`Signed up for ${tournament.name}. Entry paid: ${tournament.entryGold} gold.`);
   }
 
@@ -433,9 +477,9 @@ export default function EventsPage() {
       <section className="mx-auto max-w-6xl px-4 py-6">
         <div className="border border-stone-700 bg-stone-950 p-5">
           <p className="text-xs font-black uppercase tracking-[0.25em] text-red-300">Events Hall</p>
-          <h1 className="mt-2 text-4xl font-black leading-tight">Quizzes and tournaments, clean and simple.</h1>
+          <h1 className="mt-2 text-4xl font-black leading-tight">Quizzes and tournaments.</h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-400">
-            Quizzes refresh every three days. Tournaments now require paid sign-up, use even bracket odds, and reveal results only after the event is complete.
+            Quizzes refresh every three days. Tournaments require paid sign-up and keep a clear roster for each contest.
           </p>
           <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-4">
             <Stat label="Gold" value={(realm.gold ?? 350).toLocaleString()} />
@@ -587,20 +631,108 @@ export default function EventsPage() {
               </p>
             </section>
 
+            <section className="border border-stone-700 bg-stone-950 p-5">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-red-300">Realm Watch</p>
+              <h2 className="mt-2 text-xl font-black">Moderation Ledger</h2>
+              <p className="mt-3 text-sm leading-6 text-stone-400">
+                Forum posts, votes, claims, quests, giveaway entries, and tournament signups are written to the realm activity ledger. Suspicious forum posts are flagged for review.
+              </p>
+              <div className="mt-4 grid gap-2">
+                <Stat label="Recent Actions" value={activities.length.toLocaleString()} />
+                <Stat
+                  label="Flags"
+                  value={activities.filter((activity) => activity.type === "moderation").length.toLocaleString()}
+                />
+              </div>
+            </section>
+
           </aside>
         </div>
 
         <section className="mt-5 border border-stone-700 bg-stone-950 p-5">
-          <h2 className="text-2xl font-black">Tournament Grounds</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">
-            Tournament signups, bracket previews, Friday reveals, armor prizes, and chronicles now live in the dedicated tournament hall.
-          </p>
-          <Link
-            href="/tournaments"
-            className="mt-5 inline-flex min-h-12 items-center justify-center rounded-md border border-stone-600 bg-stone-900 px-5 py-3 font-black text-stone-100 transition hover:bg-stone-800"
-          >
-            Enter Tournament Grounds
-          </Link>
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-red-300">Tournament Grounds</p>
+              <h2 className="mt-2 text-2xl font-black">Upcoming Rosters</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">
+                Sign up from this page. Real houses fill the lists first; stand-in houses only hold bracket places until more players join.
+              </p>
+            </div>
+            <p className="rounded border border-stone-700 bg-black px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-stone-400">
+              Live roster board
+            </p>
+          </div>
+
+          <div className="mt-5 grid gap-4 xl:grid-cols-2">
+            {tournaments.map((tournament) => {
+              const window = getTournamentWindow(tournament, now);
+              const signupKey = `${tournament.id}-${window.startsAt}`;
+              const signup = realm.tournamentSignups?.[signupKey];
+              const recordKey = `${tournament.id}-${window.startsAt}`;
+              const record = realm.tournamentRecords?.[recordKey];
+              const publicEntrants = buildPublicTournamentEntrants(activities, tournament, window);
+              const entrants = buildTournamentEntrants(realm, signup, publicEntrants);
+              const pairings = buildFirstRoundPairings(entrants, window.key);
+              const bracket = buildBracket(tournament, entrants, window.key);
+              const isClosed = now >= window.startsAt;
+              const isFinished = now >= window.endsAt;
+
+              return (
+                <article key={tournament.id} className="border border-stone-800 bg-black p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">{tournament.type}</p>
+                      <h3 className="mt-2 font-serif text-2xl font-black text-stone-100">{tournament.name}</h3>
+                      <p className="mt-2 text-sm leading-6 text-stone-400">
+                        Starts {formatDate(window.startsAt)}. Entry: {tournament.entryGold} gold.
+                      </p>
+                    </div>
+                    <div className="shrink-0 border border-stone-800 bg-stone-950 px-3 py-2 text-right">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-stone-500">Roster</p>
+                      <p className="text-xl font-black">{publicEntrants.length + (signup ? 1 : 0)} / 8</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-2">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-stone-500">First Round</p>
+                    {pairings.map(([first, second], index) => (
+                      <div key={`${first[0]}-${second[0]}-${index}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border border-stone-900 bg-stone-950 px-3 py-2 text-sm">
+                        <span className="font-bold text-stone-200">{first[0]}</span>
+                        <span className="text-xs uppercase tracking-[0.18em] text-stone-600">vs</span>
+                        <span className="text-right font-bold text-stone-200">{second[0]}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {record && (
+                    <div className="mt-4 max-h-40 overflow-y-auto border border-stone-800 bg-stone-950 p-3">
+                      <p className="font-black text-stone-100">Winner: {record.winner}</p>
+                      {(record.rounds || []).map((round) => (
+                        <p key={round} className="mt-2 text-sm leading-6 text-stone-400">{round}</p>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    <button
+                      onClick={() => signUpTournament(tournament, window)}
+                      disabled={Boolean(signup) || isClosed || (realm.gold ?? 350) < tournament.entryGold}
+                      className="min-h-11 rounded-md border border-stone-600 bg-stone-900 px-4 py-3 text-sm font-black text-stone-100 transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:border-stone-800 disabled:bg-stone-950 disabled:text-stone-600"
+                    >
+                      {signup ? "Already Registered" : isClosed ? "Registration Closed" : `Sign Up - ${tournament.entryGold} Gold`}
+                    </button>
+                    <button
+                      onClick={() => recordTournament(tournament, window, bracket, signup)}
+                      disabled={Boolean(record) || !isFinished}
+                      className="min-h-11 rounded-md border border-red-900/70 bg-red-950/40 px-4 py-3 text-sm font-black text-red-100 transition hover:border-red-400 disabled:cursor-not-allowed disabled:border-stone-800 disabled:bg-stone-950 disabled:text-stone-600"
+                    >
+                      {record ? "Recorded" : isFinished ? "Record Result" : `Results in ${formatDuration(window.endsAt - now)}`}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         </section>
       </section>
     </main>

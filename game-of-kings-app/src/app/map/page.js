@@ -2180,9 +2180,11 @@ export default function MapPage() {
 
     const { activities } = await loadRealmActivity(300);
     const roll = Math.random();
-    const successChance = Math.min(0.82, 0.48 + seatState.troops / 2600 + renown / 12000);
+    const successChance = 0.5;
     const succeeded = roll <= successChance;
-    const goldReward = succeeded ? raid.rewardGold : Math.floor(raid.rewardGold * 0.22);
+    const goldReward = succeeded ? raid.rewardGold : 0;
+    const goldLost = succeeded ? 0 : Math.max(15, Math.floor(raid.rewardGold * (0.18 + Math.random() * 0.22)));
+    const goldDelta = goldReward - goldLost;
     const renownReward = succeeded ? raid.rewardRenown : 2;
     const troopsLost = succeeded ? Math.ceil(raid.troopCost * 0.55) : raid.troopCost;
     const story = succeeded ? raid.success : raid.failure;
@@ -2196,7 +2198,7 @@ export default function MapPage() {
         troops: Math.max(1, current[seat.id].troops - troopsLost),
       },
     }));
-    setGold((current) => current + goldReward);
+    setGold((current) => Math.max(0, current + goldDelta));
     setRenown((current) => current + renownReward);
     if (foundArtifact) {
       setArtifactInventory((current) => [...new Set([...current, foundArtifact])]);
@@ -2209,6 +2211,7 @@ export default function MapPage() {
           succeeded,
           story,
           goldReward,
+          goldLost,
           renownReward,
           troopsLost,
           at: new Date(now).toISOString(),
@@ -2216,11 +2219,18 @@ export default function MapPage() {
         ...current,
       ].slice(0, 25)
     );
-    addEvent(`${resultTitle}: ${story} Reward: ${goldReward} gold, ${renownReward} renown. Troops lost: ${troopsLost}.${foundArtifact ? ` Rare artifact found: ${foundArtifact}.` : ""}`, "quest");
+    addEvent(
+      `${resultTitle}: ${story} ${
+        succeeded ? `Reward: ${goldReward} gold, ${renownReward} renown.` : `Lost: ${goldLost} gold. Consolation: ${renownReward} renown.`
+      } Troops lost: ${troopsLost}.${foundArtifact ? ` Rare artifact found: ${foundArtifact}.` : ""}`,
+      "quest"
+    );
     logPublicActivity({
       type: "quest",
       title: resultTitle,
-      body: `${story} House ${houseName} gained ${goldReward} gold and ${renownReward} renown from ${seat.name}.${foundArtifact ? ` A unique realm artifact was revealed: ${foundArtifact}.` : ""}`,
+      body: `${story} House ${houseName} ${
+        succeeded ? `gained ${goldReward} gold and ${renownReward} renown` : `lost ${goldLost} gold and gained ${renownReward} renown`
+      } from ${seat.name}.${foundArtifact ? ` A unique realm artifact was revealed: ${foundArtifact}.` : ""}`,
       meta: foundArtifact ? { artifact: foundArtifact, chance: 0.01, source: "quest" } : { source: "quest" },
     });
   }
@@ -2722,7 +2732,7 @@ export default function MapPage() {
               </span>
             </div>
             <p className="mt-2 text-sm leading-6 text-stone-400">
-              Ride out for instant story results, gold, renown, and a chance at a unique realm artifact. No turns, no waiting.
+              Ride out for instant story results. Quests are dangerous: each one is a clean 50/50 chance, and a bad turn can cost gold and troops.
             </p>
             <div className="mt-4 space-y-3">
               {activeRaids.map((raid) => {
@@ -2733,7 +2743,7 @@ export default function MapPage() {
                     <p className="mt-1 text-xs uppercase tracking-[0.14em] text-stone-500">{raid.place}</p>
                     <p className="mt-2 text-sm leading-6 text-stone-400">{raid.threat}.</p>
                     <p className="mt-2 text-xs font-bold text-stone-500">
-                      Reward: {raid.rewardGold} gold / {raid.rewardRenown} renown. Risk: about {raid.troopCost} troops.
+                      Success: {raid.rewardGold} gold / {raid.rewardRenown} renown. Risk: about {raid.troopCost} troops and possible gold loss.
                     </p>
                     <button
                       onClick={() => runBanditRaid(raid)}
@@ -3049,10 +3059,7 @@ function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim
         <div>
           <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">{castle.region}</p>
           <h2 className="mt-2 text-2xl font-black leading-tight md:text-3xl">{castle.name}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">{castle.summary}</p>
-          <p className="mt-3 max-w-3xl border border-stone-800 bg-black/45 p-3 text-sm font-bold leading-6 text-stone-300">
-            {owner}
-          </p>
+          <p className="mt-2 max-w-3xl border border-red-950/70 bg-red-950/45 p-3 text-sm leading-6 text-red-50">{castle.summary}</p>
           {!canClaim && claimDialogue && (
             <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-500">{claimDialogue}</p>
           )}

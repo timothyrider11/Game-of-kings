@@ -8,6 +8,7 @@ import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
+const moderationTerms = ["spam", "scam", "hack", "bot", "kill yourself", "dox", "credit card", "password"];
 
 const forumSections = [
   {
@@ -78,6 +79,12 @@ function authorName(realm) {
   return "Wandering Scribe";
 }
 
+function moderationFlagForText(text) {
+  const normalized = text.toLowerCase();
+  const matched = moderationTerms.find((term) => normalized.includes(term));
+  return matched ? `Flagged phrase: ${matched}` : "";
+}
+
 export default function ForumPage() {
   const [realm, setRealm] = useState({});
   const [threads, setThreads] = useState(starterThreads);
@@ -141,6 +148,7 @@ export default function ForumPage() {
     event.preventDefault();
     if (!draft.title.trim() || !draft.body.trim()) return;
 
+    const moderationFlag = moderationFlagForText(`${draft.title} ${draft.body}`);
     const nextThread = {
       id: `thread-${Date.now()}`,
       section: activeSection,
@@ -152,6 +160,7 @@ export default function ForumPage() {
       createdAt: new Date().toISOString(),
       upvotes: 0,
       upvotedBy: [],
+      moderationFlag,
       replies: [],
     };
 
@@ -162,14 +171,23 @@ export default function ForumPage() {
       actor: authorName(realm),
       body: `${nextThread.title} was posted in ${forumSections.find((section) => section.id === activeSection)?.name}. +15 gold and +8 renown.`,
     }));
+    if (moderationFlag) {
+      recordRealmActivity(buildActivity({
+        type: "moderation",
+        title: "A Forum Scroll Was Flagged",
+        actor: authorName(realm),
+        body: `${nextThread.title} was flagged for review. ${moderationFlag}.`,
+      }));
+    }
     setDraft({ title: "", body: "" });
-    setMessage("Thread posted: +15 gold and +8 renown.");
+    setMessage(moderationFlag ? "Thread posted and flagged for review: +15 gold and +8 renown." : "Thread posted: +15 gold and +8 renown.");
   }
 
   function replyToThread(threadId) {
     const body = replyDrafts[threadId]?.trim();
     if (!body) return;
 
+    const moderationFlag = moderationFlagForText(body);
     const nextThreads = threads.map((thread) =>
       thread.id === threadId
         ? {
@@ -181,6 +199,7 @@ export default function ForumPage() {
                 author: authorName(realm),
                 avatarUrl: realm.avatarUrl || "",
                 body,
+                moderationFlag,
                 createdAt: new Date().toISOString(),
               },
             ],
@@ -195,8 +214,16 @@ export default function ForumPage() {
       actor: authorName(realm),
       body: "+5 gold and +3 renown were awarded for discussion participation.",
     }));
+    if (moderationFlag) {
+      recordRealmActivity(buildActivity({
+        type: "moderation",
+        title: "A Forum Reply Was Flagged",
+        actor: authorName(realm),
+        body: `A reply was flagged for review. ${moderationFlag}.`,
+      }));
+    }
     setReplyDrafts((current) => ({ ...current, [threadId]: "" }));
-    setMessage("Reply posted: +5 gold and +3 renown.");
+    setMessage(moderationFlag ? "Reply posted and flagged for review: +5 gold and +3 renown." : "Reply posted: +5 gold and +3 renown.");
   }
 
   function upvoteThread(threadId) {
@@ -326,6 +353,11 @@ export default function ForumPage() {
                   </button>
                 </div>
                 <p className="mt-3 text-sm leading-6 text-[rgba(210,205,194,0.72)]">{thread.body}</p>
+                {thread.moderationFlag && (
+                  <p className="mt-3 border border-red-950 bg-red-950/25 p-2 text-xs font-black uppercase tracking-[0.14em] text-red-300">
+                    Flagged for review
+                  </p>
+                )}
 
                 <div className="mt-4 space-y-2">
                   {thread.replies.map((reply) => (
@@ -334,6 +366,9 @@ export default function ForumPage() {
                         {reply.author} / {timeAgo(reply.createdAt, now)}
                       </p>
                       <p className="mt-2 text-sm text-[rgba(210,205,194,0.72)]">{reply.body}</p>
+                      {reply.moderationFlag && (
+                        <p className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-red-300">Flagged for review</p>
+                      )}
                     </div>
                   ))}
                 </div>
