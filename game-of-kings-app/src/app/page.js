@@ -8,6 +8,7 @@ import RealmAudio from "../components/RealmAudio";
 import { formatActivityTime, loadRealmActivity, readLocalActivities } from "../lib/realm-activity";
 import { getSessionUser, loadCloudRealm } from "../lib/realm-cloud";
 import { STORAGE_KEY } from "../lib/realm-identity";
+import { loadSiteVisitCount, recordHomeVisitOnce } from "../lib/site-visits";
 
 const livingSystems = [
   ["37 Castle Map", "Explore a full Westeros map with major castles, settlements, panels, stats, and galleries."],
@@ -32,6 +33,7 @@ export default function HomePage() {
   const [realm, setRealm] = useState({});
   const [activities, setActivities] = useState([]);
   const [currentTime, setCurrentTime] = useState(0);
+  const [visitCount, setVisitCount] = useState(0);
 
   useEffect(() => {
     getSessionUser().then(({ user }) => {
@@ -58,12 +60,18 @@ export default function HomePage() {
       });
     });
 
-    setActivities(readLocalActivities());
-    loadRealmActivity(80).then(({ activities: loaded }) => setActivities(loaded));
+    function showPublicActivity(nextActivities) {
+      setActivities(nextActivities.filter((activity) => activity.type !== "site_visit"));
+    }
+
+    showPublicActivity(readLocalActivities());
+    loadRealmActivity(80).then(({ activities: loaded }) => showPublicActivity(loaded));
+    recordHomeVisitOnce().then(setVisitCount);
 
     function refreshActivity() {
       setCurrentTime(Date.now());
-      loadRealmActivity(80).then(({ activities: loaded }) => setActivities(loaded));
+      loadRealmActivity(80).then(({ activities: loaded }) => showPublicActivity(loaded));
+      loadSiteVisitCount().then(setVisitCount);
     }
 
     setCurrentTime(Date.now());
@@ -133,6 +141,9 @@ export default function HomePage() {
             <Link href="#realm-life" className="gok-nav-link hidden md:inline">
               Realm Life
             </Link>
+            <span className="border border-[var(--gok-line)] bg-black/45 px-2 py-2 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-[var(--gok-dim)] md:px-3 md:text-[0.65rem]">
+              Visits {visitCount.toLocaleString()}
+            </span>
             <Link href="/map" className="gok-btn px-3 py-3 text-xs md:px-8 md:text-sm">
               Enter Realm
             </Link>

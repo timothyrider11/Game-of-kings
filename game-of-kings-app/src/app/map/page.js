@@ -1513,7 +1513,7 @@ function getCastleLordText({ state, castle, rulerTitle, rulerName, houseName }) 
 function getClaimDialogue({ isSignedIn, houseName, hasPlayerCastle, state }) {
   if (!isSignedIn) return "Sign in to claim a castle and keep it tied to your account.";
   if (!houseName.trim()) return "Found your house before claiming a castle.";
-  if (hasPlayerCastle) return "Your house already owns a castle. Abandon that seat before claiming another.";
+  if (hasPlayerCastle) return "";
   if (state.owner) return "This castle already has a ruler.";
   return "This castle is open. Claim it for your house.";
 }
@@ -2912,7 +2912,7 @@ function CastlePopup({
             <p className="mt-4 text-sm leading-6 text-stone-500">
               {owner} This location is part of the living realm: claims, wars, upgrades, castle archives, and house activity are timestamped as the world keeps moving.
             </p>
-            {!canClaim && (
+            {!canClaim && claimDialogue && (
               <p className="mt-3 border border-stone-800 bg-black/45 p-3 text-sm leading-6 text-stone-400">
                 {claimDialogue}
               </p>
@@ -2981,7 +2981,7 @@ function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim
           <p className="mt-3 max-w-3xl border border-stone-800 bg-black/45 p-3 text-sm font-bold leading-6 text-stone-300">
             {owner}
           </p>
-          {!canClaim && (
+          {!canClaim && claimDialogue && (
             <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-500">{claimDialogue}</p>
           )}
         </div>

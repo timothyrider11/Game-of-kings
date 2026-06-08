@@ -517,23 +517,23 @@ export default function HouseFounderPage() {
                 </div>
 
                 <ControlBlock title="Decorative Elements">
-                  <div className="max-h-[620px] overflow-y-auto pr-1">
-                    <div className="grid grid-cols-4 gap-2 md:grid-cols-6 xl:grid-cols-8">
+                  <div className="max-h-[620px] overflow-y-auto overflow-x-hidden pr-3">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(4.85rem,1fr))] gap-2">
                       {chargeOptions.map(([id, label, description]) => (
                       <button
                         key={id}
                         onClick={() => updateSelectedLayer("charge", id)}
-                        className={`min-h-[4.7rem] overflow-hidden border px-1.5 py-2 text-[0.62rem] font-bold leading-tight transition ${
+                        className={`min-h-[5.35rem] overflow-hidden border px-1.5 py-2 text-[0.58rem] font-bold leading-[0.95] transition ${
                           selectedLayer.charge === id
                             ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
                             : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
                         }`}
                         title={description}
                       >
-                        <span className="mx-auto mb-1 block h-8 w-8">
+                        <span className="mx-auto mb-1 block aspect-square w-10 max-w-[72%]">
                           <ChargeIcon type={id} color="currentColor" />
                         </span>
-                        <span className="block break-words text-center">{label}</span>
+                        <span className="block overflow-hidden break-words text-center">{label}</span>
                       </button>
                       ))}
                     </div>
@@ -648,13 +648,13 @@ function ControlBlock({ title, children }) {
 
 function OptionGrid({ options, value, onChange }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(5.25rem,1fr))] gap-2">
       {options.map(([id, label, description]) => (
         <button
           key={id}
           onClick={() => onChange(id)}
           title={description}
-          className={`min-h-11 border px-3 py-2 text-sm font-bold transition ${
+          className={`min-h-12 overflow-hidden border px-2 py-2 text-[0.72rem] font-bold leading-tight transition sm:text-xs ${
             value === id
               ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
               : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
@@ -670,12 +670,12 @@ function OptionGrid({ options, value, onChange }) {
 function ColorPicker({ title, selected, onPick }) {
   return (
     <ControlBlock title={title}>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(2.25rem,1fr))] gap-2">
         {tinctures.map(([name, color, description]) => (
           <button
             key={`${title}-${name}`}
             onClick={() => onPick(color)}
-            className={`h-11 border transition ${selected === color ? "border-[var(--gok-silver)]" : "border-[var(--gok-line)]"}`}
+            className={`aspect-square min-h-9 border transition ${selected === color ? "border-[var(--gok-silver)]" : "border-[var(--gok-line)]"}`}
             style={{ backgroundColor: color }}
             title={`${name}: ${description}`}
             aria-label={name}
