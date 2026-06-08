@@ -7,6 +7,7 @@ const navItems = [
   ["Tournaments", "/tournaments"],
   ["Artifacts", "/artifacts"],
   ["Three Eyed Raven", "/three-eyed-raven"],
+  ["Songs of War", "/songs-of-war"],
   ["Forum", "/forum"],
   ["Account", "/account"],
 ];
