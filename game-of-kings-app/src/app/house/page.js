@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
-import { isRoyalEmail, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
+import { applyRoyalAccountDefaults, getRoyalAccount, isRoyalEmail, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
 
 const tinctures = [
   ["Iron Black", "#070807", "A hard black field for grim, old houses."],
@@ -290,13 +290,14 @@ export default function HouseFounderPage() {
 
       loadCloudRealm().then(({ realm }) => {
         if (!realm) return;
-        const royal = isRoyalEmail(email);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
-        const normalized = normalizeSigil(realm.houseSigil || {});
-        setHouseName(realm.houseName || (royal ? "Rider" : ""));
-        setHouseMotto(realm.houseMotto || (royal ? "Loyalty Never Dies" : ""));
-        setRulerTitle(normalizeRulerTitle(realm.rulerTitle || "Lord", email));
-        setRulerName(realm.rulerName || (royal ? "Rider" : ""));
+        const realmData = applyRoyalAccountDefaults(realm, email);
+        const royalAccount = getRoyalAccount(email);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(realmData));
+        const normalized = normalizeSigil(realmData.houseSigil || {});
+        setHouseName(realmData.houseName || "");
+        setHouseMotto(realmData.houseMotto || "");
+        setRulerTitle(normalizeRulerTitle(realmData.rulerTitle || "Lord", email));
+        setRulerName(realmData.rulerName || (royalAccount ? royalAccount.rulerName : ""));
         setSigil(normalized);
         setSelectedLayerId(normalized.layers[0].id);
       });

@@ -112,6 +112,8 @@ export const artifactVault = artifactCatalog.map((artifact) => artifact.name);
 
 export const staticArtifactPossessions = {
   Dawn: "King Rider",
+  "Dayne Falling Star": "Queen Rider",
+  "Catspaw Dagger": "Queen Rider",
 };
 
 export function rollArtifact(chance = 0.01) {

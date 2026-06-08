@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { rollUnclaimedArtifact } from "../../lib/artifacts";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { abandonCastleCloud, claimCastleCloud, getSessionUser, loadCastleClaims, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
-import { isRoyalEmail, normalizeRulerTitle, STORAGE_KEY } from "../../lib/realm-identity";
+import { applyRoyalAccountDefaults, getRoyalAccount, isRoyalEmail, normalizeRulerTitle, STORAGE_KEY } from "../../lib/realm-identity";
 
 const REALM_VERSION = 4;
 const MINUTE = 60_000;
@@ -1348,8 +1348,21 @@ function createDefaultCastleState() {
     (state, castle) => ({
       ...state,
       [castle.id]: {
-        owner: castle.id === "kings-landing" ? "rider" : castle.tier === "major" ? "ai" : null,
-        reservedHouse: castle.id === "kings-landing" ? "House Rider" : "",
+        owner:
+          castle.id === "kings-landing"
+            ? "rider"
+            : castle.id === "starpike"
+              ? "reserved"
+              : castle.tier === "major"
+                ? "ai"
+                : null,
+        reservedHouse:
+          castle.id === "kings-landing"
+            ? "House Rider"
+            : castle.id === "starpike"
+              ? "Queen Rider"
+              : "",
+        rulerName: castle.id === "kings-landing" ? "King Rider" : castle.id === "starpike" ? "Queen Rider" : "",
         troops: castle.militaryStrength,
         upgradeEndsAt: null,
         upgradeStartedAt: null,
@@ -1363,39 +1376,53 @@ function createDefaultCastleState() {
 function protectReservedCastles(castleState) {
   return castles.reduce((state, castle) => {
     const current = state[castle.id] || {};
+    const isKingsLanding = castle.id === "kings-landing";
+    const isStarPike = castle.id === "starpike";
     return {
       ...state,
       [castle.id]: {
         ...current,
         owner:
-          castle.id === "kings-landing"
+          isKingsLanding
             ? "rider"
-            : castle.tier === "major" && !current.owner
-              ? "ai"
-              : current.owner || null,
-        reservedHouse: castle.id === "kings-landing" ? "House Rider" : current.reservedHouse || "",
-        troops: current.troops || castle.militaryStrength,
+            : isStarPike
+              ? current.owner === "player"
+                ? "player"
+                : "reserved"
+              : castle.tier === "major" && !current.owner
+                ? "ai"
+                : current.owner || null,
+        reservedHouse: isKingsLanding ? "House Rider" : isStarPike ? "Queen Rider" : current.reservedHouse || "",
+        rulerName: isKingsLanding ? "King Rider" : isStarPike ? "Queen Rider" : current.rulerName || "",
+        troops: isStarPike ? Math.max(current.troops || 0, 4000) : current.troops || castle.militaryStrength,
       },
     };
   }, castleState);
 }
 
 function applyRoyalOwnership(castleState, email = "") {
-  const kingLanding = castleState["kings-landing"] || {};
-  return {
-    ...castleState,
-    "kings-landing": {
-      ...kingLanding,
-      owner: isRoyalEmail(email) ? "player" : "rider",
-      reservedHouse: "House Rider",
-      troops: Math.max(kingLanding.troops || 0, 1200),
-    },
-  };
+  const royalAccount = getRoyalAccount(email);
+  if (!royalAccount) return castleState;
+
+  return royalAccount.castleIds.reduce((state, castleId) => {
+    const current = state[castleId] || {};
+    return {
+      ...state,
+      [castleId]: {
+        ...current,
+        owner: "player",
+        reservedHouse: royalAccount.houseLabel,
+        claimedHouse: royalAccount.houseLabel,
+        rulerName: royalAccount.lordName,
+        troops: Math.max(current.troops || 0, royalAccount.startingTroops),
+      },
+    };
+  }, castleState);
 }
 
 function applyPublicClaims(castleState, claims = [], currentUserId = "", email = "") {
   const claimedState = claims.reduce((state, claim) => {
-    if (!claim.castle_id || claim.castle_id === "kings-landing") return state;
+    if (!claim.castle_id || claim.castle_id === "kings-landing" || claim.castle_id === "starpike") return state;
     const current = state[claim.castle_id] || {};
 
     return {
@@ -1469,7 +1496,7 @@ function scoreCastle(castle, castleState) {
 }
 
 function getCastleOwnerText({ state, castle, houseName }) {
-  if (state.owner === "player") return `House ${houseName || "Unknown"} owns this castle.`;
+  if (state.owner === "player") return `${state.claimedHouse || `House ${houseName || "Unknown"}`} owns this castle.`;
   if (state.owner === "claimed") return `${state.claimedHouse || state.reservedHouse || "Another house"} owns this castle.`;
   if (state.reservedHouse) return `${state.reservedHouse} owns this castle.`;
   if (state.owner === "ai") return `${castle.house} controls this castle.`;
@@ -1479,7 +1506,7 @@ function getCastleOwnerText({ state, castle, houseName }) {
 function getCastleLordText({ state, castle, rulerTitle, rulerName, houseName }) {
   if (state.owner === "player") return `${rulerTitle} ${rulerName || houseName || "Unknown"}`;
   if (state.owner === "claimed") return state.rulerName || "A sworn ruler";
-  if (state.reservedHouse) return "King Rider";
+  if (state.reservedHouse) return state.rulerName || state.reservedHouse;
   return castle.lord;
 }
 
@@ -1654,6 +1681,7 @@ export default function MapPage() {
   const hasPlayerCastle = playerCastleIds.length > 0;
   const canClaim = isSignedIn && Boolean(houseName.trim()) && !hasPlayerCastle && !selectedState.owner;
   const isRoyalAdmin = isRoyalEmail(sessionEmail);
+  const royalAccount = getRoyalAccount(sessionEmail);
   const economyPerHour = playerCastles.reduce(
     (total, castle) => total + castle.wealth * 18 + Math.floor(castle.population / 2000),
     0
@@ -1688,28 +1716,29 @@ export default function MapPage() {
   }, [zoom]);
 
   function applyRealmData(data, emailOverride = sessionEmail, userIdOverride = sessionUserId, publicClaims = []) {
-    const offlineResult = resolveOfflineProgress(data);
+    const realmData = applyRoyalAccountDefaults(data, emailOverride);
+    const royalAccount = getRoyalAccount(emailOverride);
+    const offlineResult = resolveOfflineProgress(realmData, emailOverride);
 
-    const royal = isRoyalEmail(emailOverride);
-    setHouseName(data.houseName || (royal ? "Rider" : ""));
-    setHouseMotto(data.houseMotto || (royal ? "Loyalty Never Dies" : ""));
-    setRulerTitle(normalizeRulerTitle(data.rulerTitle || "Lord", emailOverride));
-    setRulerName(data.rulerName || (royal ? "Rider" : ""));
-    setHouseSigil(data.houseSigil || sigils[0]);
+    setHouseName(realmData.houseName || "");
+    setHouseMotto(realmData.houseMotto || "");
+    setRulerTitle(normalizeRulerTitle(realmData.rulerTitle || "Lord", emailOverride));
+    setRulerName(realmData.rulerName || (royalAccount ? royalAccount.rulerName : ""));
+    setHouseSigil(realmData.houseSigil || sigils[0]);
     setCastleState(applyPublicClaims(protectReservedCastles(offlineResult.castleState), publicClaims, userIdOverride, emailOverride));
-    setGalleries({ ...createDefaultGalleries(), ...(data.galleries || {}) });
+    setGalleries({ ...createDefaultGalleries(), ...(realmData.galleries || {}) });
     setGold(offlineResult.gold);
     setRenown(offlineResult.renown);
-    setLastCheckInDate(data.lastCheckInDate || "");
+    setLastCheckInDate(realmData.lastCheckInDate || "");
     setLastResolvedAt(offlineResult.lastResolvedAt);
     setWorldEvents(offlineResult.worldEvents);
     setWars(offlineResult.wars);
-    setThreads(data.threads || initialThreads);
-    setCompletedQuizzes(data.completedQuizzes || []);
-    setArtifactInventory(data.artifactInventory || []);
-    setJoinedTournaments(data.joinedTournaments || []);
-    setRaidHistory(data.raidHistory || []);
-    setSelectedCastleId(data.selectedCastleId || "winterfell");
+    setThreads(realmData.threads || initialThreads);
+    setCompletedQuizzes(realmData.completedQuizzes || []);
+    setArtifactInventory(realmData.artifactInventory || []);
+    setJoinedTournaments(realmData.joinedTournaments || []);
+    setRaidHistory(realmData.raidHistory || []);
+    setSelectedCastleId(realmData.selectedCastleId || "winterfell");
   }
 
   useEffect(() => {
@@ -1743,13 +1772,17 @@ export default function MapPage() {
 
       Promise.all([loadCloudRealm(), loadCastleClaims()]).then(([{ realm }, { claims }]) => {
         if (!realm) {
-          if (claims?.length) {
-            setCastleState((current) => applyPublicClaims(current, claims, userId, email));
+          const bootstrappedRealm = applyRoyalAccountDefaults({}, email);
+          if (getRoyalAccount(email)) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(bootstrappedRealm));
+            saveCloudRealm(bootstrappedRealm);
           }
+          applyRealmData(bootstrappedRealm, email, userId, claims);
           return;
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
-        applyRealmData(realm, email, userId, claims);
+        const realmData = applyRoyalAccountDefaults(realm, email);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(realmData));
+        applyRealmData(realmData, email, userId, claims);
       });
       setHasLoaded(true);
     });
@@ -1856,7 +1889,7 @@ export default function MapPage() {
     worldEvents,
   ]);
 
-  function resolveOfflineProgress(data) {
+  function resolveOfflineProgress(data, emailOverride = sessionEmail) {
     const storedState = protectReservedCastles({ ...createDefaultCastleState(), ...(data.castleState || {}) });
     const storedEvents = data.worldEvents || [];
     const storedWars = data.wars || [];
@@ -1888,7 +1921,7 @@ export default function MapPage() {
               }
             : state,
         ])
-      )), sessionEmail),
+      )), emailOverride),
       gold: (data.gold ?? 350) + earnedGold,
       renown: (data.renown ?? 0) + earnedRenown,
       lastResolvedAt: Date.now(),
@@ -2571,7 +2604,7 @@ export default function MapPage() {
               <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">Royal Admin</p>
               <h2 className="mt-2 text-2xl font-black">King&apos;s Landing Controls</h2>
               <p className="mt-2 text-sm leading-6 text-stone-400">
-                Royal account active. House Rider owns King&apos;s Landing, and your title is locked as King.
+                Royal account active. {royalAccount?.houseLabel || "House Rider"} owns King&apos;s Landing, and your title is locked as {royalAccount?.title || "royalty"}.
               </p>
               <div className="mt-4 grid gap-2">
                 <button

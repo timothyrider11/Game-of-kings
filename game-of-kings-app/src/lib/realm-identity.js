@@ -1,15 +1,67 @@
 export const STORAGE_KEY = "game_of_kings_living_realm";
 export const ROYAL_EMAIL = "timothyrider11@gmail.com";
+export const QUEEN_EMAIL = "baby_girl_wpg_2@hotmail.com";
 export const PUBLIC_TITLES = ["Lord", "Lady", "Ser"];
-export const ROYAL_TITLES = ["King", ...PUBLIC_TITLES];
+export const ROYAL_TITLES = ["King", "Queen", ...PUBLIC_TITLES];
+
+export const ROYAL_ACCOUNTS = {
+  [ROYAL_EMAIL]: {
+    title: "King",
+    rulerName: "Rider",
+    lordName: "King Rider",
+    houseName: "Rider",
+    houseMotto: "Loyalty Never Dies",
+    houseLabel: "House Rider",
+    castleIds: ["kings-landing"],
+    startingGold: 350,
+    startingTroops: 1200,
+    startingArtifacts: [],
+  },
+  [QUEEN_EMAIL]: {
+    title: "Queen",
+    rulerName: "Rider",
+    lordName: "Queen Rider",
+    houseName: "Rider",
+    houseMotto: "Loyalty Never Dies",
+    houseLabel: "House Rider",
+    castleIds: ["kings-landing", "starpike"],
+    startingGold: 10000,
+    startingTroops: 4000,
+    startingArtifacts: ["Dayne Falling Star", "Catspaw Dagger"],
+  },
+};
+
+export function normalizeEmail(email = "") {
+  return email.trim().toLowerCase();
+}
+
+export function getRoyalAccount(email = "") {
+  return ROYAL_ACCOUNTS[normalizeEmail(email)] || null;
+}
 
 export function isRoyalEmail(email = "") {
-  return email.trim().toLowerCase() === ROYAL_EMAIL;
+  return Boolean(getRoyalAccount(email));
 }
 
 export function normalizeRulerTitle(title = "Lord", email = "") {
-  if (isRoyalEmail(email)) return "King";
+  const royalAccount = getRoyalAccount(email);
+  if (royalAccount) return royalAccount.title;
   return PUBLIC_TITLES.includes(title) ? title : "Lord";
+}
+
+export function applyRoyalAccountDefaults(realm = {}, email = "") {
+  const royalAccount = getRoyalAccount(email);
+  if (!royalAccount) return realm;
+
+  return {
+    ...realm,
+    houseName: realm.houseName || royalAccount.houseName,
+    houseMotto: realm.houseMotto || royalAccount.houseMotto,
+    rulerName: realm.rulerName || royalAccount.rulerName,
+    rulerTitle: royalAccount.title,
+    gold: Math.max(realm.gold ?? 350, royalAccount.startingGold),
+    artifactInventory: [...new Set([...(realm.artifactInventory || []), ...royalAccount.startingArtifacts])],
+  };
 }
 
 export function clearLocalRealm() {

@@ -14,7 +14,7 @@ import {
   signUpWithPassword,
   upsertProfile,
 } from "../../lib/realm-cloud";
-import { clearLocalRealm, isRoyalEmail, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
+import { applyRoyalAccountDefaults, clearLocalRealm, getRoyalAccount, isRoyalEmail, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
 import { supabase } from "../../lib/supabase";
 
 export default function AccountPage() {
@@ -54,7 +54,8 @@ export default function AccountPage() {
       if (!profile) return;
 
       setUsername(profile.username || "");
-      setRulerName(profile.ruler_name || "");
+      const royalAccount = getRoyalAccount(user.email);
+      setRulerName(profile.ruler_name || (royalAccount ? royalAccount.rulerName : ""));
       setRulerTitle(normalizeRulerTitle(profile.ruler_title || "Lord", user.email));
       setAvatarUrl(profile.avatar_url || "");
     });
@@ -75,7 +76,12 @@ export default function AccountPage() {
     } else {
       if (mode === "sign-in") {
         const { realm } = await loadCloudRealm();
-        if (realm) localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
+        const royalAccount = getRoyalAccount(email);
+        const realmData = realm ? applyRoyalAccountDefaults(realm, email) : royalAccount ? applyRoyalAccountDefaults({}, email) : null;
+        if (realmData) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(realmData));
+          if (!realm) await saveCloudRealm(realmData);
+        }
       }
       setMessage(mode === "sign-up" ? "Account created. Check your raven cage and send the raven back with verification." : "Signed in. Your account realm has been restored.");
     }
@@ -90,13 +96,13 @@ export default function AccountPage() {
     const { error } = await upsertProfile({ username, rulerName, rulerTitle: safeTitle, avatarUrl });
     const stored = localStorage.getItem(STORAGE_KEY);
     const realm = stored ? JSON.parse(stored) : {};
-    const nextRealm = {
+    const nextRealm = applyRoyalAccountDefaults({
       ...realm,
       username,
       rulerName,
       rulerTitle: safeTitle,
       avatarUrl,
-    };
+    }, user?.email);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRealm));
     await saveCloudRealm(nextRealm);
     await recordRealmActivity(buildActivity({
@@ -121,13 +127,13 @@ export default function AccountPage() {
     }
 
     const realm = JSON.parse(stored);
-    const { error } = await saveCloudRealm({
+    const { error } = await saveCloudRealm(applyRoyalAccountDefaults({
       ...realm,
       username,
       rulerName,
       rulerTitle: normalizeRulerTitle(rulerTitle, user?.email),
       avatarUrl,
-    });
+    }, user?.email));
 
     setMessage(error || "Account realm updated.");
     setBusy(false);
@@ -142,7 +148,7 @@ export default function AccountPage() {
     } else if (!realm) {
       setMessage("No account realm found yet.");
     } else {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(realm));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(applyRoyalAccountDefaults(realm, user?.email)));
       setMessage("Cloud realm loaded onto this device.");
     }
 
