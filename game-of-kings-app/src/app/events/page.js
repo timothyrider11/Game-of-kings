@@ -4,63 +4,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { getQuizCycle, quizQuestionBank } from "../../lib/quiz-bank";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
-import { loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
+import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
 const DAY_MS = 24 * 60 * 60 * 1000;
-const QUIZ_INTERVAL_DAYS = 3;
-
-const quizSets = [
-  {
-    title: "Realm Foundations",
-    category: "Mixed Trivia",
-    questions: [
-      ["Which city is the seat of the Iron Throne?", ["King's Landing", "Oldtown", "White Harbor", "Lannisport"], "King's Landing"],
-      ["Which castle is the ancient seat of House Stark?", ["Winterfell", "Harrenhal", "Storm's End", "The Eyrie"], "Winterfell"],
-      ["Which house rules from Pyke?", ["Greyjoy", "Tyrell", "Arryn", "Tully"], "Greyjoy"],
-      ["What is Dragonstone famous for?", ["Dragon-stone towers", "Golden mines", "Floating gardens", "Ice walls"], "Dragon-stone towers"],
-      ["Which region contains Sunspear?", ["Dorne", "The North", "The Vale", "The Reach"], "Dorne"],
-      ["Which castle is linked to House Baratheon?", ["Storm's End", "Oldtown", "Riverrun", "Highgarden"], "Storm's End"],
-      ["Which city is known for the Citadel?", ["Oldtown", "Gulltown", "Barrowton", "Maidenpool"], "Oldtown"],
-      ["Which house is tied to Highgarden?", ["Tyrell", "Bolton", "Manderly", "Dayne"], "Tyrell"],
-      ["Which riverlands castle is famously huge and cursed?", ["Harrenhal", "Riverrun", "Seagard", "The Twins"], "Harrenhal"],
-      ["Which northern port is ruled by House Manderly?", ["White Harbor", "Deepwood Motte", "Karhold", "Ramsgate"], "White Harbor"],
-    ],
-  },
-  {
-    title: "Castles and Houses",
-    category: "Castle Trivia",
-    questions: [
-      ["Which castle guards the main road through the Neck?", ["Moat Cailin", "Castle Black", "Horn Hill", "Starfall"], "Moat Cailin"],
-      ["Which house is seated at Casterly Rock?", ["Lannister", "Stark", "Martell", "Arryn"], "Lannister"],
-      ["Which castle is high in the Mountains of the Moon?", ["The Eyrie", "Storm's End", "Riverrun", "Crakehall"], "The Eyrie"],
-      ["Which house is seated at Riverrun?", ["Tully", "Frey", "Hightower", "Mormont"], "Tully"],
-      ["Which southern city is tied to House Hightower?", ["Oldtown", "King's Landing", "Gulltown", "White Harbor"], "Oldtown"],
-      ["Which castle is a Dayne seat?", ["Starfall", "Dreadfort", "Brightwater Keep", "Karhold"], "Starfall"],
-      ["Which hold is associated with House Bolton?", ["The Dreadfort", "Winterfell", "The Twins", "Oldcastle"], "The Dreadfort"],
-      ["Which castle is House Tarly's seat?", ["Horn Hill", "Highgarden", "Blackhaven", "Evenfall Hall"], "Horn Hill"],
-      ["Which castle sits on the Wall?", ["Castle Black", "Pyke", "The Arbor", "Redfort"], "Castle Black"],
-      ["Which castle is a major Iron Islands stronghold?", ["Pyke", "Harrenhal", "Sunspear", "The Eyrie"], "Pyke"],
-    ],
-  },
-  {
-    title: "War and Legend",
-    category: "Lore Trivia",
-    questions: [
-      ["Which blade is a famous Valyrian steel sword?", ["Longclaw", "Needlepoint", "Gold Fang", "River Light"], "Longclaw"],
-      ["Which ancestral sword belonged to House Tarly?", ["Heartsbane", "Blackfyre", "Oathkeeper", "Ice"], "Heartsbane"],
-      ["Which lost sword is tied to Targaryen kingship?", ["Blackfyre", "Dawn", "Widow's Wail", "Brightroar"], "Blackfyre"],
-      ["Which weapon type defines jousting?", ["Lance", "Longbow", "Dagger", "Sling"], "Lance"],
-      ["Which contest uses mounted knights?", ["Jousting", "Archery", "Melee", "Trivia"], "Jousting"],
-      ["Which house sigil is a direwolf?", ["Stark", "Tully", "Arryn", "Hightower"], "Stark"],
-      ["Which house sigil is a golden lion?", ["Lannister", "Mormont", "Reed", "Royce"], "Lannister"],
-      ["Which house sigil is a kraken?", ["Greyjoy", "Tyrell", "Baratheon", "Frey"], "Greyjoy"],
-      ["Which region is ruled from the Eyrie?", ["The Vale", "Dorne", "The Reach", "The Westerlands"], "The Vale"],
-      ["Which castle is reserved here for House Rider?", ["King's Landing", "Winterfell", "Oldtown", "Storm's End"], "King's Landing"],
-    ],
-  },
-];
+const GIVEAWAY_LOCK_STORAGE_KEY = "game_of_kings_giveaway_entries";
 
 const tournaments = [
   { id: "royal-joust", name: "King's Landing Royal Joust", type: "Jousting", cadenceDays: 7, offsetDays: 5, entryGold: 75, prizeGold: 240, prizeRenown: 45 },
@@ -97,15 +47,6 @@ function hashText(value) {
   return value.split("").reduce((hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0, 17);
 }
 
-function getQuizCycle(now = Date.now()) {
-  const cycle = Math.floor(now / (QUIZ_INTERVAL_DAYS * DAY_MS));
-  return {
-    key: `quiz-${cycle}`,
-    index: cycle % quizSets.length,
-    nextAt: (cycle + 1) * QUIZ_INTERVAL_DAYS * DAY_MS,
-  };
-}
-
 function getTournamentWindow(tournament, now = Date.now()) {
   const day = Math.floor(now / DAY_MS);
   const adjusted = day - tournament.offsetDays;
@@ -130,6 +71,24 @@ function buildTournamentEntrants(realm, signup) {
   const playerHouse = getPlayerHouse(realm);
   const npcs = realmHouses.filter(([house]) => house !== playerHouse[0]).slice(0, 7);
   return signup ? [playerHouse, ...npcs] : npcs;
+}
+
+function readGiveawayLocks() {
+  if (typeof window === "undefined") return {};
+
+  try {
+    return JSON.parse(localStorage.getItem(GIVEAWAY_LOCK_STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function writeGiveawayLock(entryKey, entry) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(GIVEAWAY_LOCK_STORAGE_KEY, JSON.stringify({
+    ...readGiveawayLocks(),
+    [entryKey]: entry,
+  }));
 }
 
 function contestLine(type, winner, loser, seed) {
@@ -214,9 +173,15 @@ export default function EventsPage() {
   const [answers, setAnswers] = useState({});
   const [now, setNow] = useState(0);
   const [activities, setActivities] = useState([]);
+  const [sessionUserId, setSessionUserId] = useState("");
+  const [sessionEmail, setSessionEmail] = useState("");
+  const [giveawayLocks, setGiveawayLocks] = useState({});
   const quizCycle = getQuizCycle(now);
-  const activeQuiz = quizSets[quizCycle.index];
+  const activeQuiz = quizCycle;
   const completedQuiz = realm?.quizAttempts?.[quizCycle.key];
+  const giveawayEntryKey = sessionUserId ? `${newcomerGiveaway.id}:${sessionUserId}` : "";
+  const giveawayEntry = realm?.giveawayEntries?.[newcomerGiveaway.id];
+  const giveawayAlreadyEntered = Boolean(giveawayEntry || (giveawayEntryKey && giveawayLocks[giveawayEntryKey]));
   const quizCompletionCount = useMemo(
     () =>
       activities.filter(
@@ -230,6 +195,11 @@ export default function EventsPage() {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     setRealm(stored ? JSON.parse(stored) : {});
+    setGiveawayLocks(readGiveawayLocks());
+    getSessionUser().then(({ user }) => {
+      setSessionUserId(user?.id || "");
+      setSessionEmail(user?.email || "");
+    });
     loadCloudRealm().then(({ realm: cloudRealm }) => {
       if (!cloudRealm) return;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRealm));
@@ -267,7 +237,8 @@ export default function EventsPage() {
     if (completedQuiz || Object.keys(answers).length < activeQuiz.questions.length) return;
 
     const correct = activeQuiz.questions.reduce((count, question, index) => count + (answers[index] === question[2] ? 1 : 0), 0);
-    const rewardGold = correct * 10;
+    const perfectBonusGold = correct === activeQuiz.questions.length ? 750 : 0;
+    const rewardGold = correct * 25 + perfectBonusGold;
     const rewardRenown = correct * 2;
     const nextRealm = {
       ...realm,
@@ -281,6 +252,7 @@ export default function EventsPage() {
           total: activeQuiz.questions.length,
           rewardGold,
           rewardRenown,
+          perfectBonusGold,
           answers,
           submittedAt: new Date(now).toISOString(),
         },
@@ -292,12 +264,13 @@ export default function EventsPage() {
       type: "quiz",
       title: "A Quiz Was Completed",
       actor: realm?.houseName ? `House ${realm.houseName}` : "A realm player",
-      body: `${activeQuiz.title}: ${correct}/10 correct. Reward: ${rewardGold} gold and ${rewardRenown} renown.`,
+      body: `${activeQuiz.title}: ${correct}/10 correct. Reward: ${rewardGold} gold and ${rewardRenown} renown.${perfectBonusGold ? " Perfect score bonus paid." : ""}`,
       meta: {
         quizKey: quizCycle.key,
         quizTitle: activeQuiz.title,
         score: correct,
         total: activeQuiz.questions.length,
+        perfectBonusGold,
       },
     }));
     loadRealmActivity(150).then(({ activities: loaded }) => setActivities(loaded));
@@ -330,43 +303,66 @@ export default function EventsPage() {
   }
 
   function enterGiveaway() {
+    if (!sessionUserId) {
+      setMessage("Sign in first. The raven ledger allows one giveaway entry per account.");
+      return;
+    }
+
     if (!realm.houseName?.trim()) {
       setMessage("Found your house before entering the giveaway.");
       return;
     }
 
     const entries = realm.giveawayEntries || {};
-    if (entries[newcomerGiveaway.id]) {
+    const entryKey = `${newcomerGiveaway.id}:${sessionUserId}`;
+    if (entries[newcomerGiveaway.id] || giveawayLocks[entryKey]) {
       setMessage("Your house is already entered for The Prince That Was Promised Giveaway.");
       return;
     }
+
+    const enteredAt = new Date(now).toISOString();
+    const hatchAt = new Date(now + 8 * DAY_MS).toISOString();
+    const entry = {
+      giveaway: newcomerGiveaway.name,
+      prize: newcomerGiveaway.prize,
+      house: `House ${realm.houseName}`,
+      userId: sessionUserId,
+      email: sessionEmail,
+      enteredAt,
+      announceAt: newcomerGiveaway.announceAt,
+      status: "entered",
+      dragonEgg: {
+        stage: "entry",
+        hatchAfterDays: 8,
+        hatchesAt: hatchAt,
+        lifecycle: ["egg", "hatchling", "young dragon", "grown dragon"],
+      },
+    };
 
     const nextRealm = {
       ...realm,
       giveawayEntries: {
         ...entries,
-        [newcomerGiveaway.id]: {
-          giveaway: newcomerGiveaway.name,
-          prize: newcomerGiveaway.prize,
-          house: `House ${realm.houseName}`,
-          enteredAt: new Date(now).toISOString(),
-          announceAt: newcomerGiveaway.announceAt,
-          status: "entered",
-        },
+        [newcomerGiveaway.id]: entry,
       },
     };
 
     saveRealm(nextRealm);
+    writeGiveawayLock(entryKey, entry);
+    setGiveawayLocks(readGiveawayLocks());
     recordRealmActivity(buildActivity({
       type: "giveaway",
       title: "A House Entered The Dragon Egg Draw",
       actor: `House ${realm.houseName}`,
-      body: `${newcomerGiveaway.name}: ${newcomerGiveaway.prize} entry recorded. Good luck. Winner announced ${newcomerGiveaway.announceAt}. Cosmetic and lore-only, no battle effect.`,
+      body: `${newcomerGiveaway.name}: ${newcomerGiveaway.prize} entry recorded. Good luck. Winner announced ${newcomerGiveaway.announceAt}. If this house wins, the egg hatches after 8 days into a cosmetic living dragon.`,
       meta: {
         action: "giveaway-entry",
         giveawayId: newcomerGiveaway.id,
         prize: newcomerGiveaway.prize,
         announceAt: newcomerGiveaway.announceAt,
+        userId: sessionUserId,
+        email: sessionEmail,
+        hatchesAt: hatchAt,
       },
     }));
     loadRealmActivity(150).then(({ activities: loaded }) => setActivities(loaded));
@@ -458,7 +454,9 @@ export default function EventsPage() {
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-stone-500">{activeQuiz.category}</p>
                 <h2 className="mt-2 text-2xl font-black">{activeQuiz.title}</h2>
-                <p className="mt-2 text-sm text-stone-400">10 questions. Each correct answer gives 10 gold and 2 renown.</p>
+                <p className="mt-2 text-sm text-stone-400">
+                  10 questions from a {quizQuestionBank.length.toLocaleString()} question lore bank. Each correct answer gives 25 gold; a perfect score pays 1000 gold total.
+                </p>
                 <p className="mt-1 text-sm text-stone-500">{quizCompletionCount} houses have completed this quiz cycle.</p>
               </div>
               {completedQuiz && (
@@ -524,14 +522,17 @@ export default function EventsPage() {
                 <DragonEggMark />
               </div>
               <p className="mt-4 text-sm leading-6 text-stone-400">{newcomerGiveaway.description}</p>
+              <p className="mt-3 text-sm leading-6 text-stone-500">
+                One entry per signed-in account. If your house wins, the egg remains cosmetic, hatches after 8 days, then appears in your house archive as a living hatchling before growing over time.
+              </p>
               <p className="mt-3 text-sm font-black text-stone-200">Prize: {newcomerGiveaway.prize}</p>
               <p className="mt-1 text-sm font-black text-stone-400">Winner announced: {newcomerGiveaway.announceAt}</p>
               <button
                 onClick={enterGiveaway}
-                disabled={Boolean(realm.giveawayEntries?.[newcomerGiveaway.id])}
+                disabled={giveawayAlreadyEntered}
                 className="mt-4 min-h-12 w-full rounded-md border border-stone-500 bg-stone-900 px-5 py-3 font-black text-stone-100 transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:border-stone-800 disabled:bg-stone-950 disabled:text-stone-600"
               >
-                {realm.giveawayEntries?.[newcomerGiveaway.id] ? "Entered - Good Luck" : "Enter Giveaway"}
+                {giveawayAlreadyEntered ? "Entered - Good Luck" : "Enter Giveaway"}
               </button>
             </section>
 
