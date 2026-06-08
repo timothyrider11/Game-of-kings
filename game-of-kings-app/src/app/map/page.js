@@ -1518,6 +1518,71 @@ function getClaimDialogue({ isSignedIn, houseName, hasPlayerCastle, state }) {
   return "This castle is open. Claim it for your house.";
 }
 
+function getSigilFieldBackground(sigil = {}) {
+  const primary = sigil.color || "#5e1114";
+  const secondary = sigil.secondary || "#070807";
+  const accent = sigil.accent || "#b7b3a8";
+
+  const fields = {
+    plain: primary,
+    "per-pale": `linear-gradient(90deg, ${primary} 0 50%, ${secondary} 50% 100%)`,
+    "per-fess": `linear-gradient(180deg, ${primary} 0 50%, ${secondary} 50% 100%)`,
+    quartered: `linear-gradient(90deg, transparent 0 50%, rgba(0,0,0,0.001) 50%), linear-gradient(180deg, ${primary} 0 50%, ${secondary} 50% 100%)`,
+    bend: `linear-gradient(135deg, transparent 0 39%, ${accent} 39% 50%, transparent 50% 100%), ${primary}`,
+    "bend-sinister": `linear-gradient(45deg, transparent 0 39%, ${accent} 39% 50%, transparent 50% 100%), ${primary}`,
+    cross: `linear-gradient(90deg, transparent 0 42%, ${accent} 42% 58%, transparent 58%), linear-gradient(180deg, transparent 0 42%, ${accent} 42% 58%, transparent 58%), ${primary}`,
+    saltire: `linear-gradient(45deg, transparent 0 43%, ${accent} 43% 55%, transparent 55%), linear-gradient(135deg, transparent 0 43%, ${accent} 43% 55%, transparent 55%), ${primary}`,
+    chevron: `linear-gradient(135deg, transparent 0 41%, ${accent} 41% 52%, transparent 52%), linear-gradient(45deg, transparent 0 41%, ${accent} 41% 52%, transparent 52%), ${primary}`,
+    pale: `linear-gradient(90deg, ${primary} 0 36%, ${accent} 36% 64%, ${primary} 64% 100%)`,
+    fess: `linear-gradient(180deg, ${primary} 0 37%, ${accent} 37% 63%, ${primary} 63% 100%)`,
+    chief: `linear-gradient(180deg, ${accent} 0 30%, ${primary} 30% 100%)`,
+    base: `linear-gradient(180deg, ${primary} 0 70%, ${accent} 70% 100%)`,
+  };
+
+  return fields[sigil.field] || primary;
+}
+
+function getMiniShieldClip(shape) {
+  const shapes = {
+    heater: "polygon(50% 0, 94% 11%, 88% 72%, 50% 100%, 12% 72%, 6% 11%)",
+    kite: "polygon(50% 0, 95% 10%, 82% 66%, 50% 100%, 18% 66%, 5% 10%)",
+    round: "ellipse(44% 48% at 50% 45%)",
+    banner: "polygon(8% 0, 92% 0, 92% 100%, 50% 82%, 8% 100%)",
+    tower: "polygon(8% 8%, 18% 8%, 18% 0, 32% 0, 32% 8%, 44% 8%, 44% 0, 56% 0, 56% 8%, 68% 8%, 68% 0, 82% 0, 82% 8%, 92% 8%, 92% 100%, 8% 100%)",
+    royal: "polygon(50% 0, 90% 8%, 96% 28%, 88% 76%, 50% 100%, 12% 76%, 4% 28%, 10% 8%)",
+    pointed: "polygon(50% 0, 97% 18%, 80% 82%, 50% 100%, 20% 82%, 3% 18%)",
+  };
+
+  return shapes[shape] || shapes.heater;
+}
+
+function fallbackSigilForCastle(castle, state) {
+  const taken = Boolean(state.owner);
+  return {
+    color: taken ? "#5e1114" : "#151716",
+    secondary: "#070807",
+    accent: "#b7b3a8",
+    border: taken ? "#8a6d3b" : "#68716f",
+    field: taken ? "chief" : "plain",
+    shield: "heater",
+    layers: [{ id: "fallback", charge: "castle", color: "#b7b3a8", size: 60, x: 50, y: 52, rotate: 0, stretch: 100, opacity: 100 }],
+    initial: (state.claimedHouse || state.reservedHouse || castle.house || castle.name || "?").replace(/^House\s+/i, "").slice(0, 1).toUpperCase(),
+  };
+}
+
+function displaySigilForCastle({ state, castle, houseSigil }) {
+  if (state.owner === "player" && houseSigil) return houseSigil;
+  return fallbackSigilForCastle(castle, state);
+}
+
+function ownerDisplayName({ state, castle, houseName, rulerTitle, rulerName }) {
+  if (state.owner === "player") return `${rulerTitle} ${rulerName || houseName || "Unknown"}`;
+  if (state.owner === "claimed") return state.rulerName || state.claimedHouse || "A sworn ruler";
+  if (state.reservedHouse) return state.rulerName || state.reservedHouse;
+  if (state.owner === "ai") return castle.lord || castle.house;
+  return "Unoccupied";
+}
+
 export default function MapPage() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -2514,7 +2579,7 @@ export default function MapPage() {
                 {castles.map((castle) => {
                   const state = castleState[castle.id] || { troops: castle.militaryStrength };
                   const hovered = castle.id === hoveredCastleId;
-                  const owned = state.owner === "player";
+                  const taken = Boolean(state.owner);
 
                   return (
                     <button
@@ -2540,12 +2605,11 @@ export default function MapPage() {
                       <span
                         className={`block h-6 w-6 rounded-full transition ${
                           hovered
-                            ? "border-2 border-stone-100 bg-red-950/45 shadow-[0_0_12px_rgba(229,231,235,0.9)]"
-                            : owned
-                              ? "border-2 border-stone-100 bg-emerald-950/35 shadow-[0_0_8px_rgba(16,185,129,0.75)]"
-                              : "border border-stone-950/40 bg-black/5 shadow-[0_0_4px_rgba(255,255,255,0.2)]"
+                            ? "border-2 border-stone-100 bg-red-700/70 shadow-[0_0_12px_rgba(229,231,235,0.9)]"
+                            : taken
+                              ? "border-2 border-red-950 bg-red-700/80 shadow-[0_0_8px_rgba(127,29,29,0.75)]"
+                              : "border border-stone-950/40 bg-transparent shadow-[0_0_4px_rgba(255,255,255,0.2)]"
                         }`}
-                        style={{ backgroundColor: owned ? houseSigil.color : undefined }}
                       />
                     </button>
                   );
@@ -2802,6 +2866,7 @@ export default function MapPage() {
           houseName={houseName}
           rulerTitle={rulerTitle}
           rulerName={rulerName}
+          houseSigil={houseSigil}
           isSignedIn={isSignedIn}
           hasPlayerCastle={hasPlayerCastle}
           images={selectedCastleImages}
@@ -2835,6 +2900,7 @@ function CastlePopup({
   houseName,
   rulerTitle,
   rulerName,
+  houseSigil,
   isSignedIn,
   hasPlayerCastle,
   images,
@@ -2850,17 +2916,20 @@ function CastlePopup({
   const owner = getCastleOwnerText({ state, castle, houseName });
   const currentLord = getCastleLordText({ state, castle, rulerTitle, rulerName, houseName });
   const claimDialogue = getClaimDialogue({ isSignedIn, houseName, hasPlayerCastle, state });
+  const castleSigil = displaySigilForCastle({ state, castle, houseSigil });
+  const occupiedBy = ownerDisplayName({ state, castle, houseName, rulerTitle, rulerName });
+  const occupied = Boolean(state.owner);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center sm:p-5">
-      <section className="max-h-[92vh] w-full max-w-4xl overflow-auto rounded-lg border border-amber-300/40 bg-[#11100d] shadow-2xl shadow-black">
-        <div className="relative min-h-64 border-b border-stone-800 bg-black sm:min-h-80">
+      <section className="max-h-[94vh] w-full max-w-6xl overflow-auto border border-[#6f5a2f] bg-[#090705] shadow-2xl shadow-black">
+        <div className="relative min-h-[25rem] border-b border-stone-900 bg-black sm:min-h-[34rem]">
           {heroImage ? (
-            <button onClick={() => onFullscreen(heroImage)} className="block h-full min-h-64 w-full sm:min-h-80">
-              <img src={heroImage.src} alt={heroImage.name} className="h-full min-h-64 w-full object-cover sm:min-h-80" />
+            <button onClick={() => onFullscreen(heroImage)} className="block h-full min-h-[25rem] w-full sm:min-h-[34rem]">
+              <img src={heroImage.src} alt={heroImage.name} className="h-full min-h-[25rem] w-full object-cover sm:min-h-[34rem]" />
             </button>
           ) : (
-            <div className="flex min-h-64 items-center justify-center bg-[radial-gradient(circle_at_50%_18%,rgba(120,120,120,0.2),transparent_32%),linear-gradient(135deg,#171717,#050505)] p-8 text-center sm:min-h-80">
+            <div className="flex min-h-[25rem] items-center justify-center bg-[radial-gradient(circle_at_50%_18%,rgba(120,120,120,0.2),transparent_32%),linear-gradient(135deg,#171717,#050505)] p-8 text-center sm:min-h-[34rem]">
               <div className="max-w-xl">
                 <p className="text-xs font-black uppercase tracking-[0.28em] text-stone-300">Castle Archive</p>
                 <h2 className="mt-3 text-3xl font-black text-stone-100">{castle.name}</h2>
@@ -2870,6 +2939,8 @@ function CastlePopup({
               </div>
             </div>
           )}
+
+          <HouseBanner sigil={castleSigil} title={occupiedBy} />
 
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-5">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">{castle.region}</p>
@@ -2905,13 +2976,25 @@ function CastlePopup({
           )}
         </div>
 
-        <div className="grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-stone-500">Lore</p>
-            <p className="mt-3 text-base leading-7 text-stone-300">{castle.summary}</p>
-            <p className="mt-4 text-sm leading-6 text-stone-500">
-              {owner} This location is part of the living realm: claims, wars, upgrades, castle archives, and house activity are timestamped as the world keeps moving.
-            </p>
+            <div className="relative overflow-hidden border border-[#8a6d3b] bg-[#c7a976] px-5 py-7 text-[#21150b] shadow-[inset_0_0_38px_rgba(73,43,18,0.55),0_20px_50px_rgba(0,0,0,0.45)] sm:px-10">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,rgba(255,247,217,0.45),transparent_26%),linear-gradient(90deg,rgba(72,41,16,0.28),transparent_10%,transparent_86%,rgba(72,41,16,0.32))]" />
+              <p className="relative text-xs font-black uppercase tracking-[0.3em] text-[#4b2418]">Royal Notice</p>
+              <h3 className="relative mt-4 max-w-xl font-serif text-4xl font-black leading-tight md:text-5xl">
+                {occupied ? `Castle Occupied by ${occupiedBy}.` : "This Castle Stands Unoccupied."}
+              </h3>
+              <div className="relative mt-6 h-px bg-[#5f321f]" />
+              <WaxSigil sigil={castleSigil} />
+            </div>
+
+            <div className="mt-5 border border-stone-800 bg-black/45 p-5">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-stone-500">Castle Lore</p>
+              <p className="mt-3 text-base leading-7 text-stone-300">{castle.summary}</p>
+              <p className="mt-4 text-sm leading-6 text-stone-500">
+                {owner} This location is part of the living realm: claims, wars, upgrades, castle archives, and house activity are timestamped as the world keeps moving.
+              </p>
+            </div>
             {!canClaim && claimDialogue && (
               <p className="mt-3 border border-stone-800 bg-black/45 p-3 text-sm leading-6 text-stone-400">
                 {claimDialogue}
@@ -3041,6 +3124,114 @@ function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim
         </div>
       </div>
     </div>
+  );
+}
+
+function HouseBanner({ sigil, title }) {
+  return (
+    <div className="pointer-events-none absolute left-1/2 top-8 hidden w-40 -translate-x-1/2 sm:block">
+      <div className="h-5 rounded-t-full border border-[#8a6d3b] bg-[#2a1c11] shadow-[0_8px_18px_rgba(0,0,0,0.7)]" />
+      <div className="relative mx-auto min-h-56 w-32 border-x border-[#8a6d3b] bg-[#080807] px-4 pb-10 pt-5 shadow-[0_24px_40px_rgba(0,0,0,0.75)]">
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.06),transparent_22%,transparent_78%,rgba(255,255,255,0.04)),radial-gradient(circle_at_50%_16%,rgba(138,109,59,0.22),transparent_34%)]" />
+        <div className="absolute bottom-0 left-0 h-10 w-1/2 origin-bottom-right -skew-y-[24deg] border-b border-[#8a6d3b] bg-[#080807]" />
+        <div className="absolute bottom-0 right-0 h-10 w-1/2 origin-bottom-left skew-y-[24deg] border-b border-[#8a6d3b] bg-[#080807]" />
+        <div className="relative mx-auto mt-4 h-28 w-24">
+          <SigilMark sigil={sigil} label={title} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WaxSigil({ sigil }) {
+  return (
+    <div
+      className="relative mx-auto mt-6 flex h-32 w-32 items-center justify-center rounded-full border border-red-950 shadow-[inset_0_0_18px_rgba(255,180,140,0.18),0_14px_30px_rgba(0,0,0,0.42)]"
+      style={{ background: `radial-gradient(circle at 35% 28%, #9b2a20, ${sigil.color || "#5e1114"} 54%, #3a0707)` }}
+    >
+      <span className="absolute -bottom-4 left-5 h-8 w-5 rounded-full bg-[#5e1114]" />
+      <span className="absolute -bottom-2 right-7 h-5 w-4 rounded-full bg-[#74130f]" />
+      <div className="h-20 w-20 opacity-85 mix-blend-screen">
+        <SigilMark sigil={sigil} label="Wax seal" />
+      </div>
+    </div>
+  );
+}
+
+function SigilMark({ sigil = {}, label = "House sigil" }) {
+  const layers = sigil.layers?.length ? sigil.layers : fallbackSigilForCastle({ name: label }, { owner: "claimed" }).layers;
+  const clipPath = getMiniShieldClip(sigil.shield);
+
+  return (
+    <div className="relative h-full w-full" aria-label={label}>
+      <div
+        className="absolute inset-0 border-2"
+        style={{
+          background: getSigilFieldBackground(sigil),
+          borderColor: sigil.border || "#8a6d3b",
+          clipPath,
+          boxShadow: "inset 0 0 18px rgba(0,0,0,.72)",
+        }}
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.18),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.32))]" />
+        {layers.map((layer) => (
+          <div
+            key={layer.id}
+            className="absolute aspect-square"
+            style={{
+              left: `${layer.x ?? 50}%`,
+              top: `${layer.y ?? 50}%`,
+              width: `${layer.size ?? 58}%`,
+              opacity: (layer.opacity ?? 100) / 100,
+              transform: `translate(-50%, -50%) rotate(${layer.rotate ?? 0}deg) scaleX(${(layer.stretch ?? 100) / 100})`,
+            }}
+          >
+            <MiniChargeIcon type={layer.charge} color={layer.color || "#b7b3a8"} fallback={sigil.initial || label.slice(0, 1)} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MiniChargeIcon({ type, color, fallback = "G" }) {
+  if (type?.startsWith("sheet-")) {
+    return (
+      <span
+        aria-hidden="true"
+        className="block h-full w-full"
+        style={{
+          backgroundColor: color,
+          WebkitMask: `url(/sigils/charges/${type}.png) center / contain no-repeat`,
+          mask: `url(/sigils/charges/${type}.png) center / contain no-repeat`,
+        }}
+      />
+    );
+  }
+
+  const common = {
+    fill: color,
+    stroke: "rgba(0,0,0,.55)",
+    strokeWidth: 2,
+    strokeLinejoin: "round",
+    strokeLinecap: "round",
+  };
+
+  return (
+    <svg viewBox="0 0 100 100" aria-hidden="true" className="h-full w-full overflow-visible">
+      {type === "wolf" && <path {...common} d="M10 58 L25 24 L38 38 L50 14 L61 38 L79 24 L71 50 L91 72 L67 68 L55 91 L45 70 L20 78 Z" />}
+      {type === "lion" && <path {...common} d="M22 73 L30 45 L18 30 L36 31 L43 12 L52 30 L70 16 L68 38 L88 45 L69 55 L74 82 L55 68 L38 89 L39 65 Z" />}
+      {type === "dragon" && <path {...common} d="M8 62 C22 27 46 40 50 17 L65 35 L91 20 L78 50 L92 68 L66 66 L56 91 L43 70 C30 79 16 76 8 62 Z" />}
+      {type === "crown" && <path {...common} d="M12 74 L20 32 L38 56 L50 20 L62 56 L80 32 L88 74 Z M16 82 H84 V92 H16 Z" />}
+      {type === "castle" && <path {...common} d="M14 88 V30 H26 V18 H38 V30 H62 V18 H74 V30 H86 V88 H62 V66 C62 56 38 56 38 66 V88 Z" />}
+      {type === "star" && <path {...common} d="M50 8 L60 37 L91 37 L66 55 L76 86 L50 68 L24 86 L34 55 L9 37 L40 37 Z" />}
+      {type === "sword" && <path {...common} d="M46 8 H54 L58 62 H42 Z M28 62 H72 V72 H28 Z M45 72 H55 L61 94 H39 Z" />}
+      {!["wolf", "lion", "dragon", "crown", "castle", "star", "sword"].includes(type) && (
+        <text x="50" y="66" textAnchor="middle" fontSize="54" fontFamily="serif" fontWeight="900" fill={color}>
+          {fallback}
+        </text>
+      )}
+    </svg>
   );
 }
 

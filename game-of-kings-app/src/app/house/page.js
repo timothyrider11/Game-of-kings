@@ -504,7 +504,7 @@ export default function HouseFounderPage() {
               </div>
             </div>
 
-            <div className="grid min-w-0 gap-4 2xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="grid min-w-0 gap-4">
               <div className="min-w-0 space-y-4">
                 <div className="grid gap-4 xl:grid-cols-2">
                   <ControlBlock title="Shield Fields">
@@ -528,7 +528,7 @@ export default function HouseFounderPage() {
                             ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
                             : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
                         }`}
-                        title={description}
+                        aria-label={description}
                       >
                         <span className="mx-auto mb-1 block aspect-square w-10 max-w-[72%]">
                           <ChargeIcon type={id} color="currentColor" />
@@ -541,7 +541,7 @@ export default function HouseFounderPage() {
                 </ControlBlock>
               </div>
 
-              <aside className="min-w-0 space-y-4">
+              <aside className="grid min-w-0 gap-4 xl:grid-cols-2">
                 <ControlBlock title="Object Layers">
                   <div className="grid gap-2">
                     {layers.map((layer, index) => (
