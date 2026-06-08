@@ -117,7 +117,7 @@ const sheetChargeOptions = [
   ["sheet-barrel-helm", "Barrel Helm"], ["sheet-face-helm", "Face Helm"], ["sheet-ghost", "Ghost"], ["sheet-pillar", "Pillar"], ["sheet-scroll-paper", "Scroll Paper"], ["sheet-rampart", "Rampart"], ["sheet-quill", "Quill Seal"], ["sheet-wings", "Wings"], ["sheet-crossed-spears", "Crossed Spears"], ["sheet-gallows", "Gallows"],
 ].map(([id, label]) => [id, label, "A custom heraldic line-art charge from your sigil sheet.", `/sigils/charges/${id}.png`]);
 
-const chargeOptions = [...charges, ...sheetChargeOptions];
+const chargeOptions = [...sheetChargeOptions, ...charges];
 
 const defaultSigil = {
   name: "Wolf",
@@ -496,6 +496,12 @@ export default function HouseFounderPage() {
                 </p>
                 <p className="mt-1 text-[var(--gok-dim)]">&quot;{houseMotto || "Our Words"}&quot;</p>
               </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <ColorPicker title="Primary Field" selected={sigil.color} onPick={(value) => updateSigilValue(setSigil, "color", value)} />
+                <ColorPicker title="Secondary Field" selected={sigil.secondary} onPick={(value) => updateSigilValue(setSigil, "secondary", value)} />
+                <ColorPicker title="Field Accent" selected={sigil.accent} onPick={(value) => updateSigilValue(setSigil, "accent", value)} />
+                <ColorPicker title="Selected Object" selected={selectedLayer.color} onPick={(value) => updateSelectedLayer("color", value)} />
+              </div>
             </div>
 
             <div className="grid min-w-0 gap-4 2xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -510,31 +516,10 @@ export default function HouseFounderPage() {
                   </ControlBlock>
                 </div>
 
-                <ControlBlock title="Classic Emblem Objects">
-                  <div className="grid grid-cols-4 gap-2 md:grid-cols-6 xl:grid-cols-8">
-                    {charges.map(([id, label, description]) => (
-                      <button
-                        key={id}
-                        onClick={() => updateSelectedLayer("charge", id)}
-                        className={`min-h-[4.7rem] overflow-hidden border px-1.5 py-2 text-[0.68rem] font-bold leading-tight transition ${
-                          selectedLayer.charge === id
-                            ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
-                            : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
-                        }`}
-                        title={description}
-                      >
-                        <span className="mx-auto mb-1 block h-8 w-8">
-                          <ChargeIcon type={id} color="currentColor" />
-                        </span>
-                        <span className="block break-words text-center">{label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </ControlBlock>
-
-                <ControlBlock title="Sigil Sheet Charges">
-                  <div className="grid grid-cols-4 gap-2 md:grid-cols-6 xl:grid-cols-8">
-                    {sheetChargeOptions.map(([id, label, description]) => (
+                <ControlBlock title="Decorative Elements">
+                  <div className="max-h-[620px] overflow-y-auto pr-1">
+                    <div className="grid grid-cols-4 gap-2 md:grid-cols-6 xl:grid-cols-8">
+                      {chargeOptions.map(([id, label, description]) => (
                       <button
                         key={id}
                         onClick={() => updateSelectedLayer("charge", id)}
@@ -550,16 +535,10 @@ export default function HouseFounderPage() {
                         </span>
                         <span className="block break-words text-center">{label}</span>
                       </button>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </ControlBlock>
-
-                <div className="grid gap-4 lg:grid-cols-4">
-                  <ColorPicker title="Primary Field" selected={sigil.color} onPick={(value) => updateSigilValue(setSigil, "color", value)} />
-                  <ColorPicker title="Secondary Field" selected={sigil.secondary} onPick={(value) => updateSigilValue(setSigil, "secondary", value)} />
-                  <ColorPicker title="Field Accent" selected={sigil.accent} onPick={(value) => updateSigilValue(setSigil, "accent", value)} />
-                  <ColorPicker title="Selected Object" selected={selectedLayer.color} onPick={(value) => updateSelectedLayer("color", value)} />
-                </div>
               </div>
 
               <aside className="min-w-0 space-y-4">
@@ -643,6 +622,7 @@ function SigilPreview({ sigil, background, layers }) {
                 left: `${layer.x}%`,
                 top: `${layer.y}%`,
                 width: `${layer.size}%`,
+                aspectRatio: "1 / 1",
                 opacity: layer.opacity / 100,
                 transform: `translate(-50%, -50%) rotate(${layer.rotate}deg) scaleX(${layer.stretch / 100})`,
                 filter: "drop-shadow(0 8px 10px rgba(0,0,0,.82))",
