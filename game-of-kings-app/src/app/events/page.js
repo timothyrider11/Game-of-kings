@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import SiteNav from "../../components/SiteNav";
 import { getQuizCycle, quizQuestionBank } from "../../lib/quiz-bank";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
@@ -407,33 +408,7 @@ export default function EventsPage() {
 
   return (
     <main className="min-h-screen bg-[#070707] text-stone-100">
-      <nav className="border-b border-stone-800 bg-black px-4 py-4">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <Link href="/" className="text-xs font-black uppercase tracking-[0.28em] text-stone-300">
-            Game of Kings
-          </Link>
-          <div className="flex gap-2">
-            <Link href="/house" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
-              House
-            </Link>
-            <Link href="/map" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
-              Map
-            </Link>
-            <Link href="/tournaments" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
-              Tournaments
-            </Link>
-            <Link href="/artifacts" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
-              Artifacts
-            </Link>
-            <Link href="/three-eyed-raven" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
-              Three Eyed Raven
-            </Link>
-            <Link href="/forum" className="rounded-md bg-stone-900 px-4 py-2 text-sm font-black text-stone-200">
-              Forum
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <SiteNav />
 
       <section className="mx-auto max-w-6xl px-4 py-6">
         <div className="border border-stone-700 bg-stone-950 p-5">

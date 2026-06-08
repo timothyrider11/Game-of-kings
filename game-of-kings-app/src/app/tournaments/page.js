@@ -2,8 +2,8 @@
 
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import SiteNav from "../../components/SiteNav";
 import { artifactVault, rollUnclaimedArtifact } from "../../lib/artifacts";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
@@ -280,16 +280,7 @@ export default function TournamentsPage() {
 
   return (
     <main className="gok-page min-h-screen px-4 py-6 text-stone-100">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between border-b border-[rgba(196,193,184,0.14)] pb-4">
-        <Link href="/" className="gok-brand text-xl">Game of Kings</Link>
-        <div className="flex gap-3">
-          <Link href="/events" className="gok-nav-link">Events</Link>
-          <Link href="/artifacts" className="gok-nav-link">Artifacts</Link>
-          <Link href="/three-eyed-raven" className="gok-nav-link">Three Eyed Raven</Link>
-          <Link href="/forum" className="gok-nav-link">Forum</Link>
-          <Link href="/map" className="gok-nav-link">Map</Link>
-        </div>
-      </nav>
+      <SiteNav className="-mx-4 -mt-6 mb-6" />
 
       <section className="mx-auto mt-6 max-w-7xl">
         <div className="gok-panel p-5">

@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import SiteNav from "../../components/SiteNav";
 import { rollUnclaimedArtifact } from "../../lib/artifacts";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { abandonCastleCloud, claimCastleCloud, getSessionUser, loadCastleClaims, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
@@ -1690,6 +1691,11 @@ export default function MapPage() {
     applyMapZoom(nextZoom, event.clientX, event.clientY);
   }
 
+  function handleMapClick(event) {
+    if (castlePopupOpen || fullscreenImage || event.defaultPrevented) return;
+    applyMapZoom(zoomRef.current + 0.16, event.clientX, event.clientY);
+  }
+
   function handleMapTouchStart(event) {
     if (event.touches.length !== 2) return;
 
@@ -2445,6 +2451,7 @@ export default function MapPage() {
 
   return (
     <main className="min-h-screen bg-[#070707] text-stone-100">
+      <SiteNav />
       <section className="sticky top-0 z-40 border-b border-stone-800 bg-black/95 px-3 py-2 backdrop-blur md:static md:px-4">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
           <div>
@@ -2478,42 +2485,6 @@ export default function MapPage() {
                 >
                   Realm
                 </button>
-                <Link
-                  href="/house"
-                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
-                >
-                  House
-                </Link>
-                <Link
-                  href="/events"
-                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
-                >
-                  Events
-                </Link>
-                <Link
-                  href="/tournaments"
-                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
-                >
-                  Tournaments
-                </Link>
-                <Link
-                  href="/artifacts"
-                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
-                >
-                  Artifacts
-                </Link>
-                <Link
-                  href="/three-eyed-raven"
-                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
-                >
-                  Three Eyed Raven
-                </Link>
-                <Link
-                  href="/forum"
-                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
-                >
-                  Forum
-                </Link>
               </div>
 
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_240px] sm:items-center">
@@ -2561,11 +2532,12 @@ export default function MapPage() {
             <div
               ref={mapViewportRef}
               onWheel={handleMapWheel}
+              onClick={handleMapClick}
               onTouchStart={handleMapTouchStart}
               onTouchMove={handleMapTouchMove}
               onTouchEnd={handleMapTouchEnd}
               onTouchCancel={handleMapTouchEnd}
-              className="h-[62vh] overflow-auto bg-[#10100e] overscroll-contain md:h-[78vh]"
+              className="h-[62vh] cursor-zoom-in overflow-auto bg-[#10100e] overscroll-contain md:h-[78vh]"
               style={{ touchAction: "pan-x pan-y" }}
             >
               <div
@@ -2585,8 +2557,8 @@ export default function MapPage() {
                 {castles.map((castle) => {
                   const state = castleState[castle.id] || { troops: castle.militaryStrength };
                   const hovered = castle.id === hoveredCastleId;
-                  const taken = Boolean(state.owner);
                   const playerOwned = state.owner === "player";
+                  const taken = Boolean(state.owner && state.owner !== "ai" && !playerOwned);
                   const active = castle.id === selectedCastleId;
 
                   return (

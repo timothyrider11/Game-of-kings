@@ -4,6 +4,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import SiteNav from "../../components/SiteNav";
+import { artifactCatalog } from "../../lib/artifacts";
 import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 import { applyRoyalAccountDefaults, getRoyalAccount, isRoyalEmail, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
 
@@ -250,12 +252,17 @@ export default function HouseFounderPage() {
   const [savedMessage, setSavedMessage] = useState("");
   const [hasLoaded, setHasLoaded] = useState(false);
   const [sessionEmail, setSessionEmail] = useState("");
+  const [artifactInventory, setArtifactInventory] = useState([]);
 
   const background = useMemo(() => getFieldBackground(sigil), [sigil]);
   const layers = sigil.layers?.length ? sigil.layers : defaultSigil.layers;
   const selectedLayer = layers.find((layer) => layer.id === selectedLayerId) || layers[0];
   const selectedCharge = getChargeById(selectedLayer.charge);
   const selectedField = getById(fieldLayouts, sigil.field);
+  const houseArtifacts = useMemo(
+    () => artifactCatalog.filter((artifact) => artifactInventory.includes(artifact.name)),
+    [artifactInventory]
+  );
 
   useEffect(() => {
     if (!hasLoaded) return;
@@ -298,6 +305,7 @@ export default function HouseFounderPage() {
         setHouseMotto(realmData.houseMotto || "");
         setRulerTitle(normalizeRulerTitle(realmData.rulerTitle || "Lord", email));
         setRulerName(realmData.rulerName || (royalAccount ? royalAccount.rulerName : ""));
+        setArtifactInventory(realmData.artifactInventory || []);
         setSigil(normalized);
         setSelectedLayerId(normalized.layers[0].id);
       });
@@ -317,6 +325,7 @@ export default function HouseFounderPage() {
       setHouseMotto(data.houseMotto || "");
       setRulerTitle(normalizeRulerTitle(data.rulerTitle || "Lord", ""));
       setRulerName(data.rulerName || "");
+      setArtifactInventory(data.artifactInventory || []);
       const normalized = normalizeSigil(savedSigil);
       setSigil(normalized);
       setSelectedLayerId(normalized.layers[0].id);
@@ -393,27 +402,7 @@ export default function HouseFounderPage() {
 
   return (
     <main className="gok-page min-h-screen overflow-x-hidden">
-      <nav className="border-b border-[rgba(196,193,184,0.14)] bg-black/80 px-4 py-4">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Link href="/" className="gok-brand text-xl">
-            Game of Kings
-          </Link>
-          <div className="flex gap-2">
-            <Link href="/map" className="gok-btn px-4 py-2 text-xs">
-              Map
-            </Link>
-            <Link href="/events" className="gok-btn px-4 py-2 text-xs">
-              Events
-            </Link>
-            <Link href="/three-eyed-raven" className="gok-btn px-4 py-2 text-xs">
-              Three Eyed Raven
-            </Link>
-            <Link href="/account" className="gok-btn px-4 py-2 text-xs">
-              Account
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <SiteNav />
 
       <section className="mx-auto grid max-w-[1800px] gap-4 px-4 py-4 2xl:grid-cols-[360px_minmax(0,1fr)]">
         <div className="gok-panel min-w-0 p-4">
@@ -471,6 +460,21 @@ export default function HouseFounderPage() {
             Update House
           </button>
           {savedMessage && <p className="relative z-10 mt-3 text-sm font-bold text-[var(--gok-parchment)]">{savedMessage}</p>}
+          <div className="relative z-10 mt-5 border border-[var(--gok-line)] bg-black/35 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gok-dim)]">House Artifacts</p>
+            <div className="mt-3 grid gap-2">
+              {houseArtifacts.length ? (
+                houseArtifacts.map((artifact) => (
+                  <div key={artifact.name} className="border border-[var(--gok-line)] bg-black/45 p-3">
+                    <p className="font-serif text-lg font-black text-[var(--gok-silver)]">{artifact.name}</p>
+                    <p className="mt-1 text-[0.62rem] font-black uppercase tracking-[0.16em] text-red-300">{artifact.type}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm leading-6 text-[rgba(210,205,194,0.58)]">No relics in your house archive yet.</p>
+              )}
+            </div>
+          </div>
           <Link href="/map" className="gok-btn relative z-10 mt-3 flex w-full px-5 py-3">
             Go Claim A Castle
           </Link>

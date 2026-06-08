@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import RealmAudio from "../components/RealmAudio";
+import SiteNav from "../components/SiteNav";
 import { formatActivityTime, loadRealmActivity, readLocalActivities } from "../lib/realm-activity";
 import { getSessionUser, loadCloudRealm } from "../lib/realm-cloud";
 import { STORAGE_KEY } from "../lib/realm-identity";
@@ -114,36 +115,9 @@ export default function HomePage() {
           </span>
         ))}
 
-        <nav className="relative z-10 mx-auto flex max-w-[1680px] flex-col items-start justify-between gap-4 px-5 py-5 sm:flex-row sm:items-center md:px-10 lg:px-16">
-          <Link href="/" className="gok-brand">
-            Game of Kings
-          </Link>
-
-          <div className="flex items-center gap-5 md:gap-8">
-            <Link href="/house" className="gok-nav-link hidden sm:inline">
-              House
-            </Link>
-            <Link href="/events" className="gok-nav-link hidden sm:inline">
-              Events
-            </Link>
-            <Link href="/tournaments" className="gok-nav-link hidden sm:inline">
-              Tournaments
-            </Link>
-            <Link href="/artifacts" className="gok-nav-link hidden sm:inline">
-              Artifacts
-            </Link>
-            <Link href="/three-eyed-raven" className="gok-nav-link hidden sm:inline">
-              Three Eyed Raven
-            </Link>
-            <Link href="/forum" className="gok-nav-link hidden sm:inline">
-              Forum
-            </Link>
-            <Link href="/account" className="gok-nav-link hidden sm:inline">
-              Account
-            </Link>
-            <Link href="#realm-life" className="gok-nav-link hidden md:inline">
-              Realm Life
-            </Link>
+        <div className="relative z-10">
+          <SiteNav className="bg-black/45" />
+          <div className="mx-auto flex max-w-[1680px] items-center justify-end gap-3 px-5 pt-3 md:px-10 lg:px-16">
             <span className="border border-[var(--gok-line)] bg-black/45 px-2 py-2 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-[var(--gok-dim)] md:px-3 md:text-[0.65rem]">
               Visits {visitCount.toLocaleString()}
             </span>
@@ -151,7 +125,7 @@ export default function HomePage() {
               Enter Realm
             </Link>
           </div>
-        </nav>
+        </div>
 
         <div className="relative z-10 mx-auto grid max-w-[1420px] gap-10 px-5 pb-12 pt-16 md:px-10 md:pt-24 lg:grid-cols-[minmax(0,1fr)_390px] lg:px-16 xl:pt-28">
           <div className="max-w-4xl">

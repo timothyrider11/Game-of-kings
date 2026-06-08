@@ -2,8 +2,8 @@
 
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import SiteNav from "../../components/SiteNav";
 import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
 import {
   loadCloudRealm,
@@ -174,14 +174,7 @@ export default function AccountPage() {
 
   return (
     <main className="gok-page min-h-screen px-4 py-6 text-stone-100">
-      <nav className="mx-auto flex max-w-5xl items-center justify-between border-b border-[rgba(196,193,184,0.14)] pb-4">
-        <Link href="/" className="gok-brand text-xl">Game of Kings</Link>
-        <div className="flex gap-3">
-          <Link href="/house" className="gok-nav-link">House</Link>
-          <Link href="/map" className="gok-nav-link">Map</Link>
-          <Link href="/three-eyed-raven" className="gok-nav-link">Three Eyed Raven</Link>
-        </div>
-      </nav>
+      <SiteNav className="-mx-4 -mt-6 mb-6" />
 
       <section className="mx-auto mt-8 grid max-w-5xl gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
         <div className="gok-panel p-5">

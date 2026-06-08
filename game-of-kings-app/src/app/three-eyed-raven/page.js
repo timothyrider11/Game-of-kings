@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
+import SiteNav from "../../components/SiteNav";
 
 const characters = [
   ["Aegon I Targaryen", "House Targaryen", "The Conqueror who forged the Seven Kingdoms with dragons, sisters, and fire. His legacy sits behind every royal claim in Westeros.", "Dragonlord King"],
@@ -156,16 +156,7 @@ export default function ThreeEyedRavenPage() {
 
   return (
     <main className="min-h-screen bg-[#070504] px-4 py-6 text-stone-100">
-      <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 border-b border-[rgba(196,193,184,0.14)] pb-4">
-        <Link href="/" className="gok-brand text-xl">Game of Kings</Link>
-        <div className="flex flex-wrap justify-end gap-3">
-          <Link href="/map" className="gok-nav-link">Map</Link>
-          <Link href="/house" className="gok-nav-link">House</Link>
-          <Link href="/events" className="gok-nav-link">Events</Link>
-          <Link href="/artifacts" className="gok-nav-link">Artifacts</Link>
-          <Link href="/forum" className="gok-nav-link">Forum</Link>
-        </div>
-      </nav>
+      <SiteNav className="-mx-4 -mt-6 mb-6" />
 
       <section className="mx-auto mt-6 grid max-w-7xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="gok-panel p-4">
@@ -200,6 +191,20 @@ export default function ThreeEyedRavenPage() {
               <p className="gok-eyebrow">Raven File</p>
               <h2 className="mt-4 font-serif text-5xl font-black text-[var(--gok-silver)] md:text-7xl">{name}</h2>
               <p className="mt-3 text-sm font-black uppercase tracking-[0.24em] text-red-300">{title}</p>
+              <div className="mt-6 overflow-hidden border border-[var(--gok-line)] bg-black/60 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+                {primaryImage ? (
+                  <img src={primaryImage.src} alt={name} className="max-h-[460px] w-full object-cover object-top" />
+                ) : (
+                  <div className="flex min-h-80 items-center justify-center" style={portraitStyle(name, house)}>
+                    <p className="font-serif text-7xl font-black text-[var(--gok-silver)]">{initials}</p>
+                  </div>
+                )}
+                <div className="border-t border-[var(--gok-line)] bg-black/72 px-4 py-3">
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--gok-dim)]">
+                    {primaryImage ? `${primaryImage.kind} from ${primaryImage.source}` : "Styled raven archive portrait"}
+                  </p>
+                </div>
+              </div>
               <div className="gok-rule mt-6" />
               <div className="mt-8 border border-[#8a6d3b] bg-[#c7a976] p-6 text-[#21150b] shadow-[inset_0_0_38px_rgba(73,43,18,0.55)] md:p-8">
                 <p className="text-xs font-black uppercase tracking-[0.26em] text-[#4b2418]">Recorded Lore</p>
@@ -223,17 +228,14 @@ export default function ThreeEyedRavenPage() {
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {images.length ? (
                     images.map((image) => (
-                      <a
+                      <div
                         key={`${image.kind}-${image.src}`}
-                        href={`https://${image.source}/wiki/${encodeURIComponent(image.title.replaceAll(" ", "_"))}`}
-                        target="_blank"
-                        rel="noreferrer"
                         className="border border-[var(--gok-line)] bg-black/50 p-3 transition hover:border-[var(--gok-line-strong)]"
                       >
                         <p className="text-xs font-black uppercase tracking-[0.2em] text-red-300">{image.kind}</p>
                         <p className="mt-1 text-sm font-bold text-[var(--gok-silver)]">{image.title}</p>
                         <p className="mt-1 text-xs text-[var(--gok-dim)]">{image.source}</p>
-                      </a>
+                      </div>
                     ))
                   ) : (
                     <div className="border border-[var(--gok-line)] bg-black/50 p-3">
