@@ -2928,20 +2928,21 @@ function CastlePopup({
             </div>
           )}
 
-          <HouseBanner sigil={castleSigil} title={occupiedBy} />
-
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-5">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">{castle.region}</p>
             <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-5xl">{castle.name}</h2>
           </div>
 
-          <button
-            onClick={onClose}
-            aria-label="Back to map"
-            className="absolute right-3 top-3 rounded-md border border-stone-500 bg-black/85 px-3 py-2 text-sm font-black text-stone-100 transition hover:bg-stone-100 hover:text-stone-950"
-          >
-            x Back to Map
-          </button>
+          <div className="absolute right-3 top-3 z-20 flex flex-col items-end gap-3">
+            <button
+              onClick={onClose}
+              aria-label="Back to map"
+              className="rounded-md border border-stone-500 bg-black/85 px-3 py-2 text-sm font-black text-stone-100 transition hover:bg-stone-100 hover:text-stone-950"
+            >
+              x Back to Map
+            </button>
+            <HouseBanner sigil={castleSigil} title={occupiedBy} />
+          </div>
 
           {images.length > 1 && (
             <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2 rounded-md border border-stone-700 bg-black/80 p-2">
@@ -3117,13 +3118,13 @@ function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim
 
 function HouseBanner({ sigil, title }) {
   return (
-    <div className="pointer-events-none absolute left-1/2 top-8 hidden w-40 -translate-x-1/2 sm:block">
-      <div className="h-5 rounded-t-full border border-[#8a6d3b] bg-[#2a1c11] shadow-[0_8px_18px_rgba(0,0,0,0.7)]" />
-      <div className="relative mx-auto min-h-56 w-32 border-x border-[#8a6d3b] bg-[#080807] px-4 pb-10 pt-5 shadow-[0_24px_40px_rgba(0,0,0,0.75)]">
+    <div className="pointer-events-none hidden w-24 sm:block">
+      <div className="h-3 rounded-t-full border border-[#8a6d3b] bg-[#2a1c11] shadow-[0_8px_18px_rgba(0,0,0,0.7)]" />
+      <div className="relative mx-auto min-h-32 w-20 border-x border-[#8a6d3b] bg-[#080807] px-3 pb-7 pt-3 shadow-[0_18px_30px_rgba(0,0,0,0.72)]">
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.06),transparent_22%,transparent_78%,rgba(255,255,255,0.04)),radial-gradient(circle_at_50%_16%,rgba(138,109,59,0.22),transparent_34%)]" />
-        <div className="absolute bottom-0 left-0 h-10 w-1/2 origin-bottom-right -skew-y-[24deg] border-b border-[#8a6d3b] bg-[#080807]" />
-        <div className="absolute bottom-0 right-0 h-10 w-1/2 origin-bottom-left skew-y-[24deg] border-b border-[#8a6d3b] bg-[#080807]" />
-        <div className="relative mx-auto mt-4 h-28 w-24">
+        <div className="absolute bottom-0 left-0 h-7 w-1/2 origin-bottom-right -skew-y-[24deg] border-b border-[#8a6d3b] bg-[#080807]" />
+        <div className="absolute bottom-0 right-0 h-7 w-1/2 origin-bottom-left skew-y-[24deg] border-b border-[#8a6d3b] bg-[#080807]" />
+        <div className="relative mx-auto mt-2 h-16 w-14">
           <SigilMark sigil={sigil} label={title} />
         </div>
       </div>

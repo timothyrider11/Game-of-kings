@@ -92,6 +92,24 @@ function writeGiveawayLock(entryKey, entry) {
   }));
 }
 
+function buildQuizReview(quiz, submittedAnswers = {}) {
+  return quiz.questions.map((question, index) => {
+    const selected = submittedAnswers[index] || submittedAnswers[String(index)] || "";
+    const correct = question[2];
+    return {
+      question: question[0],
+      selected,
+      correct,
+      isCorrect: selected === correct,
+    };
+  });
+}
+
+function getCompletedQuizReview(completedQuiz, activeQuiz) {
+  if (completedQuiz?.review?.length) return completedQuiz.review;
+  return buildQuizReview(activeQuiz, completedQuiz?.answers || {});
+}
+
 function contestLine(type, winner, loser, seed) {
   const joust = [
     "split a lance across the shoulder and stayed mounted through the roar of the yard",
@@ -241,6 +259,7 @@ export default function EventsPage() {
     const perfectBonusGold = correct === activeQuiz.questions.length ? 750 : 0;
     const rewardGold = correct * 25 + perfectBonusGold;
     const rewardRenown = correct * 2;
+    const review = buildQuizReview(activeQuiz, answers);
     const nextRealm = {
       ...realm,
       gold: (realm.gold ?? 350) + rewardGold,
@@ -255,6 +274,7 @@ export default function EventsPage() {
           rewardRenown,
           perfectBonusGold,
           answers,
+          review,
           submittedAt: new Date(now).toISOString(),
         },
       },
@@ -446,10 +466,56 @@ export default function EventsPage() {
 
             {completedQuiz ? (
               <div className="mt-5 border border-stone-800 bg-black p-5">
-                <h3 className="text-xl font-black">Quiz sealed until the next raven.</h3>
-                <p className="mt-2 text-sm leading-6 text-stone-400">
-                  Your score was {completedQuiz.score}/10. The next quiz arrives in {formatDuration(quizCycle.nextAt - now)}.
-                </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="text-xl font-black">Quiz Accounting</h3>
+                    <p className="mt-2 text-sm leading-6 text-stone-400">
+                      Your score was {completedQuiz.score}/10. Reward paid: {completedQuiz.rewardGold?.toLocaleString?.() || completedQuiz.rewardGold || 0} gold and {completedQuiz.rewardRenown || 0} renown.
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-stone-500">
+                      The next quiz arrives in {formatDuration(quizCycle.nextAt - now)}.
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm font-black text-stone-200">
+                    {completedQuiz.score}/{completedQuiz.total || 10} Correct
+                  </div>
+                </div>
+
+                <div className="mt-5 space-y-3">
+                  {getCompletedQuizReview(completedQuiz, activeQuiz).map((item, index) => (
+                    <div
+                      key={`${item.question}-${index}`}
+                      className={`border p-4 ${
+                        item.isCorrect
+                          ? "border-emerald-900 bg-emerald-950/20"
+                          : "border-red-950 bg-red-950/20"
+                      }`}
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <h4 className="font-black text-stone-100">
+                          {index + 1}. {item.question}
+                        </h4>
+                        <span
+                          className={`w-fit rounded border px-2 py-1 text-[0.65rem] font-black uppercase tracking-[0.16em] ${
+                            item.isCorrect
+                              ? "border-emerald-700 text-emerald-300"
+                              : "border-red-800 text-red-300"
+                          }`}
+                        >
+                          {item.isCorrect ? "Right" : "Correction"}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-stone-400">
+                        Your answer: <span className="font-bold text-stone-200">{item.selected || "No answer recorded"}</span>
+                      </p>
+                      {!item.isCorrect && (
+                        <p className="mt-1 text-sm leading-6 text-stone-300">
+                          Correct answer: <span className="font-black text-emerald-300">{item.correct}</span>
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
               <>
