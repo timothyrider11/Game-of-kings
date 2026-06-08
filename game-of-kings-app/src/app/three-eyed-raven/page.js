@@ -143,16 +143,21 @@ function portraitStyle(name, house) {
 
 export default function ThreeEyedRavenPage() {
   const [selectedName, setSelectedName] = useState(characters[0][0]);
+  const [brokenImages, setBrokenImages] = useState({});
   const selected = useMemo(() => characters.find(([name]) => name === selectedName) || characters[0], [selectedName]);
   const [name, house, lore, title] = selected;
   const images = characterImages[name] || [];
-  const primaryImage = images[0];
+  const primaryImage = images.find((image) => !brokenImages[image.src]);
   const initials = name
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0])
     .join("");
+
+  function markImageBroken(src) {
+    setBrokenImages((current) => (current[src] ? current : { ...current, [src]: true }));
+  }
 
   return (
     <main className="min-h-screen bg-[#070504] px-4 py-6 text-stone-100">
@@ -193,7 +198,13 @@ export default function ThreeEyedRavenPage() {
               <p className="mt-3 text-sm font-black uppercase tracking-[0.24em] text-red-300">{title}</p>
               <div className="mt-6 overflow-hidden border border-[var(--gok-line)] bg-black/60 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
                 {primaryImage ? (
-                  <img src={primaryImage.src} alt={name} className="max-h-[460px] w-full object-cover object-top" />
+                  <img
+                    src={primaryImage.src}
+                    alt={name}
+                    className="max-h-[460px] w-full object-cover object-top"
+                    referrerPolicy="no-referrer"
+                    onError={() => markImageBroken(primaryImage.src)}
+                  />
                 ) : (
                   <div className="flex min-h-80 items-center justify-center" style={portraitStyle(name, house)}>
                     <p className="font-serif text-7xl font-black text-[var(--gok-silver)]">{initials}</p>
@@ -220,61 +231,35 @@ export default function ThreeEyedRavenPage() {
                   <p className="mt-2 text-xl font-black text-[var(--gok-silver)]">Alphabetical</p>
                 </div>
               </div>
-              <div className="mt-6 border border-[var(--gok-line)] bg-black/45 p-5">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--gok-dim)]">Visual Records</p>
-                <p className="mt-2 text-sm leading-6 text-[rgba(210,205,194,0.62)]">
-                  Portraits are pulled from public Thrones wiki image records where available. Some ancient or book-first figures use illustrated references instead of show stills.
-                </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {images.length ? (
-                    images.map((image) => (
-                      <div
-                        key={`${image.kind}-${image.src}`}
-                        className="border border-[var(--gok-line)] bg-black/50 p-3 transition hover:border-[var(--gok-line-strong)]"
-                      >
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-red-300">{image.kind}</p>
-                        <p className="mt-1 text-sm font-bold text-[var(--gok-silver)]">{image.title}</p>
-                        <p className="mt-1 text-xs text-[var(--gok-dim)]">{image.source}</p>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="border border-[var(--gok-line)] bg-black/50 p-3">
-                      <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--gok-dim)]">Pending Image</p>
-                      <p className="mt-1 text-sm text-[rgba(210,205,194,0.62)]">No clean public image URL found yet. The raven keeps a styled archive portrait for now.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
 
             <div className="relative min-h-[460px] border-t border-[var(--gok-line)] bg-black/45 p-8 lg:border-l lg:border-t-0">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(196,193,184,0.16),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.58))]" />
-              <div className="relative mx-auto mt-8 aspect-[3/4] max-w-[340px] overflow-hidden border-4 bg-black" style={portraitStyle(name, house)}>
-                {primaryImage ? (
-                  <img src={primaryImage.src} alt={name} className="absolute inset-0 h-full w-full object-cover" />
-                ) : (
-                  <>
-                    <div className="absolute inset-x-[24%] top-[16%] aspect-square rounded-full border border-[rgba(196,193,184,0.3)] bg-[radial-gradient(circle_at_38%_28%,rgba(255,255,255,0.28),transparent_18%),linear-gradient(135deg,#8d9693,#2b2116)]" />
-                    <div className="absolute inset-x-[18%] bottom-[18%] h-[42%] rounded-t-[50%] border border-[rgba(196,193,184,0.18)] bg-[linear-gradient(135deg,rgba(94,17,20,.9),rgba(7,8,7,.95))]" />
-                  </>
-                )}
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_40%,rgba(0,0,0,0.92))]" />
-                <div className="absolute inset-x-6 bottom-6 border border-[rgba(196,193,184,0.3)] bg-black/72 px-4 py-3 text-center">
-                  <p className="font-serif text-3xl font-black text-[var(--gok-silver)]">{name}</p>
-                  <p className="mt-1 text-[0.62rem] font-black uppercase tracking-[0.2em] text-[var(--gok-dim)]">
-                    {primaryImage ? primaryImage.kind : `Raven Portrait ${initials}`}
-                  </p>
+              <div className="relative mx-auto mt-8 max-w-[340px] border border-[var(--gok-line)] bg-black/55 p-5">
+                <p className="gok-eyebrow">Raven Dossier</p>
+                <div className="mt-5 space-y-4">
+                  <div className="border border-[var(--gok-line)] bg-black/45 p-4">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--gok-dim)]">Name</p>
+                    <p className="mt-2 font-serif text-2xl font-black text-[var(--gok-silver)]">{name}</p>
+                  </div>
+                  <div className="border border-[var(--gok-line)] bg-black/45 p-4">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--gok-dim)]">Known As</p>
+                    <p className="mt-2 text-xl font-black text-[var(--gok-silver)]">{title}</p>
+                  </div>
+                  <div className="border border-[var(--gok-line)] bg-black/45 p-4">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--gok-dim)]">House / Allegiance</p>
+                    <p className="mt-2 text-xl font-black text-[var(--gok-silver)]">{house}</p>
+                  </div>
+                  <div className="border border-[var(--gok-line)] bg-black/45 p-4">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--gok-dim)]">Portrait Status</p>
+                    <p className="mt-2 text-sm leading-6 text-[rgba(210,205,194,0.72)]">
+                      {primaryImage
+                        ? `${primaryImage.kind} loaded from ${primaryImage.source}.`
+                        : "No clean portrait loaded, so the archive uses a styled raven seal."}
+                    </p>
+                  </div>
                 </div>
               </div>
-              {images.length > 1 && (
-                <div className="relative mt-5 grid grid-cols-2 gap-3">
-                  {images.slice(1).map((image) => (
-                    <div key={image.src} className="aspect-[4/3] overflow-hidden border border-[var(--gok-line)] bg-black">
-                      <img src={image.src} alt={`${name} ${image.kind}`} className="h-full w-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </section>
