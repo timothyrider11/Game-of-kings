@@ -13,6 +13,8 @@ const REALM_VERSION = 4;
 const MINUTE = 60_000;
 const DAY_MS = 24 * 60 * MINUTE;
 const ECONOMY_TICK_MS = 5 * MINUTE;
+const MIN_MAP_ZOOM = 0.5;
+const MAX_MAP_ZOOM = 2.4;
 
 const galleryTypes = [
   ["exterior", "Exterior Images"],
@@ -1493,6 +1495,9 @@ export default function MapPage() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [zoom, setZoom] = useState(0.95);
+  const mapViewportRef = useRef(null);
+  const zoomRef = useRef(0.95);
+  const pinchRef = useRef(null);
   const [sessionEmail, setSessionEmail] = useState("");
   const [sessionUserId, setSessionUserId] = useState("");
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -1537,6 +1542,85 @@ export default function MapPage() {
   const [joinedTournaments, setJoinedTournaments] = useState([]);
   const [raidHistory, setRaidHistory] = useState([]);
   const lastCloudSaveRef = useRef(0);
+
+  function clampMapZoom(value) {
+    return Math.min(MAX_MAP_ZOOM, Math.max(MIN_MAP_ZOOM, value));
+  }
+
+  function applyMapZoom(nextZoom, clientX, clientY) {
+    const viewport = mapViewportRef.current;
+    const currentZoom = zoomRef.current;
+    const clampedZoom = clampMapZoom(nextZoom);
+
+    if (Math.abs(clampedZoom - currentZoom) < 0.001) return;
+
+    if (!viewport || clientX === undefined || clientY === undefined) {
+      zoomRef.current = clampedZoom;
+      setZoom(clampedZoom);
+      return;
+    }
+
+    const rect = viewport.getBoundingClientRect();
+    const focusX = clientX - rect.left;
+    const focusY = clientY - rect.top;
+    const scrollX = viewport.scrollLeft + focusX;
+    const scrollY = viewport.scrollTop + focusY;
+    const zoomRatio = clampedZoom / currentZoom;
+
+    zoomRef.current = clampedZoom;
+    setZoom(clampedZoom);
+
+    requestAnimationFrame(() => {
+      viewport.scrollLeft = scrollX * zoomRatio - focusX;
+      viewport.scrollTop = scrollY * zoomRatio - focusY;
+    });
+  }
+
+  function getPinchDistance(touches) {
+    const [first, second] = touches;
+    return Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY);
+  }
+
+  function getPinchCenter(touches) {
+    const [first, second] = touches;
+    return {
+      x: (first.clientX + second.clientX) / 2,
+      y: (first.clientY + second.clientY) / 2,
+    };
+  }
+
+  function handleMapWheel(event) {
+    if (castlePopupOpen || fullscreenImage) return;
+
+    event.preventDefault();
+    const wheelStrength = event.deltaMode === 1 ? 0.08 : 0.0022;
+    const nextZoom = zoomRef.current * Math.exp(-event.deltaY * wheelStrength);
+    applyMapZoom(nextZoom, event.clientX, event.clientY);
+  }
+
+  function handleMapTouchStart(event) {
+    if (event.touches.length !== 2) return;
+
+    pinchRef.current = {
+      distance: getPinchDistance(event.touches),
+      zoom: zoomRef.current,
+    };
+  }
+
+  function handleMapTouchMove(event) {
+    if (event.touches.length !== 2 || !pinchRef.current || castlePopupOpen || fullscreenImage) return;
+
+    event.preventDefault();
+    const center = getPinchCenter(event.touches);
+    const distance = getPinchDistance(event.touches);
+    const nextZoom = pinchRef.current.zoom * (distance / pinchRef.current.distance);
+
+    applyMapZoom(nextZoom, center.x, center.y);
+  }
+
+  function handleMapTouchEnd(event) {
+    if (event.touches.length < 2) pinchRef.current = null;
+  }
 
   const selectedCastle = useMemo(
     () => castles.find((castle) => castle.id === selectedCastleId) || castles[0],
@@ -1598,6 +1682,10 @@ export default function MapPage() {
         thread.house.toLowerCase().includes(query)
     );
   }, [forumSearch, threads]);
+
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
 
   function applyRealmData(data, emailOverride = sessionEmail, userIdOverride = sessionUserId, publicClaims = []) {
     const offlineResult = resolveOfflineProgress(data);
@@ -2348,11 +2436,11 @@ export default function MapPage() {
                   <input
                     aria-label="Map zoom"
                     type="range"
-                    min="0.5"
-                    max="2.4"
+                    min={MIN_MAP_ZOOM}
+                    max={MAX_MAP_ZOOM}
                     step="0.05"
                     value={zoom}
-                    onChange={(event) => setZoom(Number(event.target.value))}
+                    onChange={(event) => applyMapZoom(Number(event.target.value))}
                     className="w-full accent-amber-400"
                   />
                 </div>
@@ -2366,7 +2454,16 @@ export default function MapPage() {
               </p>
             </div>
 
-            <div className="h-[62vh] overflow-auto bg-[#10100e] overscroll-contain md:h-[78vh]">
+            <div
+              ref={mapViewportRef}
+              onWheel={handleMapWheel}
+              onTouchStart={handleMapTouchStart}
+              onTouchMove={handleMapTouchMove}
+              onTouchEnd={handleMapTouchEnd}
+              onTouchCancel={handleMapTouchEnd}
+              className="h-[62vh] overflow-auto bg-[#10100e] overscroll-contain md:h-[78vh]"
+              style={{ touchAction: "pan-x pan-y" }}
+            >
               <div
                 className="relative origin-top-left"
                 style={{
