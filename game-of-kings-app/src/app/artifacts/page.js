@@ -35,6 +35,7 @@ export default function ArtifactsPage() {
           <Link href="/map" className="gok-nav-link">Map</Link>
           <Link href="/events" className="gok-nav-link">Events</Link>
           <Link href="/tournaments" className="gok-nav-link">Tournaments</Link>
+          <Link href="/three-eyed-raven" className="gok-nav-link">Three Eyed Raven</Link>
           <Link href="/forum" className="gok-nav-link">Forum</Link>
         </div>
       </nav>

@@ -2503,6 +2503,12 @@ export default function MapPage() {
                   Artifacts
                 </Link>
                 <Link
+                  href="/three-eyed-raven"
+                  className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
+                >
+                  Three Eyed Raven
+                </Link>
+                <Link
                   href="/forum"
                   className="min-h-11 shrink-0 snap-start rounded-md bg-stone-900 px-4 py-2 text-sm font-black capitalize text-stone-300 transition hover:bg-stone-800"
                 >
@@ -2580,6 +2586,8 @@ export default function MapPage() {
                   const state = castleState[castle.id] || { troops: castle.militaryStrength };
                   const hovered = castle.id === hoveredCastleId;
                   const taken = Boolean(state.owner);
+                  const playerOwned = state.owner === "player";
+                  const active = castle.id === selectedCastleId;
 
                   return (
                     <button
@@ -2605,12 +2613,20 @@ export default function MapPage() {
                       <span
                         className={`block h-6 w-6 rounded-full transition ${
                           hovered
-                            ? "border-2 border-stone-100 bg-red-700/70 shadow-[0_0_12px_rgba(229,231,235,0.9)]"
-                            : taken
-                              ? "border-2 border-red-950 bg-red-700/80 shadow-[0_0_8px_rgba(127,29,29,0.75)]"
-                              : "border border-stone-950/40 bg-transparent shadow-[0_0_4px_rgba(255,255,255,0.2)]"
+                            ? "border-2 border-stone-100 shadow-[0_0_12px_rgba(229,231,235,0.9)]"
+                            : playerOwned
+                              ? "border-2 border-sky-100 bg-sky-700/85 shadow-[0_0_9px_rgba(56,189,248,0.85)]"
+                              : taken
+                                ? "border-2 border-red-950 bg-red-700/80 shadow-[0_0_8px_rgba(127,29,29,0.75)]"
+                                : "border border-stone-950/40 bg-transparent shadow-[0_0_4px_rgba(255,255,255,0.2)]"
                         }`}
+                        style={hovered ? { backgroundColor: playerOwned ? "rgba(2,132,199,0.88)" : taken ? "rgba(185,28,28,0.82)" : "rgba(0,0,0,0.04)" } : undefined}
                       />
+                      {(hovered || active) && (
+                        <span className="pointer-events-none absolute left-1/2 top-8 min-w-max -translate-x-1/2 rounded-sm border border-black/70 bg-[#f1e3bd]/95 px-2 py-1 font-serif text-[0.68rem] font-black tracking-wide text-[#5e1114] shadow-[0_4px_14px_rgba(0,0,0,0.55)]">
+                          {castle.name}
+                        </span>
+                      )}
                     </button>
                   );
                 })}

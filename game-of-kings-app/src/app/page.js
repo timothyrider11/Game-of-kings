@@ -132,6 +132,9 @@ export default function HomePage() {
             <Link href="/artifacts" className="gok-nav-link hidden sm:inline">
               Artifacts
             </Link>
+            <Link href="/three-eyed-raven" className="gok-nav-link hidden sm:inline">
+              Three Eyed Raven
+            </Link>
             <Link href="/forum" className="gok-nav-link hidden sm:inline">
               Forum
             </Link>

@@ -405,6 +405,9 @@ export default function HouseFounderPage() {
             <Link href="/events" className="gok-btn px-4 py-2 text-xs">
               Events
             </Link>
+            <Link href="/three-eyed-raven" className="gok-btn px-4 py-2 text-xs">
+              Three Eyed Raven
+            </Link>
             <Link href="/account" className="gok-btn px-4 py-2 text-xs">
               Account
             </Link>

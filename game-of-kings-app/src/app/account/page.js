@@ -179,6 +179,7 @@ export default function AccountPage() {
         <div className="flex gap-3">
           <Link href="/house" className="gok-nav-link">House</Link>
           <Link href="/map" className="gok-nav-link">Map</Link>
+          <Link href="/three-eyed-raven" className="gok-nav-link">Three Eyed Raven</Link>
         </div>
       </nav>
 

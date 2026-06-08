@@ -244,6 +244,7 @@ export default function ForumPage() {
         <div className="flex gap-3">
           <Link href="/map" className="gok-nav-link">Map</Link>
           <Link href="/events" className="gok-nav-link">Events</Link>
+          <Link href="/three-eyed-raven" className="gok-nav-link">Three Eyed Raven</Link>
           <Link href="/account" className="gok-nav-link">Account</Link>
         </div>
       </nav>
