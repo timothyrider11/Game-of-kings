@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { getCastleClaimLimit } from "./realm-identity";
 
 export const CLOUD_DISABLED_MESSAGE =
   "Supabase is not configured yet. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.";
@@ -141,6 +142,17 @@ export async function claimCastleCloud({ castleId, houseName, rulerName }) {
 
   const { user, error: userError } = await getSessionUser();
   if (userError || !user) return { error: userError || "Not signed in." };
+
+  const claimLimit = getCastleClaimLimit(user.email || "");
+  const { count, error: countError } = await supabase
+    .from("castle_claims")
+    .select("castle_id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  if (countError) return { error: countError.message };
+  if ((count || 0) >= claimLimit) {
+    return { error: "This account already holds its allowed castle seat. Royal grant required for another." };
+  }
 
   const { error } = await supabase.from("castle_claims").insert({
     castle_id: castleId,

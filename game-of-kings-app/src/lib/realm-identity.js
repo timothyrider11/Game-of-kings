@@ -3,6 +3,7 @@ export const ROYAL_EMAIL = "timothyrider11@gmail.com";
 export const QUEEN_EMAIL = "baby_girl_wpg_2@hotmail.com";
 export const PUBLIC_TITLES = ["Lord", "Lady", "Ser"];
 export const ROYAL_TITLES = ["King", "Queen", ...PUBLIC_TITLES];
+export const EXTRA_CASTLE_CLAIM_GRANTS = {};
 
 export const ROYAL_ACCOUNTS = {
   [ROYAL_EMAIL]: {
@@ -41,6 +42,18 @@ export function getRoyalAccount(email = "") {
 
 export function isRoyalEmail(email = "") {
   return Boolean(getRoyalAccount(email));
+}
+
+export function getCastleClaimLimit(email = "") {
+  const normalizedEmail = normalizeEmail(email);
+  const royalAccount = getRoyalAccount(normalizedEmail);
+  const grantedExtraClaims = EXTRA_CASTLE_CLAIM_GRANTS[normalizedEmail] || 0;
+
+  if (royalAccount) {
+    return Math.max(1, royalAccount.castleIds.length, 1 + grantedExtraClaims);
+  }
+
+  return 1 + grantedExtraClaims;
 }
 
 export function normalizeRulerTitle(title = "Lord", email = "") {

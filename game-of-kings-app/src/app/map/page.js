@@ -8,7 +8,7 @@ import SiteNav from "../../components/SiteNav";
 import { rollUnclaimedArtifact } from "../../lib/artifacts";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { abandonCastleCloud, claimCastleCloud, getSessionUser, loadCastleClaims, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
-import { applyRoyalAccountDefaults, getRoyalAccount, isRoyalEmail, normalizeRulerTitle, STORAGE_KEY } from "../../lib/realm-identity";
+import { applyRoyalAccountDefaults, getCastleClaimLimit, getRoyalAccount, isRoyalEmail, normalizeRulerTitle, STORAGE_KEY } from "../../lib/realm-identity";
 
 const REALM_VERSION = 4;
 const MINUTE = 60_000;
@@ -1599,15 +1599,22 @@ function applyRoyalOwnership(castleState, email = "") {
 }
 
 function applyPublicClaims(castleState, claims = [], currentUserId = "", email = "") {
+  const claimLimit = getCastleClaimLimit(email);
+  let currentUserClaimCount = 0;
+
   const claimedState = claims.reduce((state, claim) => {
     if (!claim.castle_id || claim.castle_id === "kings-landing" || claim.castle_id === "starpike") return state;
     const current = state[claim.castle_id] || {};
+    const belongsToCurrentUser = Boolean(claim.user_id && claim.user_id === currentUserId);
+    const countsAsPlayerSeat = belongsToCurrentUser && currentUserClaimCount < claimLimit;
+
+    if (countsAsPlayerSeat) currentUserClaimCount += 1;
 
     return {
       ...state,
       [claim.castle_id]: {
         ...current,
-        owner: claim.user_id && claim.user_id === currentUserId ? "player" : "claimed",
+        owner: countsAsPlayerSeat ? "player" : "claimed",
         claimedByUserId: claim.user_id || "",
         claimedHouse: claim.house_name || "",
         rulerName: claim.ruler_name || "",
@@ -1688,10 +1695,10 @@ function getCastleLordText({ state, castle, rulerTitle, rulerName, houseName }) 
   return castle.lord;
 }
 
-function getClaimDialogue({ isSignedIn, houseName, hasPlayerCastle, state }) {
+function getClaimDialogue({ isSignedIn, houseName, hasAvailableCastleClaim, state }) {
   if (!isSignedIn) return "Sign in to claim a castle and keep it tied to your account.";
   if (!houseName.trim()) return "Found your house before claiming a castle.";
-  if (hasPlayerCastle) return "";
+  if (!hasAvailableCastleClaim) return "";
   if (state.owner) return "This castle already has a ruler.";
   return "This castle is open. Claim it for your house.";
 }
@@ -1926,8 +1933,10 @@ export default function MapPage() {
     () => getCastleImages(selectedCastle.id, galleries),
     [selectedCastle.id, galleries]
   );
+  const castleClaimLimit = getCastleClaimLimit(sessionEmail);
   const hasPlayerCastle = playerCastleIds.length > 0;
-  const canClaim = isSignedIn && Boolean(houseName.trim()) && !hasPlayerCastle && !selectedState.owner;
+  const hasAvailableCastleClaim = playerCastleIds.length < castleClaimLimit;
+  const canClaim = isSignedIn && Boolean(houseName.trim()) && hasAvailableCastleClaim && !selectedState.owner;
   const isRoyalAdmin = isRoyalEmail(sessionEmail);
   const royalAccount = getRoyalAccount(sessionEmail);
   const economyPerHour = playerCastles.reduce(
@@ -2253,18 +2262,19 @@ export default function MapPage() {
     recordRealmActivity(buildActivity({ type, title, body, actor, meta }));
   }
 
-  function claimCastle() {
-    if (!houseName.trim() || !canClaim) return;
+  async function claimCastle() {
+    if (!houseName.trim() || !canClaim || !hasAvailableCastleClaim) return;
 
-    claimCastleCloud({
+    const { error } = await claimCastleCloud({
       castleId: selectedCastle.id,
       houseName: `House ${houseName}`,
       rulerName: `${rulerTitle} ${rulerName || houseName}`,
-    }).then(({ error }) => {
-      if (error && !error.includes("Not signed in")) {
-        addEvent(`Cloud claim note for ${selectedCastle.name}: ${error}`, "claim");
-      }
     });
+
+    if (error && !error.includes("Supabase is not configured")) {
+      addEvent(`Castle claim refused for ${selectedCastle.name}: ${error}`, "claim");
+      return;
+    }
 
     setCastleState((current) => ({
       ...current,
@@ -2459,7 +2469,7 @@ export default function MapPage() {
       !target ||
       target.id === "kings-landing" ||
       target.tier !== "major" ||
-      playerCastleIds.length >= 2 ||
+      playerCastleIds.length >= castleClaimLimit ||
       selectedState.owner !== "player" ||
       selectedState.troops < 250
     ) {
@@ -2501,7 +2511,7 @@ export default function MapPage() {
   async function finishResolvedWar(war) {
     if (!war.resolved) return;
 
-    if (war.winner === war.attacker && playerCastleIds.length < 2) {
+    if (war.winner === war.attacker && playerCastleIds.length < castleClaimLimit) {
       const { activities } = await loadRealmActivity(300);
       const foundArtifact = rollUnclaimedArtifact(0.01, activities);
       setCastleState((current) => ({
@@ -2804,7 +2814,7 @@ export default function MapPage() {
                   rulerName={rulerName}
                   canClaim={canClaim}
                   isSignedIn={isSignedIn}
-                  hasPlayerCastle={hasPlayerCastle}
+                  hasAvailableCastleClaim={hasAvailableCastleClaim}
                   onClaim={claimCastle}
                   onRecruit={recruitArmy}
                   onUpgrade={startUpgrade}
@@ -3043,7 +3053,7 @@ export default function MapPage() {
           rulerName={rulerName}
           houseSigil={houseSigil}
           isSignedIn={isSignedIn}
-          hasPlayerCastle={hasPlayerCastle}
+          hasAvailableCastleClaim={hasAvailableCastleClaim}
           images={selectedCastleImages}
           galleryIndex={galleryIndex}
           setGalleryIndex={setGalleryIndex}
@@ -3077,7 +3087,7 @@ function CastlePopup({
   rulerName,
   houseSigil,
   isSignedIn,
-  hasPlayerCastle,
+  hasAvailableCastleClaim,
   images,
   galleryIndex,
   setGalleryIndex,
@@ -3090,7 +3100,7 @@ function CastlePopup({
   const heroImage = images[safeIndex];
   const owner = getCastleOwnerText({ state, castle, houseName });
   const currentLord = getCastleLordText({ state, castle, rulerTitle, rulerName, houseName });
-  const claimDialogue = getClaimDialogue({ isSignedIn, houseName, hasPlayerCastle, state });
+  const claimDialogue = getClaimDialogue({ isSignedIn, houseName, hasAvailableCastleClaim, state });
   const castleSigil = displaySigilForCastle({ state, castle, houseSigil });
   const claimedBy = ownerDisplayName({ state, castle, houseName, rulerTitle, rulerName });
   const claimed = Boolean(state.owner);
@@ -3224,11 +3234,11 @@ function CastlePopup({
   );
 }
 
-function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim, isSignedIn, hasPlayerCastle, onClaim, onRecruit, onUpgrade, gold, now, targets, castleState, onWar }) {
+function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim, isSignedIn, hasAvailableCastleClaim, onClaim, onRecruit, onUpgrade, gold, now, targets, castleState, onWar }) {
   const upgradeRemaining = state.upgradeEndsAt ? Math.max(0, Math.ceil((state.upgradeEndsAt - now) / 1000)) : 0;
   const owner = getCastleOwnerText({ state, castle, houseName });
   const currentLord = getCastleLordText({ state, castle, rulerTitle, rulerName, houseName });
-  const claimDialogue = getClaimDialogue({ isSignedIn, houseName, hasPlayerCastle, state });
+  const claimDialogue = getClaimDialogue({ isSignedIn, houseName, hasAvailableCastleClaim, state });
 
   return (
     <div>
