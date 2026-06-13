@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState } from "react";
+import NobleKnightSelector from "../../components/NobleKnightSelector";
 import SiteNav from "../../components/SiteNav";
 import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
 import {
@@ -28,6 +29,7 @@ export default function AccountPage() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [realm, setRealm] = useState({});
 
   useEffect(() => {
     if (!supabase) {
@@ -38,6 +40,15 @@ export default function AccountPage() {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data?.user || null);
     });
+
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        setRealm(JSON.parse(stored));
+      } catch {
+        setRealm({});
+      }
+    }
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
@@ -80,6 +91,7 @@ export default function AccountPage() {
         const realmData = realm ? applyRoyalAccountDefaults(realm, email) : royalAccount ? applyRoyalAccountDefaults({}, email) : null;
         if (realmData) {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(realmData));
+          setRealm(realmData);
           if (!realm) await saveCloudRealm(realmData);
         }
       }
@@ -104,6 +116,7 @@ export default function AccountPage() {
       avatarUrl,
     }, user?.email);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRealm));
+    setRealm(nextRealm);
     await saveCloudRealm(nextRealm);
     await recordRealmActivity(buildActivity({
       type: "account",
@@ -127,13 +140,15 @@ export default function AccountPage() {
     }
 
     const realm = JSON.parse(stored);
-    const { error } = await saveCloudRealm(applyRoyalAccountDefaults({
+    const nextRealm = applyRoyalAccountDefaults({
       ...realm,
       username,
       rulerName,
       rulerTitle: normalizeRulerTitle(rulerTitle, user?.email),
       avatarUrl,
-    }, user?.email));
+    }, user?.email);
+    const { error } = await saveCloudRealm(nextRealm);
+    setRealm(nextRealm);
 
     setMessage(error || "Account realm updated.");
     setBusy(false);
@@ -149,10 +164,31 @@ export default function AccountPage() {
       setMessage("No account realm found yet.");
     } else {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(applyRoyalAccountDefaults(realm, user?.email)));
+      setRealm(applyRoyalAccountDefaults(realm, user?.email));
       setMessage("Cloud realm loaded onto this device.");
     }
 
     setBusy(false);
+  }
+
+  async function selectKnight(knight) {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const current = stored ? JSON.parse(stored) : {};
+    const nextRealm = applyRoyalAccountDefaults({
+      ...current,
+      ...knight,
+    }, user?.email);
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRealm));
+    setRealm(nextRealm);
+
+    if (!user) {
+      setMessage("Sign in to save your knight.");
+      return;
+    }
+
+    const { error } = await saveCloudRealm(nextRealm);
+    setMessage(error || "Realm Saved.");
   }
 
   async function handleSignOut() {
@@ -331,6 +367,33 @@ export default function AccountPage() {
               </div>
             </div>
           )}
+        </div>
+
+        <div className="lg:col-span-2">
+          <div className="gok-panel mb-5 p-5">
+            <p className="gok-eyebrow">Realm Identity</p>
+            <div className="relative z-10 mt-3 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-3xl text-[var(--gok-silver)]">
+                  {normalizeRulerTitle(rulerTitle || realm.rulerTitle || "Lord", user?.email)} {rulerName || realm.rulerName || username || "Realm Founder"}
+                </h2>
+                <p className="text-sm text-[var(--gok-dim)]">
+                  House {realm.houseName || "Unsworn"} {realm.selectedKnightTitle ? `- ${realm.selectedKnightTitle}` : ""}
+                </p>
+              </div>
+              {realm.selectedKnightImage && (
+                <img src={realm.selectedKnightImage} alt={realm.selectedKnightTitle || "Selected knight"} className="h-24 w-20 border border-[var(--gok-line)] bg-black object-cover" />
+              )}
+            </div>
+          </div>
+
+          <NobleKnightSelector
+            key={`${realm.selectedKnightGender || "male"}-${realm.selectedKnightIndex || 1}`}
+            signedIn={Boolean(user)}
+            initialGender={realm.selectedKnightGender || "male"}
+            initialIndex={realm.selectedKnightIndex || 1}
+            onSelect={selectKnight}
+          />
         </div>
       </section>
     </main>

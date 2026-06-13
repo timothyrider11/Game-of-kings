@@ -1,4 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import { STORAGE_KEY } from "../lib/realm-identity";
 
 const navItems = [
   ["Map", "/map"],
@@ -9,10 +14,34 @@ const navItems = [
   ["Three Eyed Raven", "/three-eyed-raven"],
   ["Songs of War", "/songs-of-war"],
   ["Forum", "/forum"],
-  ["Account", "/account"],
 ];
 
 export default function SiteNav({ className = "" }) {
+  const [realm, setRealm] = useState({});
+
+  useEffect(() => {
+    function loadRealm() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (!stored) {
+        setRealm({});
+        return;
+      }
+      try {
+        setRealm(JSON.parse(stored));
+      } catch {
+        setRealm({});
+      }
+    }
+
+    loadRealm();
+    window.addEventListener("storage", loadRealm);
+    window.addEventListener("gok:realm-cleared", loadRealm);
+    return () => {
+      window.removeEventListener("storage", loadRealm);
+      window.removeEventListener("gok:realm-cleared", loadRealm);
+    };
+  }, []);
+
   return (
     <nav className={`border-b border-[rgba(196,193,184,0.14)] bg-black/88 px-4 py-4 text-stone-100 backdrop-blur ${className}`}>
       <div className="mx-auto flex max-w-[1680px] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -29,6 +58,19 @@ export default function SiteNav({ className = "" }) {
               {label}
             </Link>
           ))}
+          <Link
+            href="/account"
+            className="flex shrink-0 snap-start items-center gap-2 border border-[var(--gok-line)] bg-black/60 px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[var(--gok-dim)] transition hover:border-[var(--gok-line-strong)] hover:text-[var(--gok-silver)]"
+          >
+            {realm.selectedKnightImage ? (
+              <img src={realm.selectedKnightImage} alt="" className="h-9 w-8 border border-[rgba(196,193,184,0.2)] object-cover grayscale" />
+            ) : (
+              <span className="flex h-9 w-8 items-center justify-center border border-[rgba(196,193,184,0.2)] text-[var(--gok-silver)]">
+                {(realm.rulerName || realm.houseName || "?").slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <span className="max-w-32 truncate">{realm.rulerName || realm.houseName || "Account"}</span>
+          </Link>
         </div>
       </div>
     </nav>

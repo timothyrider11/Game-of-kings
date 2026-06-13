@@ -58,7 +58,18 @@ const baseFighters = [
 
 function fighterFromRow(row, index) {
   const [name, house, strength, skill, speed, endurance, reputation, luck] = row;
-  return { id: `${house}-${name}-${index}`.toLowerCase().replace(/[^a-z0-9]+/g, "-"), name, house, strength, skill, speed, endurance, reputation, luck };
+  return {
+    id: `${house}-${name}-${index}`.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    name,
+    house,
+    strength,
+    skill,
+    speed,
+    endurance,
+    reputation,
+    luck,
+    knightImage: `/knights/${name.startsWith("Lady") ? "female" : "male"}/${String((index % 60) + 1).padStart(2, "0")}.png`,
+  };
 }
 
 function playerFighter(realm) {
@@ -77,6 +88,7 @@ function playerFighter(realm) {
     endurance: 76 + armyBoost,
     reputation: 80 + renownBoost,
     luck: 62,
+    knightImage: realm?.selectedKnightImage || "/knights/male/01.png",
   };
 }
 
@@ -331,15 +343,19 @@ export default function TournamentsPage() {
     <main className="gok-page min-h-screen px-4 py-6 text-stone-100">
       <SiteNav className="-mx-4 -mt-6 mb-6" />
 
-      <section className="mx-auto mt-6 max-w-7xl">
-        <div className="gok-panel p-5">
-          <p className="gok-eyebrow">Tournament Grounds</p>
-          <h1 className="relative z-10 mt-3 text-4xl uppercase tracking-[0.08em] text-[var(--gok-silver)] md:text-5xl">
-            Automatic medieval tournament.
-          </h1>
-          <p className="gok-copy relative z-10 mt-4 max-w-4xl text-sm leading-6">
-            Weighted brackets, visible odds, herald updates, crowd mood, weather, injuries, upsets, fake prediction points, trophies, and mini-games for the living realm.
-          </p>
+      <section className="mx-auto mt-6 max-w-[1760px]">
+        <div className="relative overflow-hidden border border-[var(--gok-line)] bg-black">
+          <img src="/banners/TournamentGroundsFullPage.png" alt="" className="h-[18rem] w-full object-cover opacity-80 md:h-[25rem]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-5 text-center">
+            <p className="gok-eyebrow">Tournament Grounds</p>
+            <h1 className="mt-2 text-4xl uppercase tracking-[0.34em] text-[var(--gok-silver)] md:text-6xl">
+              Tournament Grounds
+            </h1>
+            <p className="mx-auto mt-3 max-w-4xl text-sm leading-6 text-[rgba(210,205,194,0.72)]">
+              Weighted brackets, visible odds, herald updates, crowd mood, weather, injuries, upsets, fake prediction points, trophies, and mini-games.
+            </p>
+          </div>
           {message && <p className="relative z-10 mt-4 border border-[var(--gok-line)] bg-black/50 p-3 text-sm text-[var(--gok-parchment)]">{message}</p>}
         </div>
 
@@ -456,7 +472,9 @@ function Stat({ label, value }) {
 
 function FighterCard({ fighter, chance, alignRight = false }) {
   return (
-    <div className={alignRight ? "text-right" : ""}>
+    <div className={`flex gap-3 ${alignRight ? "flex-row-reverse text-right" : ""}`}>
+      <img src={fighter.knightImage || "/knights/male/01.png"} alt="" className="h-20 w-16 shrink-0 border border-[var(--gok-line)] bg-black object-cover grayscale" />
+      <div className="min-w-0 flex-1">
       <p className="font-serif text-2xl font-black text-[var(--gok-silver)]">{fighter.name}</p>
       <p className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-red-300">{fighter.house}</p>
       <p className="mt-2 text-sm text-[var(--gok-dim)]">Chance to win: <span className="font-black text-[var(--gok-silver)]">{formatPercent(chance)}</span></p>
@@ -466,6 +484,7 @@ function FighterCard({ fighter, chance, alignRight = false }) {
       <p className="mt-2 text-[0.68rem] uppercase tracking-[0.12em] text-[var(--gok-dim)]">
         STR {fighter.strength} / SKL {fighter.skill} / SPD {fighter.speed} / END {fighter.endurance} / REP {fighter.reputation} / LUCK {fighter.luck}
       </p>
+      </div>
     </div>
   );
 }

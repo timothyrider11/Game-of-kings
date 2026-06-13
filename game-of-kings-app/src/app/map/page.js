@@ -1535,9 +1535,7 @@ function createDefaultCastleState() {
             ? "rider"
             : castle.id === "starpike"
               ? "reserved"
-              : castle.tier === "major"
-                ? "ai"
-                : null,
+              : null,
         reservedHouse:
           castle.id === "kings-landing"
             ? "House Rider"
@@ -1571,9 +1569,7 @@ function protectReservedCastles(castleState) {
               ? current.owner === "player"
                 ? "player"
                 : "reserved"
-              : castle.tier === "major" && !current.owner
-                ? "ai"
-                : current.owner || null,
+              : current.owner || null,
         reservedHouse: isKingsLanding ? "House Rider" : isStarPike ? "Queen Rider" : current.reservedHouse || "",
         rulerName: isKingsLanding ? "King Rider" : isStarPike ? "Queen Rider" : current.rulerName || "",
         troops: isStarPike ? Math.max(current.troops || 0, 4000) : current.troops || castle.militaryStrength,
@@ -1762,7 +1758,7 @@ function ownerDisplayName({ state, castle, houseName, rulerTitle, rulerName }) {
   if (state.owner === "claimed") return state.rulerName || state.claimedHouse || "A sworn ruler";
   if (state.reservedHouse) return state.rulerName || state.reservedHouse;
   if (state.owner === "ai") return castle.lord || castle.house;
-  return "Unoccupied";
+  return "Unclaimed";
 }
 
 export default function MapPage() {
@@ -3096,8 +3092,8 @@ function CastlePopup({
   const currentLord = getCastleLordText({ state, castle, rulerTitle, rulerName, houseName });
   const claimDialogue = getClaimDialogue({ isSignedIn, houseName, hasPlayerCastle, state });
   const castleSigil = displaySigilForCastle({ state, castle, houseSigil });
-  const occupiedBy = ownerDisplayName({ state, castle, houseName, rulerTitle, rulerName });
-  const occupied = Boolean(state.owner);
+  const claimedBy = ownerDisplayName({ state, castle, houseName, rulerTitle, rulerName });
+  const claimed = Boolean(state.owner);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center sm:p-5">
@@ -3132,7 +3128,7 @@ function CastlePopup({
             >
               x Back to Map
             </button>
-            <HouseBanner sigil={castleSigil} title={occupiedBy} />
+            <HouseBanner sigil={castleSigil} title={claimedBy} />
           </div>
 
           {images.length > 1 && (
@@ -3162,7 +3158,7 @@ function CastlePopup({
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,rgba(255,247,217,0.45),transparent_26%),linear-gradient(90deg,rgba(72,41,16,0.28),transparent_10%,transparent_86%,rgba(72,41,16,0.32))]" />
               <p className="relative text-xs font-black uppercase tracking-[0.3em] text-[#4b2418]">Royal Notice</p>
               <h3 className="relative mt-4 max-w-xl font-serif text-4xl font-black leading-tight md:text-5xl">
-                {occupied ? `Castle Occupied by ${occupiedBy}.` : "This Castle Stands Unoccupied."}
+                {claimed ? `${claimedBy} holds this castle.` : "This castle is ready to be claimed."}
               </h3>
               <div className="relative mt-6 h-px bg-[#5f321f]" />
               <WaxSigil sigil={castleSigil} />

@@ -455,7 +455,11 @@ export default function SongsOfWarPage() {
     <main className="min-h-screen bg-[#070504] px-4 py-6 text-stone-100">
       <SiteNav className="-mx-4 -mt-6 mb-6" />
 
-      <section className="mx-auto mt-6 grid max-w-7xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
+      <section className="mx-auto mt-6 max-w-7xl">
+        <img src="/banners/songs of war.png" alt="" className="mb-5 h-32 w-full border border-[var(--gok-line)] bg-black object-cover opacity-85 md:h-44" />
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="gok-panel p-4">
           <p className="gok-eyebrow">Songs of War</p>
           <h1 className="mt-3 text-3xl font-normal uppercase tracking-[0.08em] text-[var(--gok-silver)]">

@@ -3,171 +3,58 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import SiteNav from "../../components/SiteNav";
 import { artifactCatalog } from "../../lib/artifacts";
 import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
-import { applyRoyalAccountDefaults, getRoyalAccount, isRoyalEmail, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
+import { applyRoyalAccountDefaults, getRoyalAccount, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
+
+const sigilCategories = {
+  "Ancient-Royal": [],
+  "Animals-Fantasy": [],
+  "Arms-Shields": [],
+  Floral: [],
+  "Food-Utensils": [],
+  Objects: [],
+  Random: [],
+};
 
 const tinctures = [
-  ["Iron Black", "#070807", "A hard black field for grim, old houses."],
-  ["Night Charcoal", "#151716", "Soft black leather and smoke."],
-  ["Aged Steel", "#68716f", "Cold metal, practical and noble."],
-  ["Muted Silver", "#b7b3a8", "Moonlit steel and worn plate."],
-  ["Dim Parchment", "#a99d86", "Old maps, vows, and dusty halls."],
-  ["Blood Red", "#5e1114", "War banners, old grudges, and ambition."],
-  ["Dried Maroon", "#3a0d12", "Darker blood, more secretive."],
-  ["Deep Umber", "#4a3728", "Wood, earth, and fortress halls."],
-  ["Forest Shadow", "#153529", "Woods, scouts, and patient strength."],
-  ["Moss Green", "#46523a", "Ancient growth and quiet survival."],
-  ["Sea Iron", "#183c42", "Coasts, ships, and storm-water."],
-  ["Storm Blue", "#263848", "Rain, banners, and northern skies."],
-  ["Ash Violet", "#3c3346", "Mystery, old bloodlines, and court secrets."],
-  ["Old Bone", "#d1c7b5", "Relics, vows, and ancient claims."],
-  ["Soot Brown", "#241b16", "Forge smoke and burned timber."],
-  ["Candle Gold", "#8a6d3b", "Wealth without looking bright or modern."],
-  ["Tarnished Brass", "#6f5a2f", "Old hall fixtures and quiet money."],
-  ["Oxidized Copper", "#315d55", "Sea air, age, and green-blue metal."],
-  ["Dried Rose", "#6b2635", "Courtly color without brightness."],
-  ["Deep Plum", "#25182d", "Old blood, secrets, and night courts."],
-  ["Frost Grey", "#8d9693", "Cold stone and northern mornings."],
-  ["Smoke White", "#d8d2c4", "Pale cloth, ash, and old vows."],
-  ["River Slate", "#273541", "Wet stone and river crossings."],
-  ["Pine Black", "#101f19", "Dark forests and old green roads."],
+  ["Iron Black", "#070807"], ["Night Charcoal", "#151716"], ["Aged Steel", "#68716f"], ["Muted Silver", "#b7b3a8"],
+  ["Dim Parchment", "#a99d86"], ["Blood Red", "#5e1114"], ["Dried Maroon", "#3a0d12"], ["Deep Umber", "#4a3728"],
+  ["Forest Shadow", "#153529"], ["Moss Green", "#46523a"], ["Sea Iron", "#183c42"], ["Storm Blue", "#263848"],
+  ["Ash Violet", "#3c3346"], ["Old Bone", "#d1c7b5"], ["Soot Brown", "#241b16"], ["Candle Gold", "#8a6d3b"],
+  ["Tarnished Brass", "#6f5a2f"], ["Oxidized Copper", "#315d55"], ["Dried Rose", "#6b2635"], ["Deep Plum", "#25182d"],
+  ["Frost Grey", "#8d9693"], ["Smoke White", "#d8d2c4"], ["River Slate", "#273541"], ["Pine Black", "#101f19"],
 ];
 
 const fieldLayouts = [
-  ["plain", "Plain Field", "A single proud house color."],
-  ["per-pale", "Split Vertical", "Two bloodlines or two loyalties."],
-  ["per-fess", "Split Horizontal", "A house divided by land and sky."],
-  ["quartered", "Quartered", "Alliance, marriage, or conquest."],
-  ["bend", "Diagonal Bend", "A road, blade, river, or oath."],
-  ["bend-sinister", "Reverse Bend", "A rival claim or hidden branch."],
-  ["cross", "Iron Cross", "Duty, faith, and command."],
-  ["saltire", "Saltire", "Crossed roads, crossed swords."],
-  ["chevron", "Chevron", "A roof, mountain, or defensive wall."],
-  ["pale", "Center Pale", "A central banner stripe."],
-  ["fess", "Center Fess", "A strong belt across the shield."],
-  ["chief", "Chief", "A ruling color above the house field."],
-  ["base", "Base", "A foundation color below the house field."],
-  ["bordure", "Bordure", "A bordered house mark for cadet branches."],
-  ["orle", "Inner Orle", "A smaller frame inside the shield."],
-  ["gyronny", "Gyronny", "Radiating wedges for a dramatic house."],
+  ["plain", "Plain"], ["per-pale", "Split Vertical"], ["per-fess", "Split Horizontal"], ["quartered", "Quartered"],
+  ["bend", "Diagonal"], ["bend-sinister", "Reverse Bend"], ["cross", "Iron Cross"], ["saltire", "Saltire"],
+  ["chevron", "Chevron"], ["pale", "Center Pale"], ["fess", "Center Fess"], ["chief", "Chief"],
+  ["base", "Base"], ["bordure", "Bordure"], ["orle", "Inner Orle"], ["gyronny", "Gyronny"],
 ];
 
 const shieldShapes = [
-  ["heater", "Heater", "Classic knightly shield."],
-  ["kite", "Kite", "Long war shield for older houses."],
-  ["round", "Round", "Ancient island or hill clan feel."],
-  ["banner", "Banner", "A hanging war banner."],
-  ["tower", "Tower", "Fortress-shaped house mark."],
-  ["royal", "Royal", "Highborn ceremonial shield."],
-  ["pointed", "Pointed", "Aggressive tournament shield."],
+  ["heater", "Heater"], ["kite", "Kite"], ["round", "Round"], ["banner", "Banner"], ["tower", "Tower"], ["royal", "Royal"], ["pointed", "Pointed"],
 ];
-
-const charges = [
-  ["wolf", "Wolf", "Loyal, cold, watchful, and dangerous in packs."],
-  ["direwolf", "Direwolf", "Ancient northern strength, loyalty, and fearsome family bonds."],
-  ["lion", "Lion", "Pride, command, wealth, and open power."],
-  ["dragon", "Dragon", "Fire, conquest, old magic, and royal ambition."],
-  ["griffin", "Griffin", "Watchful courage, high pride, and stormland nobility."],
-  ["kraken", "Kraken", "Sea raids, deep grudges, and coastal terror."],
-  ["stag", "Stag", "Storm kings, endurance, and lawful rule."],
-  ["falcon", "Falcon", "Mountain sight, precision, and noble distance."],
-  ["eagle", "Eagle", "High command, long sight, and hard-won freedom."],
-  ["raven", "Raven", "Secrets, messages, omens, and memory."],
-  ["bear", "Bear", "Raw strength, patience, and brutal defense."],
-  ["horse", "Horse", "Speed, cavalry, open roads, and messengers."],
-  ["serpent", "Serpent", "Cunning, poison, survival, and hidden strikes."],
-  ["boar", "Boar", "Ferocity, stubborn charges, and hard survival."],
-  ["bull", "Bull", "Strength, stubborn rule, and battlefield force."],
-  ["ram", "Ram", "Mountain endurance, sieges, and headlong courage."],
-  ["rose", "Rose", "Courtly beauty, wealth, and soft power."],
-  ["sun", "Sun", "Desert pride, warmth, and royal confidence."],
-  ["moon", "Moon", "Night vows, mystery, and quiet influence."],
-  ["tower", "Tower", "Stone, siegecraft, and a house built to last."],
-  ["sword", "Sword", "Warrior vows, justice, and martial honor."],
-  ["crown", "Crown", "Kingship, elections, prestige, and ambition."],
-  ["ship", "Ship", "Trade, raids, fleets, and sea roads."],
-  ["tree", "Weirwood", "Old gods, memory, roots, and northern mystery."],
-  ["star", "Star", "Destiny, rare bloodlines, and legendary claims."],
-  ["axe", "Axe", "Raids, executions, and hard northern justice."],
-  ["chalice", "Chalice", "Faith, feasts, poison, or old ceremony."],
-  ["key", "Key", "Gatekeepers, secrets, and castle authority."],
-  ["flame", "Flame", "Zeal, danger, and restless ambition."],
-  ["fish", "Fish", "Rivers, trade, patience, and old family currents."],
-  ["hammer", "Hammer", "Smiths, builders, siege work, and blunt force."],
-  ["castle", "Castle", "Fortified rule, landholding, and stubborn defense."],
-  ["hand", "Hand", "Service, loyalty, law, and trusted counsel."],
-  ["leaf", "Leaf", "Growth, harvest, healing, and old green places."],
-  ["skull", "Skull", "Fear, mortality, vengeance, and grim warnings."],
-];
-
-const sheetChargeOptions = [
-  ["sheet-spear", "Spear"], ["sheet-pike", "Pike"], ["sheet-halberd", "Halberd"], ["sheet-trident", "War Trident"],
-  ["sheet-mace", "Morning Star"], ["sheet-chain-flail", "Chain Flail"], ["sheet-war-flag", "War Flag"],
-  ["sheet-longsword", "Longsword"], ["sheet-arming-sword", "Arming Sword"], ["sheet-dagger", "Dagger"], ["sheet-curved-sword", "Curved Sword"], ["sheet-sabre", "Sabre"], ["sheet-warhammer", "War Hammer"], ["sheet-battleaxe", "Battle Axe"],
-  ["sheet-bow", "War Bow"], ["sheet-crossbow", "Crossbow"], ["sheet-arrow", "Arrow"], ["sheet-helmet", "Knight Helm"], ["sheet-horned-helm", "Horned Helm"], ["sheet-winged-helm", "Winged Helm"], ["sheet-visored-helm", "Visored Helm"],
-  ["sheet-axe", "Axe"], ["sheet-crossed-maces", "Crossed Maces"], ["sheet-flail", "Flail"], ["sheet-bomb", "Firepot"], ["sheet-banner", "Banner"], ["sheet-swallowtail", "Swallowtail"], ["sheet-gonfalon", "Gonfalon"], ["sheet-hanging-banner", "Hanging Banner"],
-  ["sheet-heater-shield", "Heater Shield"], ["sheet-kite-shield", "Kite Shield"], ["sheet-point-shield", "Point Shield"], ["sheet-ring-shield", "Round Gate Shield"],
-  ["sheet-crown-open", "Open Crown"], ["sheet-crown-royal", "Royal Crown"], ["sheet-crown-iron", "Iron Crown"], ["sheet-crown-thin", "Thin Crown"],
-  ["sheet-castle", "Castle"], ["sheet-fleur", "Fleur de Lis"], ["sheet-tower", "Tower Crest"], ["sheet-gem", "Gem"], ["sheet-sword-point", "Pointed Sword"], ["sheet-crossbow-bolts", "Bolted Crossbow"], ["sheet-spiked-mace", "Spiked Mace"], ["sheet-pennant", "Pennant"],
-  ["sheet-anvil", "Anvil"], ["sheet-hammer-tool", "Craft Hammer"], ["sheet-key", "Key"], ["sheet-goblet", "Goblet"], ["sheet-horn", "Horn"], ["sheet-lockbox", "Lockbox"], ["sheet-well", "Well"],
-  ["sheet-cross", "Faith Cross"], ["sheet-faith-axe", "Faith Axe"], ["sheet-bishop", "Septon Hood"], ["sheet-cauldron", "Cauldron"], ["sheet-scroll", "Scroll"], ["sheet-hood", "Hooded Mask"], ["sheet-pointed-hood", "Pointed Hood"], ["sheet-warship", "Warship"], ["sheet-siege-engine", "Siege Engine"],
-  ["sheet-fortress", "Fortress"], ["sheet-wall-tower", "Wall Tower"], ["sheet-tall-tower", "Tall Tower"], ["sheet-gatehouse", "Gatehouse"], ["sheet-watchtower", "Watchtower"],
-  ["sheet-laurel-frame", "Laurel Frame"], ["sheet-ornate-frame", "Ornate Frame"], ["sheet-round-frame", "Round Frame"], ["sheet-arrow-long", "Long Arrow"], ["sheet-marker-flag", "Marker Flag"], ["sheet-torch", "Torch"],
-  ["sheet-barrel-helm", "Barrel Helm"], ["sheet-face-helm", "Face Helm"], ["sheet-ghost", "Ghost"], ["sheet-pillar", "Pillar"], ["sheet-scroll-paper", "Scroll Paper"], ["sheet-rampart", "Rampart"], ["sheet-quill", "Quill Seal"], ["sheet-wings", "Wings"], ["sheet-crossed-spears", "Crossed Spears"], ["sheet-gallows", "Gallows"],
-].map(([id, label]) => [id, label, "A custom heraldic line-art charge from your sigil sheet.", `/sigils/charges/${id}.png`]);
-
-const chargeOptions = [...sheetChargeOptions, ...charges];
 
 const defaultSigil = {
-  name: "Wolf",
-  charge: "wolf",
-  color: "#5e1114",
-  secondary: "#070807",
+  color: "#070807",
+  secondary: "#151716",
   accent: "#b7b3a8",
-  field: "plain",
-  shield: "heater",
-  chargeSize: 58,
-  chargeX: 50,
-  chargeY: 50,
-  chargeRotate: 0,
-  chargeStretch: 100,
   border: "#68716f",
-  layers: [
-    {
-      id: "layer-1",
-      charge: "wolf",
-      color: "#68716f",
-      size: 58,
-      x: 50,
-      y: 50,
-      rotate: 0,
-      stretch: 100,
-      opacity: 100,
-    },
-  ],
+  glow: "#d8d2c4",
+  field: "saltire",
+  shield: "heater",
+  layers: [],
 };
 
-function getById(list, id) {
-  return list.find(([itemId]) => itemId === id) || list[0];
-}
-
-function getChargeById(id) {
-  return chargeOptions.find(([itemId]) => itemId === id) || chargeOptions[0];
-}
-
-function isSheetCharge(id) {
-  return id?.startsWith("sheet-");
-}
-
 function getFieldBackground(sigil) {
-  const primary = sigil.color;
-  const secondary = sigil.secondary;
-  const accent = sigil.accent;
-
-  const fields = {
+  const primary = sigil.color || defaultSigil.color;
+  const secondary = sigil.secondary || defaultSigil.secondary;
+  const accent = sigil.accent || defaultSigil.accent;
+  return {
     plain: primary,
     "per-pale": `linear-gradient(90deg, ${primary} 0 50%, ${secondary} 50% 100%)`,
     "per-fess": `linear-gradient(180deg, ${primary} 0 50%, ${secondary} 50% 100%)`,
@@ -184,13 +71,11 @@ function getFieldBackground(sigil) {
     bordure: `radial-gradient(closest-side, ${primary} 72%, transparent 73%), ${accent}`,
     orle: `radial-gradient(closest-side, ${primary} 60%, transparent 61% 67%, ${primary} 68%), ${accent}`,
     gyronny: `conic-gradient(from 45deg, ${primary} 0 12.5%, ${secondary} 12.5% 25%, ${primary} 25% 37.5%, ${secondary} 37.5% 50%, ${primary} 50% 62.5%, ${secondary} 62.5% 75%, ${primary} 75% 87.5%, ${secondary} 87.5% 100%)`,
-  };
-
-  return fields[sigil.field] || primary;
+  }[sigil.field] || primary;
 }
 
 function getShieldClip(shape) {
-  const shapes = {
+  return {
     heater: "polygon(50% 0, 94% 11%, 88% 72%, 50% 100%, 12% 72%, 6% 11%)",
     kite: "polygon(50% 0, 95% 10%, 82% 66%, 50% 100%, 18% 66%, 5% 10%)",
     round: "ellipse(44% 48% at 50% 45%)",
@@ -198,47 +83,43 @@ function getShieldClip(shape) {
     tower: "polygon(8% 8%, 18% 8%, 18% 0, 32% 0, 32% 8%, 44% 8%, 44% 0, 56% 0, 56% 8%, 68% 8%, 68% 0, 82% 0, 82% 8%, 92% 8%, 92% 100%, 8% 100%)",
     royal: "polygon(50% 0, 90% 8%, 96% 28%, 88% 76%, 50% 100%, 12% 76%, 4% 28%, 10% 8%)",
     pointed: "polygon(50% 0, 97% 18%, 80% 82%, 50% 100%, 20% 82%, 3% 18%)",
-  };
-
-  return shapes[shape] || shapes.heater;
+  }[shape] || "polygon(50% 0, 94% 11%, 88% 72%, 50% 100%, 12% 72%, 6% 11%)";
 }
 
-function updateSigilValue(setSigil, key, value) {
-  setSigil((sigil) => ({
-    ...sigil,
-    [key]: value,
-    name: key === "charge" ? getChargeById(value)[1] : sigil.name,
-  }));
-}
-
-function createLayer(charge = "wolf", color = "#68716f") {
+function createLayer(icon, layerIndex = 0, color = "#d8d2c4") {
   return {
+    ...icon,
     id: `layer-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    charge,
-    color,
-    size: 58,
     x: 50,
     y: 50,
-    rotate: 0,
-    stretch: 100,
-    opacity: 100,
+    scale: 1,
+    rotation: 0,
+    opacity: 1,
+    color,
+    layerIndex,
   };
 }
 
 function normalizeSigil(savedSigil = {}) {
-  const fallbackLayer = createLayer(
-    savedSigil.charge || savedSigil.name?.toLowerCase() || defaultSigil.charge,
-    savedSigil.border || defaultSigil.border
-  );
-
+  const oldLayers = Array.isArray(savedSigil.layers) ? savedSigil.layers : [];
   return {
     ...defaultSigil,
     ...savedSigil,
-    charge: savedSigil.charge || savedSigil.name?.toLowerCase() || defaultSigil.charge,
-    name: savedSigil.name || defaultSigil.name,
-    color: savedSigil.color || defaultSigil.color,
-    secondary: savedSigil.secondary || defaultSigil.secondary,
-    layers: Array.isArray(savedSigil.layers) && savedSigil.layers.length ? savedSigil.layers : [fallbackLayer],
+    layers: oldLayers
+      .filter((layer) => layer.imageUrl)
+      .map((layer, index) => ({
+        id: layer.id || `saved-layer-${index}`,
+        name: layer.name || "Decorative Element",
+        category: layer.category || "Objects",
+        imageUrl: layer.imageUrl,
+        x: Number(layer.x ?? 50),
+        y: Number(layer.y ?? 50),
+        scale: Number(layer.scale ?? (layer.size ? layer.size / 58 : 1)),
+        rotation: Number(layer.rotation ?? layer.rotate ?? 0),
+        opacity: Number(layer.opacity ?? 1),
+        color: layer.color || savedSigil.border || "#d8d2c4",
+        layerIndex: Number(layer.layerIndex ?? index),
+      })),
   };
 }
 
@@ -248,46 +129,36 @@ export default function HouseFounderPage() {
   const [rulerTitle, setRulerTitle] = useState("Lord");
   const [rulerName, setRulerName] = useState("");
   const [sigil, setSigil] = useState(defaultSigil);
-  const [selectedLayerId, setSelectedLayerId] = useState(defaultSigil.layers[0].id);
+  const [categories, setCategories] = useState(sigilCategories);
+  const [selectedCategory, setSelectedCategory] = useState("Ancient-Royal");
+  const [selectedLayerId, setSelectedLayerId] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const [hasLoaded, setHasLoaded] = useState(false);
   const [sessionEmail, setSessionEmail] = useState("");
   const [artifactInventory, setArtifactInventory] = useState([]);
+  const previewRef = useRef(null);
+  const draggingRef = useRef(null);
 
   const background = useMemo(() => getFieldBackground(sigil), [sigil]);
-  const layers = sigil.layers?.length ? sigil.layers : defaultSigil.layers;
+  const layers = useMemo(() => [...(sigil.layers || [])].sort((a, b) => a.layerIndex - b.layerIndex), [sigil.layers]);
   const selectedLayer = layers.find((layer) => layer.id === selectedLayerId) || layers[0];
-  const selectedCharge = getChargeById(selectedLayer.charge);
-  const selectedField = getById(fieldLayouts, sigil.field);
-  const houseArtifacts = useMemo(
-    () => artifactCatalog.filter((artifact) => artifactInventory.includes(artifact.name)),
-    [artifactInventory]
-  );
+  const houseArtifacts = useMemo(() => artifactCatalog.filter((artifact) => artifactInventory.includes(artifact.name)), [artifactInventory]);
 
   useEffect(() => {
-    if (!hasLoaded) return;
-
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const current = stored ? JSON.parse(stored) : {};
-    const chargeName = getChargeById(selectedLayer.charge)[1];
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        ...current,
-        houseName: houseName.trim(),
-        houseMotto: houseMotto.trim(),
-        rulerTitle: normalizeRulerTitle(rulerTitle, sessionEmail),
-        rulerName: rulerName.trim(),
-        houseSigil: {
-          ...sigil,
-          name: chargeName,
-          description: selectedCharge[2],
-          fieldDescription: selectedField[2],
-        },
+    fetch("/sigil-generator/manifest.json")
+      .then((response) => response.json())
+      .then((manifest) => {
+        setCategories({ ...sigilCategories, ...manifest });
+        const firstIcon = manifest["Ancient-Royal"]?.[0] || Object.values(manifest).flat()[0];
+        setSigil((current) => {
+          if (current.layers?.length || !firstIcon) return current;
+          const layer = createLayer(firstIcon, 0, current.border);
+          setSelectedLayerId(layer.id);
+          return { ...current, layers: [layer] };
+        });
       })
-    );
-  }, [hasLoaded, houseName, houseMotto, rulerName, rulerTitle, selectedCharge, selectedField, selectedLayer.charge, sessionEmail, sigil]);
+      .catch(() => setCategories(sigilCategories));
+  }, []);
 
   useEffect(() => {
     getSessionUser().then(({ user }) => {
@@ -307,38 +178,52 @@ export default function HouseFounderPage() {
         setRulerName(realmData.rulerName || (royalAccount ? royalAccount.rulerName : ""));
         setArtifactInventory(realmData.artifactInventory || []);
         setSigil(normalized);
-        setSelectedLayerId(normalized.layers[0].id);
+        setSelectedLayerId(normalized.layers[0]?.id || "");
       });
     });
 
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      setHasLoaded(true);
-      return;
-    }
-
-    try {
-      const data = JSON.parse(stored);
-      const savedSigil = data.houseSigil || {};
-
-      setHouseName(data.houseName || "");
-      setHouseMotto(data.houseMotto || "");
-      setRulerTitle(normalizeRulerTitle(data.rulerTitle || "Lord", ""));
-      setRulerName(data.rulerName || "");
-      setArtifactInventory(data.artifactInventory || []);
-      const normalized = normalizeSigil(savedSigil);
-      setSigil(normalized);
-      setSelectedLayerId(normalized.layers[0].id);
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        const normalized = normalizeSigil(data.houseSigil || {});
+        setHouseName(data.houseName || "");
+        setHouseMotto(data.houseMotto || "");
+        setRulerTitle(normalizeRulerTitle(data.rulerTitle || "Lord", ""));
+        setRulerName(data.rulerName || "");
+        setArtifactInventory(data.artifactInventory || []);
+        setSigil(normalized);
+        setSelectedLayerId(normalized.layers[0]?.id || "");
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
     }
     setHasLoaded(true);
   }, []);
 
+  useEffect(() => {
+    if (!hasLoaded) return;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const current = stored ? JSON.parse(stored) : {};
+    const nextRealm = {
+      ...current,
+      houseName: houseName.trim(),
+      houseMotto: houseMotto.trim(),
+      rulerTitle: normalizeRulerTitle(rulerTitle, sessionEmail),
+      rulerName: rulerName.trim(),
+      houseSigil: {
+        ...sigil,
+        name: selectedLayer?.name || "Custom Sigil",
+        description: selectedLayer ? `A custom heraldic mark from ${selectedLayer.category}.` : "A custom heraldic mark.",
+      },
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRealm));
+    window.dispatchEvent(new Event("storage"));
+  }, [hasLoaded, houseName, houseMotto, rulerName, rulerTitle, selectedLayer, sessionEmail, sigil]);
+
   async function saveHouse() {
     const stored = localStorage.getItem(STORAGE_KEY);
     const current = stored ? JSON.parse(stored) : {};
-    const chargeName = getChargeById(selectedLayer.charge)[1];
     const safeTitle = normalizeRulerTitle(rulerTitle, sessionEmail);
     const nextRealm = {
       ...current,
@@ -346,258 +231,270 @@ export default function HouseFounderPage() {
       houseMotto: houseMotto.trim(),
       rulerTitle: safeTitle,
       rulerName: rulerName.trim(),
-      houseSigil: {
-        ...sigil,
-        name: chargeName,
-        description: selectedCharge[2],
-        fieldDescription: selectedField[2],
-      },
+      houseSigil: { ...sigil, name: selectedLayer?.name || "Custom Sigil" },
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRealm));
-
     const { error } = await saveCloudRealm(nextRealm);
     setRulerTitle(safeTitle);
-    setSavedMessage(
-      error && !error.includes("Not signed in")
-        ? `House updated locally. Account update needs attention: ${error}`
-        : error
-          ? "House updated locally. Sign in on the Account page to update it to your account."
-          : "House updated on this device and your account."
-    );
+    setSavedMessage(error?.includes("Not signed in") ? "House updated locally. Sign in on the Account page to update it to your account." : error || "House updated.");
   }
 
-  function updateSelectedLayer(key, value) {
+  function updateSigil(key, value) {
+    setSigil((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateSelectedLayer(values) {
+    if (!selectedLayer) return;
     setSigil((current) => ({
       ...current,
-      layers: current.layers.map((layer) =>
-        layer.id === selectedLayer.id ? { ...layer, [key]: value } : layer
-      ),
+      layers: current.layers.map((layer) => (layer.id === selectedLayer.id ? { ...layer, ...values } : layer)),
     }));
   }
 
-  function addLayer(charge = "crown") {
-    const nextLayer = createLayer(charge, sigil.border);
+  function addLayer(icon = categories[selectedCategory]?.[0]) {
+    if (!icon) return;
+    const nextLayer = createLayer(icon, layers.length, selectedLayer?.color || sigil.border);
     setSigil((current) => ({ ...current, layers: [...current.layers, nextLayer] }));
     setSelectedLayerId(nextLayer.id);
   }
 
   function duplicateLayer() {
+    if (!selectedLayer) return;
     const nextLayer = {
       ...selectedLayer,
       id: `layer-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      x: Math.min(88, selectedLayer.x + 5),
-      y: Math.min(86, selectedLayer.y + 5),
+      x: Math.min(92, selectedLayer.x + 5),
+      y: Math.min(92, selectedLayer.y + 5),
+      layerIndex: layers.length,
     };
     setSigil((current) => ({ ...current, layers: [...current.layers, nextLayer] }));
     setSelectedLayerId(nextLayer.id);
   }
 
-  function removeLayer() {
-    if (layers.length <= 1) return;
-    const nextLayers = layers.filter((layer) => layer.id !== selectedLayer.id);
+  function deleteLayer() {
+    if (!selectedLayer || layers.length <= 1) return;
+    const nextLayers = layers.filter((layer) => layer.id !== selectedLayer.id).map((layer, index) => ({ ...layer, layerIndex: index }));
     setSigil((current) => ({ ...current, layers: nextLayers }));
-    setSelectedLayerId(nextLayers[0].id);
+    setSelectedLayerId(nextLayers[0]?.id || "");
   }
+
+  function moveLayer(direction) {
+    if (!selectedLayer) return;
+    const ordered = layers.map((layer) => ({ ...layer }));
+    const currentIndex = ordered.findIndex((layer) => layer.id === selectedLayer.id);
+    const nextIndex = Math.max(0, Math.min(ordered.length - 1, currentIndex + direction));
+    if (currentIndex === nextIndex) return;
+    const [layer] = ordered.splice(currentIndex, 1);
+    ordered.splice(nextIndex, 0, layer);
+    setSigil((current) => ({ ...current, layers: ordered.map((item, index) => ({ ...item, layerIndex: index })) }));
+  }
+
+  function startDrag(event, layer) {
+    event.preventDefault();
+    setSelectedLayerId(layer.id);
+    draggingRef.current = layer.id;
+  }
+
+  function dragLayer(event) {
+    if (!draggingRef.current || !previewRef.current) return;
+    const rect = previewRef.current.getBoundingClientRect();
+    const x = Math.max(4, Math.min(96, ((event.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(4, Math.min(96, ((event.clientY - rect.top) / rect.height) * 100));
+    const id = draggingRef.current;
+    setSigil((current) => ({
+      ...current,
+      layers: current.layers.map((layer) => (layer.id === id ? { ...layer, x, y } : layer)),
+    }));
+  }
+
+  function stopDrag() {
+    draggingRef.current = null;
+  }
+
+  function resizeLayer(event, layer) {
+    event.preventDefault();
+    setSelectedLayerId(layer.id);
+    const delta = event.deltaY < 0 ? 0.08 : -0.08;
+    const scale = Math.max(0.28, Math.min(2.6, (layer.scale || 1) + delta));
+    setSigil((current) => ({
+      ...current,
+      layers: current.layers.map((item) => (item.id === layer.id ? { ...item, scale } : item)),
+    }));
+  }
+
+  const categoryIcons = categories[selectedCategory] || [];
 
   return (
     <main className="gok-page min-h-screen overflow-x-hidden">
       <SiteNav />
-
-      <section className="mx-auto grid max-w-[1800px] gap-4 px-4 py-4 2xl:grid-cols-[360px_minmax(0,1fr)]">
-        <div className="gok-panel min-w-0 p-4">
-          <p className="gok-eyebrow relative z-10">House Founder</p>
-          <h1 className="relative z-10 mt-3 text-3xl font-normal uppercase tracking-[0.08em] text-[var(--gok-silver)]">
-            Forge your house.
-          </h1>
-          <p className="gok-copy relative z-10 mt-4 max-w-full text-sm leading-6">
-            Build a custom sigil with shield fields, colors, emblem objects, size, position, stretch, and rotation.
-            This is the mark players will remember when your house enters the realm. Changes auto-save to this device, and Update writes them to your account when signed in.
-          </p>
-
-          <div className="relative z-10 mt-5 space-y-3">
-            <input
-              value={houseName}
-              onChange={(event) => setHouseName(event.target.value)}
-              placeholder="House name"
-              className="min-h-12 w-full border border-[var(--gok-line)] bg-black/70 px-4 py-3 outline-none focus:border-[var(--gok-line-strong)]"
-            />
-            <div className="grid gap-3 sm:grid-cols-[120px_minmax(0,1fr)]">
-              <select
-                value={rulerTitle}
-                onChange={(event) => setRulerTitle(event.target.value)}
-                className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-4 py-3 outline-none focus:border-[var(--gok-line-strong)]"
-              >
-                {(isRoyalEmail(sessionEmail) ? ROYAL_TITLES : PUBLIC_TITLES).map((title) => <option key={title}>{title}</option>)}
+      <section className="mx-auto max-w-[1800px] px-4 py-4">
+        <div className="gok-panel mb-4 p-5">
+          <p className="gok-eyebrow">House Founder</p>
+          <div className="relative z-10 mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.8fr_1fr_1.4fr_auto] lg:items-end">
+            <LabeledInput label="House Name" value={houseName} onChange={setHouseName} placeholder="Rider" />
+            <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--gok-dim)]">
+              Title
+              <select value={rulerTitle} onChange={(event) => setRulerTitle(event.target.value)} className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-3 text-sm text-[var(--gok-silver)] outline-none">
+                {(getRoyalAccount(sessionEmail) ? ROYAL_TITLES : PUBLIC_TITLES).map((title) => <option key={title}>{title}</option>)}
               </select>
-              <input
-                value={rulerName}
-                onChange={(event) => setRulerName(event.target.value)}
-                placeholder="Ruler name"
-                className="min-h-12 w-full border border-[var(--gok-line)] bg-black/70 px-4 py-3 outline-none focus:border-[var(--gok-line-strong)]"
-              />
-            </div>
-            <input
-              value={houseMotto}
-              onChange={(event) => setHouseMotto(event.target.value)}
-              placeholder="House words"
-              className="min-h-12 w-full border border-[var(--gok-line)] bg-black/70 px-4 py-3 outline-none focus:border-[var(--gok-line-strong)]"
-            />
+            </label>
+            <LabeledInput label="First Name" value={rulerName} onChange={setRulerName} placeholder="Timothy" />
+            <LabeledInput label="House Words" value={houseMotto} onChange={setHouseMotto} placeholder="Loyalty Never Dies" />
+            <button onClick={saveHouse} disabled={!houseName.trim() || !rulerName.trim()} className="gok-btn gok-btn-blood min-h-12 px-5 py-3 disabled:opacity-45">
+              Update House
+            </button>
           </div>
-
-          <div className="relative z-10 mt-5 border border-[var(--gok-line)] bg-black/35 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gok-dim)]">Selected Meaning</p>
-            <h2 className="mt-2 text-xl font-normal text-[var(--gok-silver)]">{selectedCharge[1]}</h2>
-            <p className="mt-2 text-sm leading-6 text-[rgba(210,205,194,0.62)]">{selectedCharge[2]}</p>
-            <p className="mt-3 text-sm leading-6 text-[rgba(210,205,194,0.48)]">{selectedField[2]}</p>
-          </div>
-
-          <button
-            onClick={saveHouse}
-            disabled={!houseName.trim() || !rulerName.trim()}
-            className="gok-btn gok-btn-blood relative z-10 mt-5 w-full px-5 py-3 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            Update House
-          </button>
           {savedMessage && <p className="relative z-10 mt-3 text-sm font-bold text-[var(--gok-parchment)]">{savedMessage}</p>}
-          <div className="relative z-10 mt-5 border border-[var(--gok-line)] bg-black/35 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gok-dim)]">House Artifacts</p>
-            <div className="mt-3 grid gap-2">
-              {houseArtifacts.length ? (
-                houseArtifacts.map((artifact) => (
-                  <div key={artifact.name} className="border border-[var(--gok-line)] bg-black/45 p-3">
-                    <p className="font-serif text-lg font-black text-[var(--gok-silver)]">{artifact.name}</p>
-                    <p className="mt-1 text-[0.62rem] font-black uppercase tracking-[0.16em] text-red-300">{artifact.type}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm leading-6 text-[rgba(210,205,194,0.58)]">No relics in your house archive yet.</p>
-              )}
-            </div>
-          </div>
-          <Link href="/map" className="gok-btn relative z-10 mt-3 flex w-full px-5 py-3">
-            Go Claim A Castle
-          </Link>
         </div>
 
-        <div className="gok-panel min-w-0 p-4">
-          <div className="relative z-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="gok-panel overflow-hidden p-4">
+          <div className="relative z-10 mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="gok-eyebrow">Sigil Generator</p>
-              <h2 className="mt-3 text-3xl font-normal uppercase tracking-[0.08em] text-[var(--gok-silver)]">
-                Heraldry Workbench
-              </h2>
+              <h1 className="mt-2 text-3xl uppercase tracking-[0.08em] text-[var(--gok-silver)]">Heraldry Workbench</h1>
             </div>
-            <p className="max-w-xl text-sm leading-6 text-[rgba(210,205,194,0.58)]">
-              Choose the shield, divide the field, place the emblem, and tune the mark until it feels like your house.
-            </p>
+            <img src="/banners/House.png" alt="" className="h-24 max-w-full border border-[var(--gok-line)] object-cover opacity-80 lg:w-[760px]" />
           </div>
 
-          <div className="relative z-10 mt-5 grid min-w-0 gap-5 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
-            <div className="min-w-0 xl:sticky xl:top-4 xl:self-start">
-              <SigilPreview sigil={sigil} background={background} layers={layers} />
-              <div className="mt-4 text-center">
-                <h3 className="text-2xl font-normal text-[var(--gok-silver)]">House {houseName || "Unnamed"}</h3>
-                <p className="mt-1 text-sm text-[var(--gok-parchment)]">
-                  {rulerTitle} {rulerName || "Unnamed"}
-                </p>
-                <p className="mt-1 text-[var(--gok-dim)]">&quot;{houseMotto || "Our Words"}&quot;</p>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <ColorPicker title="Primary Field" selected={sigil.color} onPick={(value) => updateSigilValue(setSigil, "color", value)} />
-                <ColorPicker title="Secondary Field" selected={sigil.secondary} onPick={(value) => updateSigilValue(setSigil, "secondary", value)} />
-                <ColorPicker title="Field Accent" selected={sigil.accent} onPick={(value) => updateSigilValue(setSigil, "accent", value)} />
-                <ColorPicker title="Selected Object" selected={selectedLayer.color} onPick={(value) => updateSelectedLayer("color", value)} />
-              </div>
-            </div>
-
-            <div className="grid min-w-0 gap-4">
-              <div className="min-w-0 space-y-4">
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <ControlBlock title="Shield Fields">
-                    <OptionGrid options={fieldLayouts} value={sigil.field} onChange={(value) => updateSigilValue(setSigil, "field", value)} />
-                  </ControlBlock>
-
-                  <ControlBlock title="Shield Shape">
-                    <OptionGrid options={shieldShapes} value={sigil.shield} onChange={(value) => updateSigilValue(setSigil, "shield", value)} />
-                  </ControlBlock>
+          <div className="relative z-10 grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)_420px] 2xl:grid-cols-[440px_minmax(0,1fr)_460px]">
+            <section>
+              <div
+                ref={previewRef}
+                onMouseMove={dragLayer}
+                onMouseUp={stopDrag}
+                onMouseLeave={stopDrag}
+                className="relative mx-auto aspect-[3/4] max-h-[64vh] min-h-[32rem] overflow-hidden border border-[var(--gok-line)] bg-black/35 p-4"
+              >
+                <div
+                  className="absolute inset-6 border-[5px]"
+                  style={{
+                    background,
+                    borderColor: sigil.border,
+                    clipPath: getShieldClip(sigil.shield),
+                    boxShadow: "inset 0 0 42px rgba(0,0,0,.78), 0 26px 60px rgba(0,0,0,.7)",
+                  }}
+                >
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.14),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.28))]" />
+                  {layers.map((layer) => (
+                    <button
+                      key={layer.id}
+                      type="button"
+                      onMouseDown={(event) => startDrag(event, layer)}
+                      onWheel={(event) => resizeLayer(event, layer)}
+                      className={`absolute block cursor-grab active:cursor-grabbing ${selectedLayer?.id === layer.id ? "rounded-full outline outline-1 outline-[var(--gok-silver)]" : ""}`}
+                      style={{
+                        left: `${layer.x}%`,
+                        top: `${layer.y}%`,
+                        width: `${Math.round(96 * (layer.scale || 1))}px`,
+                        height: `${Math.round(96 * (layer.scale || 1))}px`,
+                        opacity: layer.opacity,
+                        transform: `translate(-50%, -50%) rotate(${layer.rotation || 0}deg)`,
+                        zIndex: layer.layerIndex + 2,
+                        filter: selectedLayer?.id === layer.id ? `drop-shadow(0 0 16px ${sigil.glow || defaultSigil.glow})` : undefined,
+                      }}
+                      title="Drag to move. Use the mouse wheel to resize."
+                    >
+                      <span
+                        className="block h-full w-full"
+                        style={{
+                          backgroundColor: layer.color,
+                          WebkitMask: `url(${layer.imageUrl}) center / contain no-repeat`,
+                          mask: `url(${layer.imageUrl}) center / contain no-repeat`,
+                          filter: "drop-shadow(0 8px 10px rgba(0,0,0,.82))",
+                        }}
+                      />
+                    </button>
+                  ))}
                 </div>
-
-                <ControlBlock title="Decorative Elements">
-                  <div className="max-h-[620px] overflow-y-auto overflow-x-hidden pr-3">
-                    <div className="grid grid-cols-[repeat(auto-fit,minmax(4.85rem,1fr))] gap-2">
-                      {chargeOptions.map(([id, label, description]) => (
-                      <button
-                        key={id}
-                        onClick={() => updateSelectedLayer("charge", id)}
-                        className={`min-h-[5.35rem] overflow-hidden border px-1.5 py-2 text-[0.58rem] font-bold leading-[0.95] transition ${
-                          selectedLayer.charge === id
-                            ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
-                            : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
-                        }`}
-                        aria-label={description}
-                      >
-                        <span className="mx-auto mb-1 block aspect-square w-10 max-w-[72%]">
-                          <ChargeIcon type={id} color="currentColor" />
-                        </span>
-                        <span className="block overflow-hidden break-words text-center">{label}</span>
-                      </button>
-                      ))}
-                    </div>
-                  </div>
-                </ControlBlock>
               </div>
+              <div className="mt-3 text-center">
+                <h2 className="text-2xl text-[var(--gok-silver)]">House {houseName || "Unnamed"}</h2>
+                <p className="text-sm text-[var(--gok-parchment)]">{rulerTitle} {rulerName || "Unnamed"}</p>
+                <p className="text-sm text-[var(--gok-dim)]">&quot;{houseMotto || "Our Words"}&quot;</p>
+              </div>
+            </section>
 
-              <aside className="grid min-w-0 gap-4 xl:grid-cols-2">
-                <ControlBlock title="Object Layers">
-                  <div className="grid gap-2">
-                    {layers.map((layer, index) => (
+            <section className="grid min-w-0 gap-4 lg:grid-cols-2">
+              <ToolBlock title="Shield Fields">
+                <OptionGrid options={fieldLayouts} value={sigil.field} onChange={(value) => updateSigil("field", value)} />
+              </ToolBlock>
+              <ToolBlock title="Shield Shape">
+                <OptionGrid options={shieldShapes} value={sigil.shield} onChange={(value) => updateSigil("shield", value)} />
+              </ToolBlock>
+              <ToolBlock title="Color Palette">
+                <div className="grid gap-3">
+                  <ColorPicker title="Primary Field" selected={sigil.color} onPick={(value) => updateSigil("color", value)} />
+                  <ColorPicker title="Secondary Field" selected={sigil.secondary} onPick={(value) => updateSigil("secondary", value)} />
+                  <ColorPicker title="Field Accent" selected={sigil.accent} onPick={(value) => updateSigil("accent", value)} />
+                </div>
+              </ToolBlock>
+              <ToolBlock title="Selected Icon">
+                <div className="grid gap-3">
+                  <ColorPicker title="Icon Color" selected={selectedLayer?.color || sigil.border} onPick={(value) => updateSelectedLayer({ color: value })} />
+                  <ColorPicker title="Outline / Glow" selected={sigil.glow || defaultSigil.glow} onPick={(value) => updateSigil("glow", value)} />
+                </div>
+              </ToolBlock>
+            </section>
+
+            <section className="grid min-h-0 gap-4">
+              <ToolBlock title="Decorative Elements">
+                <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)} className="mb-3 min-h-11 w-full border border-[var(--gok-line)] bg-black/80 px-3 text-sm text-[var(--gok-silver)] outline-none">
+                  {Object.keys(sigilCategories).map((category) => <option key={category}>{category}</option>)}
+                </select>
+                <div className="max-h-[34rem] overflow-y-auto border border-[var(--gok-line)] bg-black/35 p-2">
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(4.4rem,1fr))] gap-2">
+                    {categoryIcons.map((icon) => (
                       <button
-                        key={layer.id}
-                        onClick={() => setSelectedLayerId(layer.id)}
-                        className={`flex min-h-10 items-center justify-between border px-3 py-2 text-left text-xs font-bold ${
-                          selectedLayer.id === layer.id
-                            ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
-                            : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)]"
-                        }`}
+                        key={icon.id}
+                        type="button"
+                        onClick={() => addLayer(icon)}
+                        className="min-h-20 border border-[var(--gok-line)] bg-black/50 p-2 transition hover:border-[var(--gok-line-strong)]"
+                        title={icon.name}
                       >
-                        <span>{index + 1}. {getChargeById(layer.charge)[1]}</span>
-                        <span className="h-4 w-4 border border-black/50" style={{ backgroundColor: layer.color }} />
+                        <span
+                          className="mx-auto block h-10 w-10"
+                          style={{ backgroundColor: selectedLayer?.color || sigil.border, WebkitMask: `url(${icon.imageUrl}) center / contain no-repeat`, mask: `url(${icon.imageUrl}) center / contain no-repeat` }}
+                        />
                       </button>
                     ))}
                   </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    <button onClick={() => addLayer()} className="gok-btn px-3 py-2 text-xs">Add</button>
-                    <button onClick={duplicateLayer} className="gok-btn px-3 py-2 text-xs">Copy</button>
-                    <button onClick={removeLayer} disabled={layers.length <= 1} className="gok-btn px-3 py-2 text-xs disabled:opacity-40">Remove</button>
-                  </div>
-                </ControlBlock>
+                </div>
+              </ToolBlock>
 
-                <ControlBlock title="Custom Placement">
-                  <div className="grid gap-3">
-                    <RangeControl label="Size" value={selectedLayer.size} min="16" max="110" onChange={(value) => updateSelectedLayer("size", value)} />
-                    <RangeControl label="Width Stretch" value={selectedLayer.stretch} min="50" max="160" onChange={(value) => updateSelectedLayer("stretch", value)} />
-                    <RangeControl label="Left / Right" value={selectedLayer.x} min="8" max="92" onChange={(value) => updateSelectedLayer("x", value)} />
-                    <RangeControl label="Up / Down" value={selectedLayer.y} min="10" max="90" onChange={(value) => updateSelectedLayer("y", value)} />
-                    <RangeControl label="Rotation" value={selectedLayer.rotate} min="-90" max="90" onChange={(value) => updateSelectedLayer("rotate", value)} />
-                    <RangeControl label="Opacity" value={selectedLayer.opacity} min="20" max="100" onChange={(value) => updateSelectedLayer("opacity", value)} />
-                  </div>
-                  <button
-                    onClick={() => {
-                      updateSelectedLayer("size", 58);
-                      updateSelectedLayer("x", 50);
-                      updateSelectedLayer("y", 50);
-                      updateSelectedLayer("rotate", 0);
-                      updateSelectedLayer("stretch", 100);
-                      updateSelectedLayer("opacity", 100);
-                    }}
-                    className="gok-btn mt-4 px-4 py-2 text-xs"
-                  >
-                    Center Layer
-                  </button>
-                </ControlBlock>
-              </aside>
-            </div>
+              <ToolBlock title="Object Layers">
+                <div className="max-h-48 overflow-y-auto border border-[var(--gok-line)] bg-black/35">
+                  {layers.map((layer, index) => (
+                    <button
+                      key={layer.id}
+                      type="button"
+                      onClick={() => setSelectedLayerId(layer.id)}
+                      className={`flex w-full items-center justify-between border-b border-[rgba(196,193,184,0.1)] px-3 py-2 text-left text-xs font-black ${selectedLayer?.id === layer.id ? "bg-[rgba(196,193,184,0.14)] text-[var(--gok-silver)]" : "text-[var(--gok-dim)]"}`}
+                    >
+                      <span>{index + 1}. {layer.name}</span>
+                      <span className="h-4 w-4 border border-black/50" style={{ backgroundColor: layer.color }} />
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  <button onClick={() => addLayer()} className="gok-btn px-3 py-2 text-xs">Add New Layer</button>
+                  <button onClick={duplicateLayer} className="gok-btn px-3 py-2 text-xs">Duplicate</button>
+                  <button onClick={deleteLayer} className="gok-btn px-3 py-2 text-xs">Delete</button>
+                  <button onClick={() => moveLayer(1)} className="gok-btn px-3 py-2 text-xs">Bring Forward</button>
+                  <button onClick={() => moveLayer(-1)} className="gok-btn px-3 py-2 text-xs">Send Backward</button>
+                </div>
+              </ToolBlock>
+
+              <div className="border border-[var(--gok-line)] bg-black/35 p-3">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--gok-dim)]">House Artifacts</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {houseArtifacts.length ? houseArtifacts.map((artifact) => (
+                    <span key={artifact.name} className="border border-[var(--gok-line)] bg-black/45 px-3 py-2 text-xs font-black text-[var(--gok-silver)]">{artifact.name}</span>
+                  )) : <span className="text-sm text-[var(--gok-dim)]">No relics in your house archive yet.</span>}
+                </div>
+                <Link href="/map" className="gok-btn mt-3 inline-flex px-4 py-2 text-xs">Go Claim A Castle</Link>
+              </div>
+            </section>
           </div>
         </div>
       </section>
@@ -605,48 +502,18 @@ export default function HouseFounderPage() {
   );
 }
 
-function SigilPreview({ sigil, background, layers }) {
-  const clipPath = getShieldClip(sigil.shield);
-
+function LabeledInput({ label, value, onChange, placeholder }) {
   return (
-    <div className="mx-auto w-full max-w-[420px]">
-      <div className="relative aspect-[3/4] bg-black/30 p-4">
-        <div
-          className="absolute inset-4 border-[5px] shadow-2xl"
-          style={{
-            background,
-            borderColor: sigil.border,
-            clipPath,
-            boxShadow: "inset 0 0 42px rgba(0,0,0,.78), 0 26px 60px rgba(0,0,0,.7)",
-          }}
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.14),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.28))]" />
-          {layers.map((layer) => (
-            <div
-              key={layer.id}
-              className="absolute"
-              style={{
-                left: `${layer.x}%`,
-                top: `${layer.y}%`,
-                width: `${layer.size}%`,
-                aspectRatio: "1 / 1",
-                opacity: layer.opacity / 100,
-                transform: `translate(-50%, -50%) rotate(${layer.rotate}deg) scaleX(${layer.stretch / 100})`,
-                filter: "drop-shadow(0 8px 10px rgba(0,0,0,.82))",
-              }}
-            >
-              <ChargeIcon type={layer.charge} color={layer.color} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--gok-dim)]">
+      {label}
+      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="min-h-12 border border-[var(--gok-line)] bg-black/70 px-4 text-sm text-[var(--gok-silver)] outline-none focus:border-[var(--gok-line-strong)]" />
+    </label>
   );
 }
 
-function ControlBlock({ title, children }) {
+function ToolBlock({ title, children }) {
   return (
-    <section>
+    <section className="min-w-0">
       <p className="mb-3 text-xs font-bold uppercase tracking-[0.22em] text-[var(--gok-dim)]">{title}</p>
       {children}
     </section>
@@ -655,18 +522,9 @@ function ControlBlock({ title, children }) {
 
 function OptionGrid({ options, value, onChange }) {
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(5.25rem,1fr))] gap-2">
-      {options.map(([id, label, description]) => (
-        <button
-          key={id}
-          onClick={() => onChange(id)}
-          title={description}
-          className={`min-h-12 overflow-hidden border px-2 py-2 text-[0.72rem] font-bold leading-tight transition sm:text-xs ${
-            value === id
-              ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]"
-              : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"
-          }`}
-        >
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(5.4rem,1fr))] gap-2">
+      {options.map(([id, label]) => (
+        <button key={id} onClick={() => onChange(id)} className={`min-h-11 overflow-hidden border px-2 py-2 text-[0.68rem] font-bold leading-tight transition ${value === id ? "border-[var(--gok-line-strong)] bg-[rgba(196,193,184,0.12)] text-[var(--gok-silver)]" : "border-[var(--gok-line)] bg-black/40 text-[var(--gok-dim)] hover:text-[var(--gok-silver)]"}`}>
           {label}
         </button>
       ))}
@@ -676,109 +534,13 @@ function OptionGrid({ options, value, onChange }) {
 
 function ColorPicker({ title, selected, onPick }) {
   return (
-    <ControlBlock title={title}>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(2.25rem,1fr))] gap-2">
-        {tinctures.map(([name, color, description]) => (
-          <button
-            key={`${title}-${name}`}
-            onClick={() => onPick(color)}
-            className={`aspect-square min-h-9 border transition ${selected === color ? "border-[var(--gok-silver)]" : "border-[var(--gok-line)]"}`}
-            style={{ backgroundColor: color }}
-            title={`${name}: ${description}`}
-            aria-label={name}
-          />
+    <div>
+      <p className="mb-2 text-[0.62rem] font-black uppercase tracking-[0.16em] text-[var(--gok-dim)]">{title}</p>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(1.85rem,1fr))] gap-1.5">
+        {tinctures.map(([name, color]) => (
+          <button key={`${title}-${name}`} onClick={() => onPick(color)} className={`aspect-square min-h-7 border transition ${selected === color ? "border-[var(--gok-silver)]" : "border-[var(--gok-line)]"}`} style={{ backgroundColor: color }} title={name} aria-label={name} />
         ))}
       </div>
-    </ControlBlock>
-  );
-}
-
-function RangeControl({ label, value, min, max, onChange }) {
-  return (
-    <label className="block">
-      <span className="flex justify-between text-xs font-bold uppercase tracking-[0.18em] text-[var(--gok-dim)]">
-        {label}
-        <span>{value}</span>
-      </span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="mt-2 w-full accent-[var(--gok-steel)]"
-      />
-    </label>
-  );
-}
-
-function ChargeIcon({ type, color }) {
-  if (isSheetCharge(type)) {
-    return (
-      <span
-        aria-hidden="true"
-        className="block h-full w-full"
-        style={{
-          backgroundColor: color,
-          WebkitMask: `url(/sigils/charges/${type}.png) center / contain no-repeat`,
-          mask: `url(/sigils/charges/${type}.png) center / contain no-repeat`,
-        }}
-      />
-    );
-  }
-
-  const common = {
-    fill: color,
-    stroke: "rgba(0,0,0,.55)",
-    strokeWidth: 2,
-    strokeLinejoin: "round",
-    strokeLinecap: "round",
-  };
-
-  return (
-    <svg viewBox="0 0 100 100" aria-hidden="true" className="h-full w-full overflow-visible">
-      {type === "wolf" && <path {...common} d="M10 58 L25 24 L38 38 L50 14 L61 38 L79 24 L71 50 L91 72 L67 68 L55 91 L45 70 L20 78 Z" />}
-      {type === "direwolf" && <path {...common} d="M7 61 L19 30 L32 39 L41 18 L50 36 L60 18 L69 39 L82 30 L74 58 L94 70 L72 72 L62 91 L50 75 L38 91 L28 72 L6 70 Z" />}
-      {type === "lion" && <path {...common} d="M22 73 L30 45 L18 30 L36 31 L43 12 L52 30 L70 16 L68 38 L88 45 L69 55 L74 82 L55 68 L38 89 L39 65 Z" />}
-      {type === "dragon" && <path {...common} d="M8 62 C22 27 46 40 50 17 L65 35 L91 20 L78 50 L92 68 L66 66 L56 91 L43 70 C30 79 16 76 8 62 Z" />}
-      {type === "griffin" && <path {...common} d="M12 68 C23 30 51 40 54 16 L66 33 L88 26 L75 45 L88 61 L67 60 L58 86 L45 66 L25 82 L31 60 Z" />}
-      {type === "kraken" && <path {...common} d="M50 9 C70 9 80 25 70 42 C88 45 93 62 82 77 C75 61 63 61 56 72 L63 95 L50 82 L37 95 L44 72 C37 61 25 61 18 77 C7 62 12 45 30 42 C20 25 30 9 50 9 Z" />}
-      {type === "stag" && <path {...common} d="M34 91 L42 58 L27 45 L11 55 L23 34 L8 17 L31 26 L36 7 L45 30 H55 L64 7 L69 26 L92 17 L77 34 L89 55 L73 45 L58 58 L66 91 L50 76 Z" />}
-      {type === "falcon" && <path {...common} d="M6 55 C27 24 44 18 50 42 C56 18 73 24 94 55 C74 51 60 57 54 76 L50 94 L46 76 C40 57 26 51 6 55 Z" />}
-      {type === "eagle" && <path {...common} d="M5 50 C25 20 42 19 50 39 C58 19 75 20 95 50 C76 49 65 57 58 73 L50 94 L42 73 C35 57 24 49 5 50 Z M40 42 L50 31 L60 42 L50 49 Z" />}
-      {type === "raven" && <path {...common} d="M15 55 C37 18 66 20 84 49 L97 48 L86 60 C80 76 61 87 40 79 L18 93 L28 70 C18 65 12 61 15 55 Z" />}
-      {type === "bear" && <path {...common} d="M22 24 L34 13 L44 24 H56 L66 13 L79 24 L80 58 C78 80 63 91 50 91 C37 91 22 80 20 58 Z" />}
-      {type === "horse" && <path {...common} d="M26 91 L34 56 L24 45 L30 20 L54 12 L75 28 L66 49 L79 66 L66 91 L58 64 L43 59 L39 91 Z" />}
-      {type === "serpent" && <path {...common} d="M67 13 C36 14 26 36 48 46 C72 57 63 80 30 85 L20 70 C49 72 52 60 35 53 C8 41 25 11 67 13 Z M68 13 L88 21 L68 31 Z" />}
-      {type === "boar" && <path {...common} d="M15 60 C20 34 47 26 72 35 L88 26 L83 47 L94 61 L78 66 L68 84 L58 68 L34 72 L22 89 L21 69 Z" />}
-      {type === "bull" && <path {...common} d="M20 34 C23 15 38 10 45 28 H55 C62 10 77 15 80 34 L67 28 L71 56 C70 77 60 91 50 91 C40 91 30 77 29 56 L33 28 Z" />}
-      {type === "ram" && <path {...common} d="M20 44 C8 28 23 10 40 22 C46 8 61 8 67 22 C84 10 99 28 86 44 C78 32 65 35 66 50 C66 74 58 90 50 90 C42 90 34 74 34 50 C35 35 22 32 20 44 Z" />}
-      {type === "rose" && (
-        <>
-          <circle {...common} cx="50" cy="50" r="13" />
-          {[0, 60, 120, 180, 240, 300].map((angle) => (
-            <ellipse key={angle} {...common} cx="50" cy="31" rx="12" ry="20" transform={`rotate(${angle} 50 50)`} />
-          ))}
-        </>
-      )}
-      {type === "sun" && <path {...common} d="M50 5 L58 30 L82 18 L70 42 L95 50 L70 58 L82 82 L58 70 L50 95 L42 70 L18 82 L30 58 L5 50 L30 42 L18 18 L42 30 Z" />}
-      {type === "moon" && <path {...common} d="M70 10 C45 22 38 53 58 76 C45 78 27 69 21 51 C13 25 39 4 70 10 Z" />}
-      {type === "tower" && <path {...common} d="M22 90 V28 H32 V12 H44 V28 H56 V12 H68 V28 H78 V90 H58 V68 H42 V90 Z" />}
-      {type === "sword" && <path {...common} d="M47 8 H53 L58 60 L78 69 L69 81 L56 72 L53 95 H47 L44 72 L31 81 L22 69 L42 60 Z" />}
-      {type === "crown" && <path {...common} d="M12 78 L18 30 L38 58 L50 18 L62 58 L82 30 L88 78 Z" />}
-      {type === "ship" && <path {...common} d="M15 60 H85 L72 82 H28 Z M48 18 H54 V60 H48 Z M54 24 C70 30 78 42 80 55 H54 Z M47 28 C32 33 24 44 22 56 H47 Z" />}
-      {type === "tree" && <path {...common} d="M45 92 L48 64 C29 64 16 51 22 36 C26 25 37 25 41 31 C43 16 58 10 66 20 C75 19 84 29 78 42 C90 50 78 67 58 64 L62 92 Z" />}
-      {type === "star" && <path {...common} d="M50 6 L61 37 L94 37 L67 56 L78 90 L50 70 L22 90 L33 56 L6 37 L39 37 Z" />}
-      {type === "axe" && <path {...common} d="M44 91 L51 48 L32 36 C39 18 57 13 82 18 C76 42 64 58 51 48 L58 91 Z" />}
-      {type === "chalice" && <path {...common} d="M27 15 H73 L66 46 C64 58 57 65 50 65 C43 65 36 58 34 46 Z M47 65 H53 V83 H70 V91 H30 V83 H47 Z" />}
-      {type === "key" && <path {...common} d="M34 17 C49 17 58 31 52 44 L91 83 L79 95 L70 86 L63 92 L56 85 L49 91 L39 81 L44 53 C31 58 17 48 17 34 C17 24 24 17 34 17 Z" />}
-      {type === "flame" && <path {...common} d="M51 95 C28 85 20 67 30 49 C36 37 45 32 43 16 C58 25 62 42 59 54 C68 48 72 38 72 28 C89 50 85 78 51 95 Z" />}
-      {type === "fish" && <path {...common} d="M8 52 C27 28 58 25 79 45 L94 32 V72 L79 59 C56 78 27 75 8 52 Z M63 44 L71 36 L70 50 Z" />}
-      {type === "hammer" && <path {...common} d="M16 32 L31 17 L54 40 L79 15 L89 25 L64 50 L86 72 L72 86 L50 64 L25 89 L15 79 L40 54 Z" />}
-      {type === "castle" && <path {...common} d="M14 88 V32 H24 V15 H36 V32 H45 V15 H56 V32 H65 V15 H77 V32 H87 V88 H64 V67 H36 V88 Z" />}
-      {type === "hand" && <path {...common} d="M25 91 C18 75 18 59 23 45 L29 21 C31 14 42 16 41 24 L38 45 L45 13 C47 6 58 8 57 17 L53 44 L62 18 C65 10 76 14 73 23 L64 50 L75 36 C81 28 91 36 85 45 L64 75 C56 89 42 96 25 91 Z" />}
-      {type === "leaf" && <path {...common} d="M12 82 C17 36 48 10 88 12 C86 52 61 83 18 88 C33 70 51 50 75 27 C49 41 31 61 12 82 Z" />}
-      {type === "skull" && <path {...common} d="M50 9 C72 9 88 27 88 50 C88 64 80 72 69 77 V91 H31 V77 C20 72 12 64 12 50 C12 27 28 9 50 9 Z M31 47 A9 9 0 1 0 31 65 A9 9 0 1 0 31 47 M69 47 A9 9 0 1 0 69 65 A9 9 0 1 0 69 47 M44 73 H56 L50 61 Z" />}
-    </svg>
+    </div>
   );
 }

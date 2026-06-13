@@ -12,15 +12,20 @@ const characters = [
   ["Alicent Hightower", "House Hightower", "A queen, mother, and political force whose court loyalties helped ignite the Dance of the Dragons.", "Green Queen"],
   ["Arya Stark", "House Stark", "A Stark daughter shaped by war, loss, Braavos, and a fierce refusal to become what others expected.", "Faceless Wolf"],
   ["Baela Targaryen", "House Targaryen", "A bold dragonrider of royal blood, known for courage, temper, and the fire of House Targaryen.", "Dragonrider"],
+  ["Baelon Targaryen", "House Targaryen", "Known as the Brave, Baelon was a beloved prince of the old dragon dynasty, rider of Vhagar, son of Jaehaerys and Alysanne, and father to Viserys and Daemon.", "The Brave Prince"],
+  ["Baelor I Targaryen", "House Targaryen", "Baelor the Blessed was a pious king remembered for devotion, fasting, mercy, and decisions that made some call him holy while others called him dangerously unworldly.", "The Blessed King"],
+  ["Baelor Breakspear", "House Targaryen", "Prince Baelor was heir to the Iron Throne, admired for honor and ability, and remembered as one of the great lost hopes of House Targaryen.", "Prince of Dragonstone"],
   ["Balon Greyjoy", "House Greyjoy", "Lord of the Iron Islands, stubborn in his dream of independence and old reaving glory.", "Lord Reaper"],
   ["Barristan Selmy", "Kingsguard", "A legendary knight whose honor and sword skill made him one of the great names of the Kingsguard.", "Bold Knight"],
   ["Beric Dondarrion", "House Dondarrion", "A lightning lord returned from death again and again, carrying a strange purpose through the war-torn Riverlands.", "Lightning Lord"],
+  ["Brandon Stark the Builder", "House Stark", "A legendary founder from the Age of Heroes, credited in northern memory with raising Winterfell, the Wall, and other wonders too old for clean history.", "The Builder"],
   ["Bran Stark", "House Stark", "A broken boy who became something older and stranger, tied to memory, ravens, weirwoods, and the long sight.", "Three Eyed Raven"],
   ["Brienne of Tarth", "House Tarth", "A warrior of rare loyalty and uncommon honor, carrying vows through a realm that mocks what it needs most.", "Knight of Tarth"],
   ["Bronn", "Sellsword", "A sharp sellsword who survives by wit, timing, and knowing exactly what people are willing to pay for.", "Cutthroat Lord"],
   ["Brynden Rivers", "House Targaryen", "Bloodraven: bastard, sorcerer, spymaster, and greenseer whose thousand eyes watched the realm from shadow.", "Bloodraven"],
   ["Catelyn Stark", "House Tully", "Lady of Winterfell, mother of wolves, and a woman whose family loyalties shaped the early War of the Five Kings.", "Lady Stark"],
   ["Cersei Lannister", "House Lannister", "A queen of pride, fear, and ruthless love for her children, always fighting the walls closing around her.", "Lion Queen"],
+  ["Cregan Stark", "House Stark", "The Wolf of the North entered the Dance of the Dragons late but decisively, bringing northern justice to King's Landing during the Hour of the Wolf.", "Wolf of the North"],
   ["Criston Cole", "Kingsguard", "A knight whose broken loyalties and fierce pride helped turn court tension into civil war.", "Kingmaker"],
   ["Daemon Targaryen", "House Targaryen", "The Rogue Prince, dangerous and charismatic, as comfortable in war as in scandal.", "Rogue Prince"],
   ["Daenerys Targaryen", "House Targaryen", "The last dragon queen of exile, breaker of chains, and claimant whose mercy and fire became impossible to separate.", "Mother of Dragons"],
@@ -30,15 +35,20 @@ const characters = [
   ["Gendry", "House Baratheon", "A royal bastard and smith whose bloodline carries more danger than he ever asked for.", "Storm-Blood Smith"],
   ["Gregor Clegane", "House Clegane", "The Mountain: a brutal instrument of terror whose name alone can empty a road.", "The Mountain"],
   ["Helaena Targaryen", "House Targaryen", "A gentle queen and dreamer whose strange words often sound like prophecy after the blood has already spilled.", "Dreaming Queen"],
+  ["Harwin Strong", "House Strong", "Called Breakbones, Harwin Strong was famed for strength, court scandal, and the shadow his relationship with Rhaenyra cast across the succession.", "Breakbones"],
   ["Jaime Lannister", "House Lannister", "Kingslayer, knight, brother, and man caught between reputation, love, shame, and a buried wish for honor.", "Golden Lion"],
   ["Jaqen H'ghar", "Faceless Men", "A servant of the Many-Faced God whose gifts come wrapped in riddles and death.", "Faceless Man"],
+  ["Jacaerys Velaryon", "House Velaryon", "Rhaenyra's eldest son, Jacaerys was a young dragonrider and envoy whose courage and diplomacy mattered deeply to the black cause.", "Prince of Dragonstone"],
   ["Joffrey Baratheon", "House Baratheon", "A cruel boy king whose crown made every weakness sharper and every whim deadly.", "Boy King"],
+  ["Joffrey Velaryon", "House Velaryon", "A young prince of Rhaenyra's line, Joffrey was caught in the terrible inheritance of the Dance and remembered for the cost paid by children of dragonblood.", "Young Prince"],
   ["Jon Snow", "House Stark", "A bastard of Winterfell, brother of the Watch, and reluctant leader drawn again and again toward impossible duty.", "White Wolf"],
   ["Jorah Mormont", "House Mormont", "An exiled knight whose loyalty to Daenerys is marked by shame, longing, and stubborn courage.", "Exiled Bear"],
   ["Laena Velaryon", "House Velaryon", "A dragonrider of Driftmark, remembered for fire, pride, and the great dragon Vhagar.", "Sea Dragon"],
   ["Laenor Velaryon", "House Velaryon", "A dragonrider and heir of Driftmark, caught between duty, court expectation, and private truth.", "Velaryon Heir"],
   ["Larys Strong", "House Strong", "A quiet spider of Harrenhal, trading in secrets, patience, and the power of being underestimated.", "Clubfoot"],
   ["Loras Tyrell", "House Tyrell", "The Knight of Flowers, bright in tourneys and dangerous in the politics of beauty and reputation.", "Knight of Flowers"],
+  ["Lucerys Velaryon", "House Velaryon", "Rhaenyra's son Lucerys carried a peace mission that became one of the Dance's first great tragedies above Shipbreaker Bay.", "Young Dragonrider"],
+  ["Maekar Targaryen", "House Targaryen", "Maekar was a hard, martial Targaryen prince and later king, father to Aegon V and a figure tied to the Dunk and Egg era.", "Warrior King"],
   ["Margaery Tyrell", "House Tyrell", "A queenly player of soft power, public kindness, and careful ambition.", "Rose Queen"],
   ["Melisandre", "Asshai", "A red priestess whose visions, fires, and certainty bring both miracles and ruin.", "Red Woman"],
   ["Mysaria", "Lys", "The White Worm, a listener in the walls of power whose whispers travel farther than armies.", "White Worm"],
@@ -49,6 +59,8 @@ const characters = [
   ["Rhaegar Targaryen", "House Targaryen", "A silver prince of prophecy, song, and tragedy whose choices reshaped the realm.", "Dragon Prince"],
   ["Rhaenys Targaryen", "House Targaryen", "The Queen Who Never Was, a dragonrider of dignity, pride, and power denied.", "Queen Who Never Was"],
   ["Rhaenyra Targaryen", "House Targaryen", "Named heir to the Iron Throne, her claim became the burning heart of the Dance of the Dragons.", "Black Queen"],
+  ["Rickard Stark", "House Stark", "Lord Rickard Stark was the head of Winterfell before Robert's Rebellion, and his death by royal cruelty helped light the realm on fire.", "Lord of Winterfell"],
+  ["Rickon Stark", "House Stark", "The youngest Stark son, Rickon represents the scattered wolf pups of Winterfell and the brutal cost of southern wars reaching northern children.", "Young Wolf"],
   ["Robb Stark", "House Stark", "The Young Wolf, crowned by northern swords and undone by love, honor, and betrayal.", "Young Wolf"],
   ["Robert Baratheon", "House Baratheon", "A warrior king who won a throne with a hammer and lost himself in the peace that followed.", "Usurper King"],
   ["Sansa Stark", "House Stark", "A northern daughter who survives courts, cages, and cruelty by learning the shape of power.", "Lady of Winterfell"],
@@ -124,6 +136,27 @@ const characterImages = {
   "Ygritte": [{ kind: "Show Portrait", title: "Ygritte", source: "gameofthrones.fandom.com", src: "https://static.wikia.nocookie.net/gameofthrones/images/2/28/Ygritte-promotionals4pic.jpg/revision/latest/scale-to-width-down/601?cb=20170107042949" }],
 };
 
+const localCharacterImages = {
+  "Aegon I Targaryen": [{ kind: "Local Archive Portrait", title: "Aegon Targaryen", source: "Game of Kings archive", src: "/three-eyed-raven/AegonTargaryen1.png" }],
+  "Aegon II Targaryen": [{ kind: "Local Archive Portrait", title: "Aegon Targaryen", source: "Game of Kings archive", src: "/three-eyed-raven/AegonTargaryen3.png" }],
+  "Aemon Targaryen": [{ kind: "Local Archive Portrait", title: "Aemon Targaryen", source: "Game of Kings archive", src: "/three-eyed-raven/AemonTargaryen1.png" }],
+  "Baelon Targaryen": [{ kind: "Local Archive Portrait", title: "Baelon Targaryen", source: "Game of Kings archive", src: "/three-eyed-raven/BaelonTargaryen.png" }],
+  "Baelor I Targaryen": [{ kind: "Local Archive Portrait", title: "Baelor the Blessed", source: "Game of Kings archive", src: "/three-eyed-raven/Baelor The Blessed.png" }],
+  "Baelor Breakspear": [{ kind: "Local Archive Portrait", title: "Baelor Breakspear", source: "Game of Kings archive", src: "/three-eyed-raven/BaelorBreakspear.gif" }],
+  "Brandon Stark the Builder": [{ kind: "Local Archive Portrait", title: "Brandon Stark the Builder", source: "Game of Kings archive", src: "/three-eyed-raven/Brandon Stark The Builder.png" }],
+  "Cregan Stark": [{ kind: "Local Archive Portrait", title: "Cregan Stark", source: "Game of Kings archive", src: "/three-eyed-raven/CreganStark2.webp" }],
+  "Harwin Strong": [{ kind: "Local Archive Portrait", title: "Harwin Strong", source: "Game of Kings archive", src: "/three-eyed-raven/Harwin Strong.jpg" }],
+  "Jacaerys Velaryon": [{ kind: "Local Archive Portrait", title: "Jacaerys Velaryon", source: "Game of Kings archive", src: "/three-eyed-raven/Jacaerys Velaryon.jpg" }],
+  "Joffrey Velaryon": [{ kind: "Local Archive Portrait", title: "Joffrey Velaryon", source: "Game of Kings archive", src: "/three-eyed-raven/Joffrey Velaryon.jpg" }],
+  "Lucerys Velaryon": [{ kind: "Local Archive Portrait", title: "Lucerys Velaryon", source: "Game of Kings archive", src: "/three-eyed-raven/Lucerys Velaryon.jpg" }],
+  "Maekar Targaryen": [{ kind: "Local Archive Portrait", title: "Maekar Targaryen", source: "Game of Kings archive", src: "/three-eyed-raven/MaekarTargaryen.webp" }],
+  "Nymeria": [{ kind: "Local Archive Portrait", title: "Nymeria", source: "Game of Kings archive", src: "/three-eyed-raven/Nymeria.png" }],
+  "Rickard Stark": [{ kind: "Local Archive Portrait", title: "Rickard Stark", source: "Game of Kings archive", src: "/three-eyed-raven/Rickard Stark.avif" }],
+  "Rickon Stark": [{ kind: "Local Archive Portrait", title: "Rickon Stark", source: "Game of Kings archive", src: "/three-eyed-raven/Rickon Stark 1.png" }],
+  "Viserys I Targaryen": [{ kind: "Local Archive Portrait", title: "Viserys Targaryen", source: "Game of Kings archive", src: "/three-eyed-raven/ViserysTargaryen.webp" }],
+  "Viserys III Targaryen": [{ kind: "Local Archive Portrait", title: "Viserys Targaryen", source: "Game of Kings archive", src: "/three-eyed-raven/ViserysTargaryen2.png" }],
+};
+
 function portraitStyle(name, house) {
   const seed = [...name].reduce((total, char) => total + char.charCodeAt(0), 0);
   const palettes = [
@@ -146,7 +179,7 @@ export default function ThreeEyedRavenPage() {
   const [brokenImages, setBrokenImages] = useState({});
   const selected = useMemo(() => characters.find(([name]) => name === selectedName) || characters[0], [selectedName]);
   const [name, house, lore, title] = selected;
-  const images = characterImages[name] || [];
+  const images = [...(localCharacterImages[name] || []), ...(characterImages[name] || [])];
   const primaryImage = images.find((image) => !brokenImages[image.src]);
   const initials = name
     .split(" ")
@@ -163,7 +196,11 @@ export default function ThreeEyedRavenPage() {
     <main className="min-h-screen bg-[#070504] px-4 py-6 text-stone-100">
       <SiteNav className="-mx-4 -mt-6 mb-6" />
 
-      <section className="mx-auto mt-6 grid max-w-7xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
+      <section className="mx-auto mt-6 max-w-7xl">
+        <img src="/banners/Westeros front page.png" alt="" className="mb-5 h-28 w-full border border-[var(--gok-line)] bg-black object-cover opacity-80" />
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="gok-panel p-4">
           <p className="gok-eyebrow">Three Eyed Raven</p>
           <h1 className="mt-3 text-3xl font-normal uppercase tracking-[0.08em] text-[var(--gok-silver)]">
