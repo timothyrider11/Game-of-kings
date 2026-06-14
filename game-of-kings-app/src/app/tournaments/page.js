@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import SiteNav from "../../components/SiteNav";
-import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
+import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
@@ -20,57 +20,6 @@ const tournamentEvents = [
   "crowd favorite emerges",
   "champion crowned",
 ];
-
-const baseFighters = [
-  ["Ser Alaric", "House Vance", 72, 82, 67, 76, 54, 65],
-  ["Lord Webber", "House Webber", 68, 70, 59, 78, 63, 58],
-  ["Ser Mandon", "House Moore", 78, 66, 52, 74, 48, 62],
-  ["Lady Rohanne", "House Rowan", 60, 86, 74, 70, 80, 64],
-  ["Lord Caswell", "House Caswell", 70, 73, 66, 72, 58, 52],
-  ["Ser Janos", "House Slynt", 55, 61, 58, 64, 45, 78],
-  ["Ser Brynden", "House Tully", 76, 79, 70, 82, 76, 57],
-  ["Lord Royce", "House Royce", 84, 72, 55, 85, 70, 49],
-  ["Ser Gwayne", "House Hightower", 69, 83, 66, 71, 82, 50],
-  ["Lady Ynys", "House Arryn", 58, 78, 82, 69, 68, 70],
-  ["Ser Marq", "House Piper", 64, 72, 88, 62, 52, 74],
-  ["Lord Manderly", "House Manderly", 80, 68, 54, 88, 74, 48],
-  ["Ser Damon", "House Lannister", 77, 80, 69, 72, 88, 55],
-  ["Lady Myria", "House Martell", 61, 84, 90, 66, 72, 69],
-  ["Ser Harlan", "House Tyrell", 66, 81, 73, 70, 84, 61],
-  ["Lord Stark", "House Stark", 82, 74, 63, 90, 86, 44],
-  ["Ser Osric", "House Dayne", 73, 91, 79, 72, 89, 60],
-  ["Lord Celtigar", "House Celtigar", 67, 69, 62, 76, 71, 72],
-  ["Ser Addam", "House Velaryon", 70, 82, 85, 73, 78, 56],
-  ["Lord Tarth", "House Tarth", 86, 70, 58, 84, 73, 50],
-  ["Ser Symon", "House Dondarrion", 74, 76, 67, 79, 68, 63],
-  ["Lady Alys", "House Blackwood", 59, 83, 77, 68, 75, 80],
-  ["Ser Walder", "House Frey", 62, 65, 58, 70, 67, 79],
-  ["Lord Mallister", "House Mallister", 75, 77, 69, 78, 76, 53],
-  ["Ser Theo", "House Redwyne", 63, 75, 71, 66, 72, 76],
-  ["Lady Elinor", "House Beesbury", 55, 74, 80, 64, 58, 85],
-  ["Ser Lyonel", "House Baratheon", 91, 70, 59, 82, 84, 46],
-  ["Lord Yronwood", "House Yronwood", 79, 73, 66, 80, 72, 57],
-  ["Ser Rolland", "House Storm", 83, 68, 64, 86, 61, 66],
-  ["Lady Meredyth", "House Crane", 57, 82, 86, 65, 69, 73],
-  ["Ser Quentyn", "House Qorgyle", 66, 76, 78, 69, 62, 81],
-  ["Lord Harlaw", "House Harlaw", 81, 69, 61, 88, 70, 54],
-];
-
-function fighterFromRow(row, index) {
-  const [name, house, strength, skill, speed, endurance, reputation, luck] = row;
-  return {
-    id: `${house}-${name}-${index}`.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    name,
-    house,
-    strength,
-    skill,
-    speed,
-    endurance,
-    reputation,
-    luck,
-    knightImage: `/knights/${name.startsWith("Lady") ? "female" : "male"}/${String((index % 60) + 1).padStart(2, "0")}.png`,
-  };
-}
 
 function playerFighter(realm) {
   const house = realm?.houseName?.trim() ? `House ${realm.houseName.trim()}` : "House Founder";
@@ -183,16 +132,18 @@ export default function TournamentsPage() {
   const [tournamentType, setTournamentType] = useState("Joust");
   const [weather, setWeather] = useState(weatherOptions[0]);
   const [crowdMood, setCrowdMood] = useState(crowdMoods[0]);
-  const [fighters, setFighters] = useState([]);
+  const [publicEntrants, setPublicEntrants] = useState([]);
   const [currentPairs, setCurrentPairs] = useState([]);
   const [roundNumber, setRoundNumber] = useState(1);
   const [completedRounds, setCompletedRounds] = useState([]);
-  const [status, setStatus] = useState("idle");
+  const [status, setStatus] = useState("signup");
   const [heraldFeed, setHeraldFeed] = useState([]);
   const [predictionPoints, setPredictionPoints] = useState(100);
   const [predictions, setPredictions] = useState({});
   const [miniGame, setMiniGame] = useState({ joust: 0, archery: 0, melee: 0, smithing: 0 });
   const [message, setMessage] = useState("");
+
+  const tournamentKey = `open-${tournamentType.toLowerCase()}-${bracketSize}`;
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -205,16 +156,58 @@ export default function TournamentsPage() {
     });
   }, []);
 
+  useEffect(() => {
+    let alive = true;
+
+    async function loadEntrants() {
+      const { activities } = await loadRealmActivity(500);
+      if (!alive) return;
+      const entrants = (activities || [])
+        .filter((activity) => activity.type === "tournament" && activity.meta?.action === "signup")
+        .filter((activity) => activity.meta?.tournamentKey === tournamentKey)
+        .map((activity) => activity.meta?.fighter)
+        .filter(Boolean)
+        .filter((fighter, index, all) => all.findIndex((entry) => entry.id === fighter.id || entry.house === fighter.house) === index);
+      setPublicEntrants(entrants);
+    }
+
+    loadEntrants();
+    const timer = setInterval(loadEntrants, 8000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [tournamentKey]);
+
+  const playerEntry = useMemo(() => playerFighter(realm), [realm]);
+  const localSignup = realm.tournamentSignups?.[tournamentKey];
+  const signedUp = Boolean(localSignup || publicEntrants.some((fighter) => fighter.id === playerEntry.id || fighter.house === playerEntry.house));
+  const signupRoster = useMemo(() => {
+    const entries = signedUp && !publicEntrants.some((fighter) => fighter.id === playerEntry.id || fighter.house === playerEntry.house)
+      ? [playerEntry, ...publicEntrants]
+      : publicEntrants;
+
+    return entries
+      .filter((fighter, index, all) => all.findIndex((entry) => entry.id === fighter.id || entry.house === fighter.house) === index)
+      .slice(0, bracketSize);
+  }, [bracketSize, playerEntry, publicEntrants, signedUp]);
+
+  const bracketSlots = useMemo(() => {
+    const emptyCount = Math.max(0, bracketSize - signupRoster.length);
+    return [...signupRoster, ...Array.from({ length: emptyCount }, (_, index) => ({ id: `empty-${index}`, empty: true, name: "Open Seat", house: "Awaiting a house" }))];
+  }, [bracketSize, signupRoster]);
+
   const nextMatch = currentPairs[0];
   const champion = status === "complete" ? completedRounds.at(-1)?.matches?.at(-1)?.winner : null;
 
-  function seedTournament(size = bracketSize, type = tournamentType) {
-    const roster = [playerFighter(realm), ...baseFighters.map(fighterFromRow)]
-      .filter((fighter, index, all) => all.findIndex((entry) => entry.house === fighter.house) === index)
-      .slice(0, size)
-      .sort(() => Math.random() - 0.5);
+  function openBracketFromSignups() {
+    if (signupRoster.length < bracketSize) {
+      setMessage(`${bracketSize - signupRoster.length} more houses must sign up before the bracket can begin.`);
+      return;
+    }
+
+    const roster = [...signupRoster];
     const nextWeather = weatherOptions[Math.floor(Math.random() * weatherOptions.length)];
-    setFighters(roster);
     setCurrentPairs(makePairs(roster));
     setCompletedRounds([]);
     setRoundNumber(1);
@@ -223,11 +216,11 @@ export default function TournamentsPage() {
     setStatus("ready");
     setPredictions({});
     setHeraldFeed([
-      `The heralds call ${roster.length} houses to the lists for a ${type.toLowerCase()} tournament.`,
+      `The heralds close the rolls with ${roster.length} signed houses.`,
       `The field is set beneath ${nextWeather}.`,
       `The crowd roars as ${roster[0].house} enters the lists.`,
     ]);
-    setMessage("Tournament seeded. Press start and the bracket will run automatically.");
+    setMessage("The bracket is filled from signed houses. The tournament is ready.");
   }
 
   const saveRealm = useCallback((nextRealm) => {
@@ -240,6 +233,44 @@ export default function TournamentsPage() {
     if (!matchId) return;
     setPredictions((current) => ({ ...current, [matchId]: fighterId }));
     setMessage("Prediction recorded with fake points only.");
+  }
+
+  function signUpTournament() {
+    if (!realm.houseName?.trim() && !realm.rulerName?.trim()) {
+      setMessage("Found your house first, then enter the tournament rolls.");
+      return;
+    }
+
+    if (signedUp) {
+      setMessage("Your house is already written into the tournament rolls.");
+      return;
+    }
+
+    const fighter = playerFighter(realm);
+    const nextRealm = {
+      ...realm,
+      tournamentSignups: {
+        ...(realm.tournamentSignups || {}),
+        [tournamentKey]: {
+          tournamentType,
+          bracketSize,
+          fighter,
+          at: new Date().toISOString(),
+        },
+      },
+    };
+
+    saveRealm(nextRealm);
+    setPublicEntrants((current) => [fighter, ...current].filter((entry, index, all) => all.findIndex((item) => item.id === entry.id || item.house === entry.house) === index));
+    recordRealmActivity(buildActivity({
+      type: "tournament",
+      title: "A House Entered The Lists",
+      actor: fighter.house,
+      body: `${fighter.name} of ${fighter.house} signed up for the ${tournamentType} tournament.`,
+      meta: { action: "signup", tournamentKey, tournamentType, bracketSize, fighter },
+    }));
+    setHeraldFeed((current) => [`${fighter.house} has entered the ${tournamentType.toLowerCase()} lists.`, ...current].slice(0, 14));
+    setMessage("You are signed up. The bracket will fill as more houses join.");
   }
 
   const resolveNextMatch = useCallback(() => {
@@ -310,7 +341,7 @@ export default function TournamentsPage() {
     if (status !== "running") return undefined;
     const timer = setInterval(() => {
       const updates = [
-        `The crowd roars as ${fighters[Math.floor(Math.random() * Math.max(1, fighters.length))]?.house || "a noble house"} enters the lists.`,
+        `The crowd roars as ${signupRoster[Math.floor(Math.random() * Math.max(1, signupRoster.length))]?.house || "a noble house"} enters the lists.`,
         "The maesters whisper of an injury.",
         "A noble house rivalry begins near the viewing rail.",
         "The champion's banner snaps above the yard.",
@@ -319,7 +350,7 @@ export default function TournamentsPage() {
       setHeraldFeed((current) => [updates[Math.floor(Math.random() * updates.length)], ...current].slice(0, 14));
     }, 6500);
     return () => clearInterval(timer);
-  }, [status, fighters, weather]);
+  }, [status, signupRoster, weather]);
 
   function playMiniGame(type) {
     const roll = Math.floor(35 + Math.random() * 66);
@@ -344,17 +375,24 @@ export default function TournamentsPage() {
       <SiteNav className="-mx-4 -mt-6 mb-6" />
 
       <section className="mx-auto mt-6 max-w-[1760px]">
-        <div className="relative overflow-hidden border border-[var(--gok-line)] bg-black">
-          <img src="/banners/TournamentGroundsFullPage.png" alt="" className="h-[18rem] w-full object-cover opacity-80 md:h-[25rem]" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 p-5 text-center">
-            <p className="gok-eyebrow">Tournament Grounds</p>
-            <h1 className="mt-2 text-4xl uppercase tracking-[0.34em] text-[var(--gok-silver)] md:text-6xl">
-              Tournament Grounds
-            </h1>
-            <p className="mx-auto mt-3 max-w-4xl text-sm leading-6 text-[rgba(210,205,194,0.72)]">
-              Weighted brackets, visible odds, herald updates, crowd mood, weather, injuries, upsets, fake prediction points, trophies, and mini-games.
-            </p>
+        <div className="relative overflow-hidden border border-[var(--gok-line)] bg-black p-5 shadow-2xl shadow-black">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#2a2218,transparent_35%),linear-gradient(90deg,#070707,#0e0c09_45%,#050505)]" />
+          <div className="relative z-10 grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+            <div className="hidden h-24 border border-[var(--gok-line)] bg-[url('/banners/TournamentGrounds.png')] bg-cover bg-left opacity-55 lg:block" />
+            <div className="text-center">
+              <p className="gok-eyebrow">Tournament Grounds</p>
+              <h1 className="mt-2 text-4xl uppercase tracking-[0.34em] text-[var(--gok-silver)] md:text-6xl">Tournament Grounds</h1>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)] sm:grid-cols-4">
+                <Stat label="Trial" value={tournamentType} />
+                <Stat label="Status" value={status === "signup" ? "Signing Up" : status} />
+                <Stat label="Rolls" value={`${signupRoster.length} / ${bracketSize}`} />
+                <Stat label="Prize" value="Gold and Trophy" />
+              </div>
+            </div>
+            <div className="hidden h-24 border border-[var(--gok-line)] bg-[url('/banners/TournamentGrounds.png')] bg-cover bg-right opacity-55 lg:block" />
+          </div>
+          <div className="relative z-10 mt-5 h-3 overflow-hidden border border-red-950 bg-black">
+            <div className="h-full bg-red-950" style={{ width: `${Math.round((signupRoster.length / bracketSize) * 100)}%` }} />
           </div>
           {message && <p className="relative z-10 mt-4 border border-[var(--gok-line)] bg-black/50 p-3 text-sm text-[var(--gok-parchment)]">{message}</p>}
         </div>
@@ -375,9 +413,14 @@ export default function TournamentsPage() {
                   {["Joust", "Archery", "Melee", "Smithing"].map((type) => <option key={type} value={type}>{type}</option>)}
                 </select>
               </label>
-              <button onClick={() => seedTournament()} className="gok-btn gok-btn-blood min-h-12 px-5 py-3">Seed Tournament</button>
+              <button onClick={signUpTournament} disabled={signedUp || signupRoster.length >= bracketSize} className="gok-btn gok-btn-blood min-h-12 px-5 py-3 disabled:opacity-45">
+                {signedUp ? "Already Signed Up" : "Sign Up For The Lists"}
+              </button>
+              <button onClick={openBracketFromSignups} disabled={signupRoster.length < bracketSize || currentPairs.length > 0 || status === "complete"} className="gok-btn min-h-12 px-5 py-3 disabled:opacity-45">
+                Open Filled Bracket
+              </button>
               <button onClick={() => setStatus(status === "running" ? "paused" : "running")} disabled={!currentPairs.length} className="gok-btn min-h-12 px-5 py-3 disabled:opacity-45">
-                {status === "running" ? "Pause Heralds" : "Start Automatic Run"}
+                {status === "running" ? "Pause Heralds" : "Begin Tournament"}
               </button>
               <button onClick={resolveNextMatch} disabled={!currentPairs.length || status === "complete"} className="gok-btn min-h-12 px-5 py-3 disabled:opacity-45">Run Next Match</button>
             </div>
@@ -416,8 +459,23 @@ export default function TournamentsPage() {
                   </div>
                 </article>
               )) : (
-                <div className="border border-[var(--gok-line)] bg-black/55 p-6 text-center text-[var(--gok-dim)]">
-                  Seed a tournament to call fighters to the lists.
+                <div className="grid gap-3 border border-[var(--gok-line)] bg-black/55 p-4">
+                  <p className="text-center text-[var(--gok-dim)]">The bracket fills only when real houses sign up.</p>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {bracketSlots.map((fighter, index) => (
+                      <div key={`${fighter.id}-${index}`} className={`flex items-center gap-3 border border-[var(--gok-line)] bg-black/60 p-3 ${fighter.empty ? "opacity-45" : ""}`}>
+                        {fighter.empty ? (
+                          <div className="grid h-14 w-12 place-items-center border border-dashed border-[var(--gok-line)] text-xs">OPEN</div>
+                        ) : (
+                          <img src={fighter.knightImage || "/knights/male/01.png"} alt="" className="h-14 w-12 border border-[var(--gok-line)] object-cover grayscale" />
+                        )}
+                        <div>
+                          <p className="font-black text-[var(--gok-silver)]">{fighter.name}</p>
+                          <p className="text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)]">{fighter.house}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
