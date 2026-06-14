@@ -449,13 +449,10 @@ export default function HouseFounderPage() {
                         key={icon.id}
                         type="button"
                         onClick={() => addLayer(icon)}
-                        className="min-h-20 border border-[var(--gok-line)] bg-black/50 p-2 transition hover:border-[var(--gok-line-strong)]"
+                        className="grid min-h-20 place-items-center border border-[var(--gok-line)] bg-black/50 p-2 transition hover:border-[var(--gok-line-strong)]"
                         title={icon.name}
                       >
-                        <span
-                          className="mx-auto block h-10 w-10"
-                          style={{ backgroundColor: selectedLayer?.color || sigil.border, WebkitMask: `url(${icon.imageUrl}) center / contain no-repeat`, mask: `url(${icon.imageUrl}) center / contain no-repeat` }}
-                        />
+                        <img src={icon.imageUrl} alt="" className="h-14 w-14 object-contain opacity-95 drop-shadow-[0_0_10px_rgba(216,208,187,0.18)]" />
                       </button>
                     ))}
                   </div>
