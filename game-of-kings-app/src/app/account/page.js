@@ -382,7 +382,9 @@ export default function AccountPage() {
                 </p>
               </div>
               {realm.selectedKnightImage && (
-                <img src={realm.selectedKnightImage} alt={realm.selectedKnightTitle || "Selected knight"} className="h-24 w-20 border border-[var(--gok-line)] bg-black object-cover" />
+                <span className="gok-knight-frame block h-24 w-20">
+                  <img src={realm.selectedKnightImage} alt={realm.selectedKnightTitle || "Selected knight"} className="gok-knight-image h-full w-full object-cover" />
+                </span>
               )}
             </div>
           </div>

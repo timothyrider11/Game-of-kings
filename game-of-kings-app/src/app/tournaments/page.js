@@ -467,7 +467,9 @@ export default function TournamentsPage() {
                         {fighter.empty ? (
                           <div className="grid h-14 w-12 place-items-center border border-dashed border-[var(--gok-line)] text-xs">OPEN</div>
                         ) : (
-                          <img src={fighter.knightImage || "/knights/male/01.png"} alt="" className="h-14 w-12 border border-[var(--gok-line)] object-cover grayscale" />
+                          <span className="gok-knight-frame block h-14 w-12">
+                            <img src={fighter.knightImage || "/knights/male/01.png"} alt="" className="gok-knight-image h-full w-full object-cover grayscale" />
+                          </span>
                         )}
                         <div>
                           <p className="font-black text-[var(--gok-silver)]">{fighter.name}</p>
@@ -531,7 +533,9 @@ function Stat({ label, value }) {
 function FighterCard({ fighter, chance, alignRight = false }) {
   return (
     <div className={`flex gap-3 ${alignRight ? "flex-row-reverse text-right" : ""}`}>
-      <img src={fighter.knightImage || "/knights/male/01.png"} alt="" className="h-20 w-16 shrink-0 border border-[var(--gok-line)] bg-black object-cover grayscale" />
+      <span className="gok-knight-frame block h-20 w-16 shrink-0">
+        <img src={fighter.knightImage || "/knights/male/01.png"} alt="" className="gok-knight-image h-full w-full object-cover grayscale" />
+      </span>
       <div className="min-w-0 flex-1">
       <p className="font-serif text-2xl font-black text-[var(--gok-silver)]">{fighter.name}</p>
       <p className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-red-300">{fighter.house}</p>

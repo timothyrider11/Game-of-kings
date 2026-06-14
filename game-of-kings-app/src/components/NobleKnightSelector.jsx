@@ -93,14 +93,14 @@ export default function NobleKnightSelector({ initialGender = "male", initialInd
             &lsaquo;
           </button>
 
-          <div className="relative min-h-[24rem] overflow-hidden border border-[var(--gok-line)] bg-[radial-gradient(circle_at_50%_35%,rgba(104,113,111,0.24),transparent_34%),#050606]">
-            {previous && <img src={previous.imageUrl} alt="" className="absolute left-2 top-10 h-[78%] w-[32%] object-contain opacity-20 grayscale blur-[1px]" />}
-            {next && <img src={next.imageUrl} alt="" className="absolute right-2 top-10 h-[78%] w-[32%] object-contain opacity-20 grayscale blur-[1px]" />}
+          <div className="gok-knight-frame relative min-h-[24rem]">
+            {previous && <img src={previous.imageUrl} alt="" className="gok-knight-image-faded absolute left-2 top-10 h-[78%] w-[32%] object-contain opacity-28 blur-[1px]" />}
+            {next && <img src={next.imageUrl} alt="" className="gok-knight-image-faded absolute right-2 top-10 h-[78%] w-[32%] object-contain opacity-28 blur-[1px]" />}
             {selected && (
               <img
                 src={selected.imageUrl}
                 alt={title}
-                className="absolute inset-x-0 bottom-0 mx-auto h-[96%] w-[64%] object-contain drop-shadow-[0_20px_34px_rgba(0,0,0,0.9)]"
+                className="gok-knight-image absolute inset-x-0 bottom-0 mx-auto h-[96%] w-[64%] object-contain drop-shadow-[0_20px_34px_rgba(0,0,0,0.9)]"
               />
             )}
           </div>

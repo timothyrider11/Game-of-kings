@@ -63,7 +63,9 @@ export default function SiteNav({ className = "" }) {
             className="flex shrink-0 snap-start items-center gap-2 border border-[var(--gok-line)] bg-black/60 px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[var(--gok-dim)] transition hover:border-[var(--gok-line-strong)] hover:text-[var(--gok-silver)]"
           >
             {realm.selectedKnightImage ? (
-              <img src={realm.selectedKnightImage} alt="" className="h-9 w-8 border border-[rgba(196,193,184,0.2)] object-cover grayscale" />
+              <span className="gok-knight-frame block h-9 w-8">
+                <img src={realm.selectedKnightImage} alt="" className="gok-knight-image h-full w-full object-cover grayscale" />
+              </span>
             ) : (
               <span className="flex h-9 w-8 items-center justify-center border border-[rgba(196,193,184,0.2)] text-[var(--gok-silver)]">
                 {(realm.rulerName || realm.houseName || "?").slice(0, 1).toUpperCase()}
