@@ -11,13 +11,7 @@ import { applyRoyalAccountDefaults, getRoyalAccount, normalizeRulerTitle, PUBLIC
 import { generatedSigilCategories } from "../../lib/sigil-manifest";
 
 const sigilCategories = {
-  "Ancient-Royal": [],
-  "Animals-Fantasy": [],
-  "Arms-Shields": [],
-  Floral: [],
-  "Food-Utensils": [],
-  Objects: [],
-  Random: [],
+  Sigils: [],
 };
 
 const tinctures = [
@@ -131,7 +125,7 @@ export default function HouseFounderPage() {
   const [rulerName, setRulerName] = useState("");
   const [sigil, setSigil] = useState(defaultSigil);
   const [categories, setCategories] = useState(sigilCategories);
-  const [selectedCategory, setSelectedCategory] = useState("Ancient-Royal");
+  const [selectedCategory, setSelectedCategory] = useState("Sigils");
   const [selectedLayerId, setSelectedLayerId] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -147,7 +141,7 @@ export default function HouseFounderPage() {
 
   useEffect(() => {
     setCategories({ ...sigilCategories, ...generatedSigilCategories });
-    const firstIcon = generatedSigilCategories["Ancient-Royal"]?.[0] || Object.values(generatedSigilCategories).flat()[0];
+    const firstIcon = generatedSigilCategories.Sigils?.[0] || Object.values(generatedSigilCategories).flat()[0];
     setSigil((current) => {
       if (current.layers?.length || !firstIcon) return current;
       const layer = createLayer(firstIcon, 0, current.border);
@@ -436,7 +430,7 @@ export default function HouseFounderPage() {
             <section className="grid min-h-0 gap-4">
               <ToolBlock title="Decorative Elements">
                 <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)} className="mb-3 min-h-11 w-full border border-[var(--gok-line)] bg-black/80 px-3 text-sm text-[var(--gok-silver)] outline-none">
-                  {Object.keys(sigilCategories).map((category) => <option key={category}>{category}</option>)}
+                  {Object.keys(categories).map((category) => <option key={category}>{category}</option>)}
                 </select>
                 <div className="max-h-[34rem] overflow-y-auto border border-[var(--gok-line)] bg-black/35 p-2">
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(5rem,1fr))] gap-2">
@@ -448,7 +442,7 @@ export default function HouseFounderPage() {
                         className="grid aspect-[3/4] min-h-24 place-items-center overflow-hidden border border-[var(--gok-line)] bg-black/50 p-1 transition hover:border-[var(--gok-line-strong)]"
                         title={icon.name}
                       >
-                        <img src={icon.previewUrl || icon.imageUrl} alt="" className="h-full w-full object-cover opacity-95" />
+                        <img src={icon.previewUrl || icon.imageUrl} alt="" className="h-full w-full object-contain p-2 opacity-95" />
                       </button>
                     ))}
                   </div>
