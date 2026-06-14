@@ -8,6 +8,7 @@ import SiteNav from "../../components/SiteNav";
 import { artifactCatalog } from "../../lib/artifacts";
 import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 import { applyRoyalAccountDefaults, getRoyalAccount, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
+import { generatedSigilCategories } from "../../lib/sigil-manifest";
 
 const sigilCategories = {
   "Ancient-Royal": [],
@@ -145,19 +146,14 @@ export default function HouseFounderPage() {
   const houseArtifacts = useMemo(() => artifactCatalog.filter((artifact) => artifactInventory.includes(artifact.name)), [artifactInventory]);
 
   useEffect(() => {
-    fetch("/sigil-generator/manifest.json")
-      .then((response) => response.json())
-      .then((manifest) => {
-        setCategories({ ...sigilCategories, ...manifest });
-        const firstIcon = manifest["Ancient-Royal"]?.[0] || Object.values(manifest).flat()[0];
-        setSigil((current) => {
-          if (current.layers?.length || !firstIcon) return current;
-          const layer = createLayer(firstIcon, 0, current.border);
-          setSelectedLayerId(layer.id);
-          return { ...current, layers: [layer] };
-        });
-      })
-      .catch(() => setCategories(sigilCategories));
+    setCategories({ ...sigilCategories, ...generatedSigilCategories });
+    const firstIcon = generatedSigilCategories["Ancient-Royal"]?.[0] || Object.values(generatedSigilCategories).flat()[0];
+    setSigil((current) => {
+      if (current.layers?.length || !firstIcon) return current;
+      const layer = createLayer(firstIcon, 0, current.border);
+      setSelectedLayerId(layer.id);
+      return { ...current, layers: [layer] };
+    });
   }, []);
 
   useEffect(() => {
@@ -443,16 +439,16 @@ export default function HouseFounderPage() {
                   {Object.keys(sigilCategories).map((category) => <option key={category}>{category}</option>)}
                 </select>
                 <div className="max-h-[34rem] overflow-y-auto border border-[var(--gok-line)] bg-black/35 p-2">
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(4.4rem,1fr))] gap-2">
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(5rem,1fr))] gap-2">
                     {categoryIcons.map((icon) => (
                       <button
                         key={icon.id}
                         type="button"
                         onClick={() => addLayer(icon)}
-                        className="grid min-h-20 place-items-center border border-[var(--gok-line)] bg-black/50 p-2 transition hover:border-[var(--gok-line-strong)]"
+                        className="grid aspect-[3/4] min-h-24 place-items-center overflow-hidden border border-[var(--gok-line)] bg-black/50 p-1 transition hover:border-[var(--gok-line-strong)]"
                         title={icon.name}
                       >
-                        <img src={icon.imageUrl} alt="" className="h-14 w-14 object-contain opacity-95 drop-shadow-[0_0_10px_rgba(216,208,187,0.18)]" />
+                        <img src={icon.previewUrl || icon.imageUrl} alt="" className="h-full w-full object-cover opacity-95" />
                       </button>
                     ))}
                   </div>

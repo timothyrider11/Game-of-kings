@@ -1775,6 +1775,8 @@ export default function MapPage() {
   const mapViewportRef = useRef(null);
   const zoomRef = useRef(0.95);
   const pinchRef = useRef(null);
+  const mapPanRef = useRef(null);
+  const mapWasDraggedRef = useRef(false);
   const [sessionEmail, setSessionEmail] = useState("");
   const [sessionUserId, setSessionUserId] = useState("");
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -1869,6 +1871,8 @@ export default function MapPage() {
   function handleMapWheel(event) {
     if (castlePopupOpen || fullscreenImage) return;
 
+    if (!mapPanRef.current && event.buttons !== 1) return;
+
     event.preventDefault();
     const wheelStrength = event.deltaMode === 1 ? 0.08 : 0.0022;
     const nextZoom = zoomRef.current * Math.exp(-event.deltaY * wheelStrength);
@@ -1876,8 +1880,59 @@ export default function MapPage() {
   }
 
   function handleMapClick(event) {
-    if (castlePopupOpen || fullscreenImage || event.defaultPrevented) return;
-    applyMapZoom(zoomRef.current + 0.16, event.clientX, event.clientY);
+    if (!mapWasDraggedRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    mapWasDraggedRef.current = false;
+  }
+
+  function shouldIgnoreMapPan(target) {
+    return target?.closest?.("button, a, input, select, textarea");
+  }
+
+  function handleMapPointerDown(event) {
+    if (event.button !== 0 || event.pointerType === "touch" || castlePopupOpen || fullscreenImage || shouldIgnoreMapPan(event.target)) return;
+
+    const viewport = mapViewportRef.current;
+    if (!viewport) return;
+
+    mapPanRef.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      scrollLeft: viewport.scrollLeft,
+      scrollTop: viewport.scrollTop,
+    };
+    mapWasDraggedRef.current = false;
+    viewport.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  }
+
+  function handleMapPointerMove(event) {
+    const pan = mapPanRef.current;
+    const viewport = mapViewportRef.current;
+    if (!pan || !viewport || pan.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - pan.x;
+    const deltaY = event.clientY - pan.y;
+    viewport.scrollLeft = pan.scrollLeft - deltaX;
+    viewport.scrollTop = pan.scrollTop - deltaY;
+
+    if (Math.abs(deltaX) + Math.abs(deltaY) > 4) {
+      mapWasDraggedRef.current = true;
+    }
+
+    event.preventDefault();
+  }
+
+  function handleMapPointerEnd(event) {
+    const pan = mapPanRef.current;
+    const viewport = mapViewportRef.current;
+    if (!pan || pan.pointerId !== event.pointerId) return;
+
+    viewport?.releasePointerCapture?.(event.pointerId);
+    mapPanRef.current = null;
   }
 
   function handleMapTouchStart(event) {
@@ -2722,7 +2777,7 @@ export default function MapPage() {
             <div className="border-b border-stone-800 bg-black/50 p-3 text-sm text-stone-400">
               <p>
                 Selected: <span className="font-black text-amber-300">{selectedCastle.name}</span>
-                <span className="ml-2 text-stone-500">Tap a printed castle dot on the map to open it.</span>
+                <span className="ml-2 text-stone-500">Drag the map to move. Hold the mouse button and wheel to zoom.</span>
               </p>
             </div>
 
@@ -2730,11 +2785,16 @@ export default function MapPage() {
               ref={mapViewportRef}
               onWheel={handleMapWheel}
               onClick={handleMapClick}
+              onPointerDown={handleMapPointerDown}
+              onPointerMove={handleMapPointerMove}
+              onPointerUp={handleMapPointerEnd}
+              onPointerCancel={handleMapPointerEnd}
+              onPointerLeave={handleMapPointerEnd}
               onTouchStart={handleMapTouchStart}
               onTouchMove={handleMapTouchMove}
               onTouchEnd={handleMapTouchEnd}
               onTouchCancel={handleMapTouchEnd}
-              className="h-[62vh] cursor-zoom-in overflow-auto bg-[#10100e] overscroll-contain md:h-[78vh]"
+              className="h-[62vh] cursor-grab overflow-auto bg-[#10100e] overscroll-contain active:cursor-grabbing md:h-[78vh]"
               style={{ touchAction: "pan-x pan-y" }}
             >
               <div
