@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import SiteNav from "../../components/SiteNav";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
-import { loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
+import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
 
@@ -21,14 +21,16 @@ const tournamentEvents = [
   "champion crowned",
 ];
 
-function playerFighter(realm) {
+function playerFighter(realm, sessionUserId = "") {
   const house = realm?.houseName?.trim() ? `House ${realm.houseName.trim()}` : "House Founder";
   const ruler = realm?.rulerName?.trim() || realm?.houseName?.trim() || "New Challenger";
   const title = realm?.rulerTitle || "Lord";
+  const identity = sessionUserId || realm?.accountId || realm?.userId || `${house}-${ruler}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const renownBoost = Math.min(16, Math.floor((realm?.renown || 0) / 80));
   const armyBoost = Math.min(12, Math.floor((realm?.army || realm?.troops || 0) / 500));
   return {
-    id: "player-house-fighter",
+    id: `player-house-fighter-${identity}`,
+    userId: sessionUserId || realm?.accountId || realm?.userId || "",
     name: `${title} ${ruler}`,
     house,
     strength: 72 + armyBoost,
@@ -111,6 +113,33 @@ function makePairs(fighters) {
   return pairs;
 }
 
+function normalizeEntrant(fighter, activity) {
+  if (!fighter) return null;
+  const userId = fighter.userId || activity?.meta?.userId || activity?.meta?.fighter?.user_id || "";
+  const fallback = activity?.id || `${fighter.house || "house"}-${fighter.name || "fighter"}`;
+  const id = fighter.id && fighter.id !== "player-house-fighter"
+    ? fighter.id
+    : `player-house-fighter-${userId || fallback}`;
+
+  return {
+    ...fighter,
+    id,
+    userId,
+  };
+}
+
+function entrantKey(fighter) {
+  return fighter?.userId || fighter?.id || `${fighter?.house || "house"}-${fighter?.name || "fighter"}`;
+}
+
+function sameEntrant(a, b) {
+  return Boolean(a && b && entrantKey(a) === entrantKey(b));
+}
+
+function uniqueEntrants(entries) {
+  return entries.filter((fighter, index, all) => all.findIndex((entry) => entrantKey(entry) === entrantKey(fighter)) === index);
+}
+
 function rewardForChampion(tournamentType, champion) {
   const trophy = tournamentType === "Joust" ? "Gilded Lance Trophy" : tournamentType === "Archery" ? "Silver Arrow Banner" : tournamentType === "Smithing" ? "Masterwork Anvil Seal" : "Champion's War Banner";
   return {
@@ -142,6 +171,7 @@ export default function TournamentsPage() {
   const [predictions, setPredictions] = useState({});
   const [miniGame, setMiniGame] = useState({ joust: 0, archery: 0, melee: 0, smithing: 0 });
   const [message, setMessage] = useState("");
+  const [sessionUserId, setSessionUserId] = useState("");
 
   const tournamentKey = `open-${tournamentType.toLowerCase()}-${bracketSize}`;
 
@@ -149,6 +179,7 @@ export default function TournamentsPage() {
     const stored = localStorage.getItem(STORAGE_KEY);
     const parsed = stored ? JSON.parse(stored) : {};
     setRealm(parsed);
+    getSessionUser().then(({ user }) => setSessionUserId(user?.id || ""));
     loadCloudRealm().then(({ realm: cloudRealm }) => {
       if (!cloudRealm) return;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRealm));
@@ -165,9 +196,9 @@ export default function TournamentsPage() {
       const entrants = (activities || [])
         .filter((activity) => activity.type === "tournament" && activity.meta?.action === "signup")
         .filter((activity) => activity.meta?.tournamentKey === tournamentKey)
-        .map((activity) => activity.meta?.fighter)
+        .map((activity) => normalizeEntrant(activity.meta?.fighter, activity))
         .filter(Boolean)
-        .filter((fighter, index, all) => all.findIndex((entry) => entry.id === fighter.id || entry.house === fighter.house) === index);
+        .filter((fighter, index, all) => all.findIndex((entry) => entrantKey(entry) === entrantKey(fighter)) === index);
       setPublicEntrants(entrants);
     }
 
@@ -179,17 +210,15 @@ export default function TournamentsPage() {
     };
   }, [tournamentKey]);
 
-  const playerEntry = useMemo(() => playerFighter(realm), [realm]);
+  const playerEntry = useMemo(() => playerFighter(realm, sessionUserId), [realm, sessionUserId]);
   const localSignup = realm.tournamentSignups?.[tournamentKey];
-  const signedUp = Boolean(localSignup || publicEntrants.some((fighter) => fighter.id === playerEntry.id || fighter.house === playerEntry.house));
+  const signedUp = Boolean(localSignup || publicEntrants.some((fighter) => sameEntrant(fighter, playerEntry)));
   const signupRoster = useMemo(() => {
-    const entries = signedUp && !publicEntrants.some((fighter) => fighter.id === playerEntry.id || fighter.house === playerEntry.house)
+    const entries = signedUp && !publicEntrants.some((fighter) => sameEntrant(fighter, playerEntry))
       ? [playerEntry, ...publicEntrants]
       : publicEntrants;
 
-    return entries
-      .filter((fighter, index, all) => all.findIndex((entry) => entry.id === fighter.id || entry.house === fighter.house) === index)
-      .slice(0, bracketSize);
+    return uniqueEntrants(entries).slice(0, bracketSize);
   }, [bracketSize, playerEntry, publicEntrants, signedUp]);
 
   const bracketSlots = useMemo(() => {
@@ -246,7 +275,7 @@ export default function TournamentsPage() {
       return;
     }
 
-    const fighter = playerFighter(realm);
+    const fighter = playerFighter(realm, sessionUserId);
     const nextRealm = {
       ...realm,
       tournamentSignups: {
@@ -261,13 +290,13 @@ export default function TournamentsPage() {
     };
 
     saveRealm(nextRealm);
-    setPublicEntrants((current) => [fighter, ...current].filter((entry, index, all) => all.findIndex((item) => item.id === entry.id || item.house === entry.house) === index));
+    setPublicEntrants((current) => uniqueEntrants([fighter, ...current]));
     recordRealmActivity(buildActivity({
       type: "tournament",
       title: "A House Entered The Lists",
       actor: fighter.house,
       body: `${fighter.name} of ${fighter.house} signed up for the ${tournamentType} tournament.`,
-      meta: { action: "signup", tournamentKey, tournamentType, bracketSize, fighter },
+      meta: { action: "signup", tournamentKey, tournamentType, bracketSize, userId: sessionUserId, fighter },
     }));
     setHeraldFeed((current) => [`${fighter.house} has entered the ${tournamentType.toLowerCase()} lists.`, ...current].slice(0, 14));
     setMessage("You are signed up. The bracket will fill as more houses join.");
@@ -305,11 +334,14 @@ export default function TournamentsPage() {
     const winners = roundMatches.map((match) => match.winner);
     if (winners.length === 1) {
       const reward = rewardForChampion(tournamentType, winners[0]);
+      const playerWon = winners[0].userId
+        ? winners[0].userId === sessionUserId
+        : winners[0].id === playerEntry.id;
       const nextRealm = {
         ...realm,
-        gold: (realm.gold || 350) + (winners[0].id === "player-house-fighter" ? reward.gold : 0),
-        renown: (realm.renown || 0) + (winners[0].id === "player-house-fighter" ? reward.honor : 0),
-        trophies: winners[0].id === "player-house-fighter" ? [...(realm.trophies || []), reward.trophy] : realm.trophies || [],
+        gold: (realm.gold || 350) + (playerWon ? reward.gold : 0),
+        renown: (realm.renown || 0) + (playerWon ? reward.honor : 0),
+        trophies: playerWon ? [...(realm.trophies || []), reward.trophy] : realm.trophies || [],
         tournamentRewards: [...(realm.tournamentRewards || []), { ...reward, champion: winners[0], at: new Date().toISOString() }],
       };
       saveRealm(nextRealm);
@@ -329,7 +361,7 @@ export default function TournamentsPage() {
     setRoundNumber((current) => current + 1);
     setCurrentPairs(makePairs(winners));
     setHeraldFeed((current) => [`Round ${roundNumber + 1} is called. Maesters update the odds before the next horns.`, ...current].slice(0, 14));
-  }, [completedRounds, currentPairs, predictionPoints, predictions, realm, roundNumber, saveRealm, status, tournamentType]);
+  }, [completedRounds, currentPairs, playerEntry.id, predictionPoints, predictions, realm, roundNumber, saveRealm, sessionUserId, status, tournamentType]);
 
   useEffect(() => {
     if (status !== "running") return undefined;
