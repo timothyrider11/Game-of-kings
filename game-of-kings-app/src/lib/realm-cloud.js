@@ -18,6 +18,16 @@ export async function signInWithPassword(email, password) {
   return { error: error?.message || null };
 }
 
+export async function sendPasswordReset(email) {
+  if (!supabase) return { error: CLOUD_DISABLED_MESSAGE };
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: typeof window === "undefined" ? undefined : `${window.location.origin}/account`,
+  });
+
+  return { error: error?.message || null };
+}
+
 export async function signUpWithPassword({ email, password, username, rulerName, rulerTitle, avatarUrl = "" }) {
   if (!supabase) return { error: CLOUD_DISABLED_MESSAGE };
 

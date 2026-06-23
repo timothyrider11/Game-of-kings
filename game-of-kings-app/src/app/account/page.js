@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import NobleKnightSelector from "../../components/NobleKnightSelector";
 import SiteNav from "../../components/SiteNav";
 import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
@@ -10,6 +10,7 @@ import {
   loadCloudRealm,
   loadProfile,
   saveCloudRealm,
+  sendPasswordReset,
   signInWithPassword,
   signOut,
   signUpWithPassword,
@@ -17,6 +18,32 @@ import {
 } from "../../lib/realm-cloud";
 import { applyRoyalAccountDefaults, clearLocalRealm, getRoyalAccount, isRoyalEmail, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
 import { supabase } from "../../lib/supabase";
+
+const CASTLE_NAMES = {
+  "kings-landing": "King's Landing",
+  starpike: "Starpike",
+  winterfell: "Winterfell",
+  dragonstone: "Dragonstone",
+  "casterly-rock": "Casterly Rock",
+  highgarden: "Highgarden",
+  "storms-end": "Storm's End",
+  sunspear: "Sunspear",
+  pyke: "Pyke",
+  riverrun: "Riverrun",
+  harrenhal: "Harrenhal",
+  oldtown: "Oldtown",
+  "the-twins": "The Twins",
+  "the-eyrie": "The Eyrie",
+};
+
+function castleNameFromId(castleId = "") {
+  if (CASTLE_NAMES[castleId]) return CASTLE_NAMES[castleId];
+  return castleId
+    .split("-")
+    .filter(Boolean)
+    .map((word) => word.slice(0, 1).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 export default function AccountPage() {
   const [mode, setMode] = useState("sign-in");
@@ -30,6 +57,50 @@ export default function AccountPage() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [realm, setRealm] = useState({});
+  const userEmail = user?.email || "";
+
+  const ownedCastles = useMemo(() => {
+    const localOwned = Object.entries(realm.castleState || {})
+      .filter(([, state]) => state?.owner === "player")
+      .map(([castleId, state]) => ({
+        id: castleId,
+        name: castleNameFromId(castleId),
+        troops: state?.troops || 0,
+        house: state?.claimedHouse || (realm.houseName ? `House ${realm.houseName}` : ""),
+      }));
+    const royalAccount = getRoyalAccount(userEmail);
+    const royalOwned = (royalAccount?.castleIds || []).map((castleId) => ({
+      id: castleId,
+      name: castleNameFromId(castleId),
+      troops: realm.castleState?.[castleId]?.troops || royalAccount.startingTroops || 0,
+      house: royalAccount.houseLabel,
+    }));
+
+    return [...localOwned, ...royalOwned].filter((castle, index, all) => all.findIndex((entry) => entry.id === castle.id) === index);
+  }, [realm, userEmail]);
+
+  const inventoryItems = useMemo(
+    () => [
+      ...(realm.artifactInventory || []).map((name) => ({ name, type: "Artifact" })),
+      ...(realm.trophies || []).map((name) => ({ name, type: "Trophy" })),
+    ],
+    [realm.artifactInventory, realm.trophies]
+  );
+
+  const loadAccountRealm = useCallback(async (accountEmail = userEmail) => {
+    const { realm: cloudRealm } = await loadCloudRealm();
+    const royalAccount = getRoyalAccount(accountEmail);
+    const realmData = cloudRealm
+      ? applyRoyalAccountDefaults(cloudRealm, accountEmail)
+      : royalAccount
+        ? applyRoyalAccountDefaults({}, accountEmail)
+        : {};
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(realmData));
+    setRealm(realmData);
+    if (!cloudRealm && royalAccount) await saveCloudRealm(realmData);
+    return realmData;
+  }, [userEmail]);
 
   useEffect(() => {
     if (!supabase) {
@@ -52,25 +123,30 @@ export default function AccountPage() {
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
-      if (event === "SIGNED_OUT") setMessage("Signed out.");
+      if (event === "SIGNED_OUT") {
+        setRealm({});
+        setMessage("Signed out.");
+      }
     });
 
     return () => listener.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userEmail) return;
 
     loadProfile().then(({ profile }) => {
       if (!profile) return;
 
       setUsername(profile.username || "");
-      const royalAccount = getRoyalAccount(user.email);
+      const royalAccount = getRoyalAccount(userEmail);
       setRulerName(profile.ruler_name || (royalAccount ? royalAccount.rulerName : ""));
-      setRulerTitle(normalizeRulerTitle(profile.ruler_title || "Lord", user.email));
+      setRulerTitle(normalizeRulerTitle(profile.ruler_title || "Lord", userEmail));
       setAvatarUrl(profile.avatar_url || "");
     });
-  }, [user]);
+
+    loadAccountRealm(userEmail);
+  }, [loadAccountRealm, userEmail]);
 
   async function submitAuth(event) {
     event.preventDefault();
@@ -86,18 +162,23 @@ export default function AccountPage() {
       setMessage(result.error);
     } else {
       if (mode === "sign-in") {
-        const { realm } = await loadCloudRealm();
-        const royalAccount = getRoyalAccount(email);
-        const realmData = realm ? applyRoyalAccountDefaults(realm, email) : royalAccount ? applyRoyalAccountDefaults({}, email) : null;
-        if (realmData) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(realmData));
-          setRealm(realmData);
-          if (!realm) await saveCloudRealm(realmData);
-        }
+        await loadAccountRealm(email);
       }
       setMessage(mode === "sign-up" ? "Account created. Check your raven cage and send the raven back with verification." : "Signed in. Your account realm has been restored.");
     }
 
+    setBusy(false);
+  }
+
+  async function handlePasswordReset() {
+    if (!email.trim()) {
+      setMessage("Enter your email first, then request a password raven.");
+      return;
+    }
+
+    setBusy(true);
+    const { error } = await sendPasswordReset(email);
+    setMessage(error || "Password raven sent. Check your raven cage for the reset link.");
     setBusy(false);
   }
 
@@ -196,6 +277,7 @@ export default function AccountPage() {
     const { error } = await signOut();
     if (!error) {
       clearLocalRealm();
+      setRealm({});
       setUser(null);
       setUsername("");
       setRulerName("");
@@ -301,6 +383,11 @@ export default function AccountPage() {
               <button disabled={busy} className="gok-btn gok-btn-blood min-h-12 w-full px-5 py-3 disabled:opacity-50">
                 {busy ? "Working..." : mode === "sign-up" ? "Create Account" : "Sign In"}
               </button>
+              {mode === "sign-in" && (
+                <button type="button" onClick={handlePasswordReset} disabled={busy} className="gok-btn min-h-11 w-full px-5 py-3 text-xs disabled:opacity-50">
+                  Send Password Raven
+                </button>
+              )}
             </form>
           ) : (
             <div className="relative z-10 space-y-5">
@@ -356,10 +443,10 @@ export default function AccountPage() {
 
               <div className="grid gap-3 md:grid-cols-3">
                 <button onClick={saveLocalToCloud} disabled={busy} className="gok-btn gok-btn-blood min-h-12 px-4 py-3 disabled:opacity-50">
-                  Update Account Realm
+                  Update Realm
                 </button>
                 <button onClick={loadCloudToLocal} disabled={busy} className="gok-btn min-h-12 px-4 py-3 disabled:opacity-50">
-                  Load Account Realm
+                  Refresh Realm
                 </button>
                 <button onClick={handleSignOut} disabled={busy} className="gok-btn min-h-12 px-4 py-3 disabled:opacity-50">
                   Sign Out
@@ -387,6 +474,40 @@ export default function AccountPage() {
                 </span>
               )}
             </div>
+            <div className="relative z-10 mt-5 grid gap-3 md:grid-cols-4">
+              <LedgerStat label="Gold" value={(realm.gold ?? 350).toLocaleString()} />
+              <LedgerStat label="Renown" value={(realm.renown ?? 0).toLocaleString()} />
+              <LedgerStat label="Castles" value={ownedCastles.length.toLocaleString()} />
+              <LedgerStat label="Inventory" value={inventoryItems.length.toLocaleString()} />
+            </div>
+            <div className="relative z-10 mt-5 grid gap-4 lg:grid-cols-2">
+              <div className="border border-[var(--gok-line)] bg-black/45 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--gok-dim)]">Castle Seat</p>
+                <div className="mt-3 grid gap-2">
+                  {ownedCastles.length ? ownedCastles.map((castle) => (
+                    <div key={castle.id} className="border border-[rgba(196,193,184,0.12)] bg-black/45 p-3">
+                      <p className="font-serif text-xl font-black text-[var(--gok-silver)]">{castle.name}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.15em] text-[var(--gok-dim)]">{castle.house || "House seat"} / {castle.troops.toLocaleString()} troops</p>
+                    </div>
+                  )) : (
+                    <p className="text-sm leading-6 text-[var(--gok-dim)]">No castle claimed yet. Claim one from the map while signed in.</p>
+                  )}
+                </div>
+              </div>
+              <div className="border border-[var(--gok-line)] bg-black/45 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--gok-dim)]">Inventory</p>
+                <div className="mt-3 grid max-h-48 gap-2 overflow-y-auto">
+                  {inventoryItems.length ? inventoryItems.map((item) => (
+                    <div key={`${item.type}-${item.name}`} className="flex items-center justify-between border border-[rgba(196,193,184,0.12)] bg-black/45 p-3">
+                      <span className="font-black text-[var(--gok-silver)]">{item.name}</span>
+                      <span className="text-[0.62rem] uppercase tracking-[0.16em] text-[var(--gok-dim)]">{item.type}</span>
+                    </div>
+                  )) : (
+                    <p className="text-sm leading-6 text-[var(--gok-dim)]">No artifacts or trophies yet. Tournaments, quests, and special events will fill this archive.</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           <NobleKnightSelector
@@ -399,5 +520,14 @@ export default function AccountPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function LedgerStat({ label, value }) {
+  return (
+    <div className="border border-[var(--gok-line)] bg-black/45 p-3">
+      <p className="text-[0.62rem] font-black uppercase tracking-[0.18em] text-[var(--gok-dim)]">{label}</p>
+      <p className="mt-1 font-serif text-2xl font-black text-[var(--gok-silver)]">{value}</p>
+    </div>
   );
 }

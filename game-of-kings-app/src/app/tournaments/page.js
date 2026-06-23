@@ -21,11 +21,46 @@ const tournamentEvents = [
   "champion crowned",
 ];
 
+const tacticalStances = {
+  aggressive: {
+    key: "aggressive",
+    label: "A. Aggressive",
+    shortLabel: "Aggressive",
+    edge: "Overwhelms calm fighters, but can be baited by balanced fighters.",
+    story: "Your champion presses early, forcing broken shields, hard charges, and dangerous openings.",
+    modifiers: { strength: 10, skill: 1, speed: 4, endurance: -4, reputation: 2, luck: 2 },
+  },
+  calm: {
+    key: "calm",
+    label: "B. Calm and Collected",
+    shortLabel: "Calm",
+    edge: "Outwaits balanced fighters, but can be overrun by aggressive fighters.",
+    story: "Your champion waits, reads the field, and strikes only when the opponent gives away the moment.",
+    modifiers: { strength: -2, skill: 8, speed: -2, endurance: 8, reputation: 4, luck: 1 },
+  },
+  balanced: {
+    key: "balanced",
+    label: "C. Balanced",
+    shortLabel: "Balanced",
+    edge: "Punishes reckless aggression, but can be picked apart by calm fighters.",
+    story: "Your champion mixes pressure and patience, shifting stance as the crowd and weather change.",
+    modifiers: { strength: 4, skill: 4, speed: 4, endurance: 4, reputation: 2, luck: 2 },
+  },
+};
+
+const stanceCounters = {
+  aggressive: "calm",
+  calm: "balanced",
+  balanced: "aggressive",
+};
+
 function playerFighter(realm, sessionUserId = "") {
   const house = realm?.houseName?.trim() ? `House ${realm.houseName.trim()}` : "House Founder";
   const ruler = realm?.rulerName?.trim() || realm?.houseName?.trim() || "New Challenger";
   const title = realm?.rulerTitle || "Lord";
   const identity = sessionUserId || realm?.accountId || realm?.userId || `${house}-${ruler}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const stance = realm?.activeTournamentStance || "balanced";
+  const modifiers = tacticalStances[stance]?.modifiers || tacticalStances.balanced.modifiers;
   const renownBoost = Math.min(16, Math.floor((realm?.renown || 0) / 80));
   const armyBoost = Math.min(12, Math.floor((realm?.army || realm?.troops || 0) / 500));
   return {
@@ -33,34 +68,43 @@ function playerFighter(realm, sessionUserId = "") {
     userId: sessionUserId || realm?.accountId || realm?.userId || "",
     name: `${title} ${ruler}`,
     house,
-    strength: 72 + armyBoost,
-    skill: 74 + renownBoost,
-    speed: 68,
-    endurance: 76 + armyBoost,
-    reputation: 80 + renownBoost,
-    luck: 62,
+    stance,
+    strength: 72 + armyBoost + modifiers.strength,
+    skill: 74 + renownBoost + modifiers.skill,
+    speed: 68 + modifiers.speed,
+    endurance: 76 + armyBoost + modifiers.endurance,
+    reputation: 80 + renownBoost + modifiers.reputation,
+    luck: 62 + modifiers.luck,
     knightImage: realm?.selectedKnightImage || "/knights/male/01.png",
   };
 }
 
-function stableScore(fighter) {
-  return fighter.strength * 1.2 + fighter.skill * 1.6 + fighter.speed * 1.1 + fighter.endurance + fighter.reputation * 0.7 + fighter.luck * 0.75;
+function getTacticalBonus(fighter, opponent) {
+  if (!fighter?.stance || !opponent?.stance) return 0;
+  if (stanceCounters[fighter.stance] === opponent.stance) return 18;
+  if (stanceCounters[opponent.stance] === fighter.stance) return -12;
+  return 0;
 }
 
-function fighterScore(fighter) {
+function stableScore(fighter, opponent) {
+  return fighter.strength * 1.2 + fighter.skill * 1.6 + fighter.speed * 1.1 + fighter.endurance + fighter.reputation * 0.7 + fighter.luck * 0.75 + getTacticalBonus(fighter, opponent);
+}
+
+function fighterScore(fighter, opponent) {
   return (
     fighter.strength * 1.2 +
     fighter.skill * 1.6 +
     fighter.speed * 1.1 +
     fighter.endurance +
     fighter.reputation * 0.7 +
-    fighter.luck * Math.random() * 1.5
+    fighter.luck * Math.random() * 1.5 +
+    getTacticalBonus(fighter, opponent)
   );
 }
 
 function getWinOdds(a, b) {
-  const scoreA = stableScore(a);
-  const scoreB = stableScore(b);
+  const scoreA = Math.max(20, stableScore(a, b));
+  const scoreB = Math.max(20, stableScore(b, a));
   const fighterAChance = Math.round((scoreA / (scoreA + scoreB)) * 100);
   return { fighterAChance, fighterBChance: 100 - fighterAChance };
 }
@@ -74,13 +118,14 @@ function narrationFor(matchType, winner, loser, closeness, upset, event) {
   };
   const line = openings[matchType]?.[Math.floor(Math.random() * openings[matchType].length)] || openings.Melee[0];
   const upsetLine = upset ? "A shocking upset sent the crowd into open shouting." : "The favorite held their nerve before the stands.";
-  return `${line}. ${event}; ${closeness.toLowerCase()}. ${upsetLine}`;
+  const stanceLine = `${tacticalStances[winner.stance]?.shortLabel || "Balanced"} judgment beat ${tacticalStances[loser.stance]?.shortLabel?.toLowerCase?.() || "balanced"} orders when it mattered.`;
+  return `${line}. ${event}; ${closeness.toLowerCase()}. ${stanceLine} ${upsetLine}`;
 }
 
 function runMatch(a, b, matchType) {
   const odds = getWinOdds(a, b);
-  const scoreA = fighterScore(a);
-  const scoreB = fighterScore(b);
+  const scoreA = Math.max(20, fighterScore(a, b));
+  const scoreB = Math.max(20, fighterScore(b, a));
   const total = scoreA + scoreB;
   const roll = Math.random() * total;
   const winner = roll < scoreA ? a : b;
@@ -159,6 +204,7 @@ export default function TournamentsPage() {
   const [realm, setRealm] = useState({});
   const [bracketSize, setBracketSize] = useState(8);
   const [tournamentType, setTournamentType] = useState("Joust");
+  const [selectedStance, setSelectedStance] = useState("balanced");
   const [weather, setWeather] = useState(weatherOptions[0]);
   const [crowdMood, setCrowdMood] = useState(crowdMoods[0]);
   const [publicEntrants, setPublicEntrants] = useState([]);
@@ -179,11 +225,13 @@ export default function TournamentsPage() {
     const stored = localStorage.getItem(STORAGE_KEY);
     const parsed = stored ? JSON.parse(stored) : {};
     setRealm(parsed);
+    setSelectedStance(parsed.activeTournamentStance || "balanced");
     getSessionUser().then(({ user }) => setSessionUserId(user?.id || ""));
     loadCloudRealm().then(({ realm: cloudRealm }) => {
       if (!cloudRealm) return;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRealm));
       setRealm(cloudRealm);
+      setSelectedStance(cloudRealm.activeTournamentStance || "balanced");
     });
   }, []);
 
@@ -228,14 +276,15 @@ export default function TournamentsPage() {
 
   const nextMatch = currentPairs[0];
   const champion = status === "complete" ? completedRounds.at(-1)?.matches?.at(-1)?.winner : null;
+  const isSignedIn = Boolean(sessionUserId);
 
   function openBracketFromSignups() {
-    if (signupRoster.length < bracketSize) {
-      setMessage(`${bracketSize - signupRoster.length} more houses must sign up before the bracket can begin.`);
+    if (signupRoster.length < 2) {
+      setMessage("At least two houses must sign up before the heralds can call the lists.");
       return;
     }
 
-    const roster = [...signupRoster];
+    const roster = [...signupRoster].sort(() => Math.random() - 0.5);
     const nextWeather = weatherOptions[Math.floor(Math.random() * weatherOptions.length)];
     setCurrentPairs(makePairs(roster));
     setCompletedRounds([]);
@@ -249,7 +298,7 @@ export default function TournamentsPage() {
       `The field is set beneath ${nextWeather}.`,
       `The crowd roars as ${roster[0].house} enters the lists.`,
     ]);
-    setMessage("The bracket is filled from signed houses. The tournament is ready.");
+    setMessage("The bracket is called from signed houses. The tournament will run live from here.");
   }
 
   const saveRealm = useCallback((nextRealm) => {
@@ -264,7 +313,12 @@ export default function TournamentsPage() {
     setMessage("Prediction recorded with fake points only.");
   }
 
-  function signUpTournament() {
+  async function signUpTournament() {
+    if (!isSignedIn) {
+      setMessage("Sign in first so the maesters can write your house into the public tournament rolls.");
+      return;
+    }
+
     if (!realm.houseName?.trim() && !realm.rulerName?.trim()) {
       setMessage("Found your house first, then enter the tournament rolls.");
       return;
@@ -275,14 +329,23 @@ export default function TournamentsPage() {
       return;
     }
 
-    const fighter = playerFighter(realm, sessionUserId);
-    const nextRealm = {
+    const realmWithStance = {
       ...realm,
+      activeTournamentStance: selectedStance,
+      tournamentChoices: {
+        ...(realm.tournamentChoices || {}),
+        [tournamentKey]: selectedStance,
+      },
+    };
+    const fighter = playerFighter(realmWithStance, sessionUserId);
+    const nextRealm = {
+      ...realmWithStance,
       tournamentSignups: {
-        ...(realm.tournamentSignups || {}),
+        ...(realmWithStance.tournamentSignups || {}),
         [tournamentKey]: {
           tournamentType,
           bracketSize,
+          stance: selectedStance,
           fighter,
           at: new Date().toISOString(),
         },
@@ -291,20 +354,60 @@ export default function TournamentsPage() {
 
     saveRealm(nextRealm);
     setPublicEntrants((current) => uniqueEntrants([fighter, ...current]));
-    recordRealmActivity(buildActivity({
+    const { error } = await recordRealmActivity(buildActivity({
       type: "tournament",
       title: "A House Entered The Lists",
       actor: fighter.house,
-      body: `${fighter.name} of ${fighter.house} signed up for the ${tournamentType} tournament.`,
+      body: `${fighter.name} of ${fighter.house} signed up for the ${tournamentType} tournament with ${tacticalStances[selectedStance].shortLabel.toLowerCase()} orders.`,
       meta: { action: "signup", tournamentKey, tournamentType, bracketSize, userId: sessionUserId, fighter },
     }));
-    setHeraldFeed((current) => [`${fighter.house} has entered the ${tournamentType.toLowerCase()} lists.`, ...current].slice(0, 14));
-    setMessage("You are signed up. The bracket will fill as more houses join.");
+    setHeraldFeed((current) => [`${fighter.house} has entered the ${tournamentType.toLowerCase()} lists with ${tacticalStances[selectedStance].shortLabel.toLowerCase()} orders.`, ...current].slice(0, 14));
+    setMessage(error || "You are signed up. The bracket will fill as more houses join.");
   }
 
   const resolveNextMatch = useCallback(() => {
     if (!currentPairs.length || status === "complete") return;
     const [pair, ...remaining] = currentPairs;
+    if (!pair.second) {
+      const byeLine = `${pair.first.name} advances by an empty bracket lane while the crowd waits for blood.`;
+      const currentRound = completedRounds.find((round) => round.roundNumber === roundNumber);
+      const byeResult = {
+        id: `${roundNumber}-${pair.first.id}-bye`,
+        first: pair.first,
+        second: null,
+        winner: pair.first,
+        loser: { name: "Open Seat", house: "No House" },
+        odds: { fighterAChance: 100, fighterBChance: 0 },
+        winnerChance: 100,
+        closeness: "A walkover",
+        event: "empty bracket lane",
+        upset: false,
+        narration: byeLine,
+      };
+      const updatedRounds = currentRound
+        ? completedRounds.map((round) => round.roundNumber === roundNumber ? { ...round, matches: [...round.matches, byeResult] } : round)
+        : [...completedRounds, { roundNumber, matches: [byeResult] }];
+      const roundMatches = updatedRounds.find((round) => round.roundNumber === roundNumber)?.matches || [];
+      setCompletedRounds(updatedRounds);
+      setHeraldFeed((current) => [byeLine, ...current].slice(0, 14));
+
+      if (remaining.length) {
+        setCurrentPairs(remaining);
+        return;
+      }
+
+      const winners = roundMatches.map((match) => match.winner);
+      if (winners.length === 1) {
+        setStatus("complete");
+        setCurrentPairs([]);
+        setHeraldFeed((current) => [`${winners[0].name} stands alone in the lists.`, ...current].slice(0, 14));
+        return;
+      }
+
+      setRoundNumber((current) => current + 1);
+      setCurrentPairs(makePairs(winners));
+      return;
+    }
     const matchId = `${roundNumber}-${pair.first.id}-${pair.second.id}`;
     const result = runMatch(pair.first, pair.second, tournamentType);
     const prediction = predictions[matchId];
@@ -398,8 +501,8 @@ export default function TournamentsPage() {
   }
 
   const visiblePairs = useMemo(() => currentPairs.map((pair) => {
-    const odds = getWinOdds(pair.first, pair.second);
-    return { ...pair, odds, matchId: `${roundNumber}-${pair.first.id}-${pair.second.id}` };
+    const odds = pair.second ? getWinOdds(pair.first, pair.second) : { fighterAChance: 100, fighterBChance: 0 };
+    return { ...pair, odds, matchId: `${roundNumber}-${pair.first.id}-${pair.second?.id || "bye"}` };
   }), [currentPairs, roundNumber]);
 
   return (
@@ -418,7 +521,7 @@ export default function TournamentsPage() {
                 <Stat label="Trial" value={tournamentType} />
                 <Stat label="Status" value={status === "signup" ? "Signing Up" : status} />
                 <Stat label="Rolls" value={`${signupRoster.length} / ${bracketSize}`} />
-                <Stat label="Prize" value="Gold and Trophy" />
+                <Stat label="Account" value={isSignedIn ? "Signed In" : "Sign In"} />
               </div>
             </div>
             <div className="hidden h-24 border border-[var(--gok-line)] bg-[url('/banners/TournamentGrounds.png')] bg-cover bg-right opacity-55 lg:block" />
@@ -445,16 +548,30 @@ export default function TournamentsPage() {
                   {["Joust", "Archery", "Melee", "Smithing"].map((type) => <option key={type} value={type}>{type}</option>)}
                 </select>
               </label>
+              <div className="grid gap-2">
+                <p className="text-sm font-black text-[var(--gok-silver)]">Choose Your Orders</p>
+                {Object.values(tacticalStances).map((stance) => (
+                  <button
+                    key={stance.key}
+                    type="button"
+                    onClick={() => setSelectedStance(stance.key)}
+                    disabled={signedUp}
+                    className={`border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${selectedStance === stance.key ? "border-red-400 bg-red-950/35 text-red-100" : "border-[var(--gok-line)] bg-black/55 text-[var(--gok-silver)] hover:border-[var(--gok-line-strong)]"}`}
+                  >
+                    <span className="block font-black">{stance.label}</span>
+                    <span className="mt-1 block text-xs leading-5 text-[var(--gok-dim)]">{stance.edge}</span>
+                  </button>
+                ))}
+              </div>
               <button onClick={signUpTournament} disabled={signedUp || signupRoster.length >= bracketSize} className="gok-btn gok-btn-blood min-h-12 px-5 py-3 disabled:opacity-45">
                 {signedUp ? "Already Signed Up" : "Sign Up For The Lists"}
               </button>
-              <button onClick={openBracketFromSignups} disabled={signupRoster.length < bracketSize || currentPairs.length > 0 || status === "complete"} className="gok-btn min-h-12 px-5 py-3 disabled:opacity-45">
-                Open Filled Bracket
+              <button onClick={openBracketFromSignups} disabled={signupRoster.length < 2 || currentPairs.length > 0 || status === "complete"} className="gok-btn min-h-12 px-5 py-3 disabled:opacity-45">
+                Call The Lists
               </button>
               <button onClick={() => setStatus(status === "running" ? "paused" : "running")} disabled={!currentPairs.length} className="gok-btn min-h-12 px-5 py-3 disabled:opacity-45">
-                {status === "running" ? "Pause Heralds" : "Begin Tournament"}
+                {status === "running" ? "Pause Live Tournament" : "Begin Live Tournament"}
               </button>
-              <button onClick={resolveNextMatch} disabled={!currentPairs.length || status === "complete"} className="gok-btn min-h-12 px-5 py-3 disabled:opacity-45">Run Next Match</button>
             </div>
             <div className="relative z-10 mt-5 grid gap-2 text-sm">
               <Stat label="Weather" value={weather} />
@@ -479,16 +596,25 @@ export default function TournamentsPage() {
                   <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
                     <FighterCard fighter={pair.first} chance={pair.odds.fighterAChance} />
                     <p className="text-center text-xs font-black uppercase tracking-[0.2em] text-[var(--gok-dim)]">versus</p>
-                    <FighterCard fighter={pair.second} chance={pair.odds.fighterBChance} alignRight />
+                    {pair.second ? (
+                      <FighterCard fighter={pair.second} chance={pair.odds.fighterBChance} alignRight />
+                    ) : (
+                      <div className="border border-dashed border-[var(--gok-line)] bg-black/45 p-4 text-right">
+                        <p className="font-serif text-2xl font-black text-[var(--gok-silver)]">Open Lane</p>
+                        <p className="mt-2 text-sm text-[var(--gok-dim)]">This house advances unless another entrant fills the lists before the horn.</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                    <button onClick={() => choosePrediction(pair.matchId, pair.first.id)} className={`gok-btn px-3 py-2 text-xs ${predictions[pair.matchId] === pair.first.id ? "border-red-300 text-red-200" : ""}`}>
-                      Predict {pair.first.house}
-                    </button>
-                    <button onClick={() => choosePrediction(pair.matchId, pair.second.id)} className={`gok-btn px-3 py-2 text-xs ${predictions[pair.matchId] === pair.second.id ? "border-red-300 text-red-200" : ""}`}>
-                      Predict {pair.second.house}
-                    </button>
-                  </div>
+                  {pair.second && (
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      <button onClick={() => choosePrediction(pair.matchId, pair.first.id)} className={`gok-btn px-3 py-2 text-xs ${predictions[pair.matchId] === pair.first.id ? "border-red-300 text-red-200" : ""}`}>
+                        Predict {pair.first.house}
+                      </button>
+                      <button onClick={() => choosePrediction(pair.matchId, pair.second.id)} className={`gok-btn px-3 py-2 text-xs ${predictions[pair.matchId] === pair.second.id ? "border-red-300 text-red-200" : ""}`}>
+                        Predict {pair.second.house}
+                      </button>
+                    </div>
+                  )}
                 </article>
               )) : (
                 <div className="grid gap-3 border border-[var(--gok-line)] bg-black/55 p-4">
@@ -576,7 +702,7 @@ function FighterCard({ fighter, chance, alignRight = false }) {
         <div className="h-full bg-red-900" style={{ width: `${chance}%` }} />
       </div>
       <p className="mt-2 text-[0.68rem] uppercase tracking-[0.12em] text-[var(--gok-dim)]">
-        STR {fighter.strength} / SKL {fighter.skill} / SPD {fighter.speed} / END {fighter.endurance} / REP {fighter.reputation} / LUCK {fighter.luck}
+        {tacticalStances[fighter.stance]?.shortLabel || "Balanced"} / STR {fighter.strength} / SKL {fighter.skill} / SPD {fighter.speed} / END {fighter.endurance} / REP {fighter.reputation} / LUCK {fighter.luck}
       </p>
       </div>
     </div>
