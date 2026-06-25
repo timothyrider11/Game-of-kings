@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import NobleKnightSelector from "../../components/NobleKnightSelector";
+import SigilMark from "../../components/SigilMark";
 import SiteNav from "../../components/SiteNav";
 import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
 import {
@@ -468,11 +469,18 @@ export default function AccountPage() {
                   House {realm.houseName || "Unsworn"} {realm.selectedKnightTitle ? `- ${realm.selectedKnightTitle}` : ""}
                 </p>
               </div>
-              {realm.selectedKnightImage && (
-                <span className="gok-knight-frame block h-24 w-20">
-                  <img src={realm.selectedKnightImage} alt={realm.selectedKnightTitle || "Selected knight"} className="gok-knight-image h-full w-full object-cover" />
-                </span>
-              )}
+              <div className="flex items-center gap-3">
+                {realm.houseSigil?.layers?.length && (
+                  <span className="block h-24 w-20">
+                    <SigilMark sigil={realm.houseSigil} label={`${realm.houseName || "House"} sigil`} />
+                  </span>
+                )}
+                {realm.selectedKnightImage && (
+                  <span className="gok-knight-frame block h-24 w-20">
+                    <img src={realm.selectedKnightImage} alt={realm.selectedKnightTitle || "Selected knight"} className="gok-knight-image h-full w-full object-cover" />
+                  </span>
+                )}
+              </div>
             </div>
             <div className="relative z-10 mt-5 grid gap-3 md:grid-cols-4">
               <LedgerStat label="Gold" value={(realm.gold ?? 350).toLocaleString()} />

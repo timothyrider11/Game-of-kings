@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import RealmAudio from "../components/RealmAudio";
+import SigilMark from "../components/SigilMark";
 import SiteNav from "../components/SiteNav";
 import { formatActivityTime, loadRealmActivity, readLocalActivities } from "../lib/realm-activity";
 import { getSessionUser, loadCloudRealm } from "../lib/realm-cloud";
@@ -197,7 +198,13 @@ export default function HomePage() {
             </Link>
 
             <div className="gok-wax-seal" style={{ backgroundColor: waxColor }}>
-              <span>{waxInitial}</span>
+              {realm.houseSigil?.layers?.length ? (
+                <div className="h-16 w-16 opacity-90 mix-blend-screen">
+                  <SigilMark sigil={realm.houseSigil} label="House wax seal" showBorder={false} />
+                </div>
+              ) : (
+                <span>{waxInitial}</span>
+              )}
             </div>
 
             <div className="relative z-10 mt-5 border border-[rgba(196,193,184,0.13)] bg-black/25 p-4">

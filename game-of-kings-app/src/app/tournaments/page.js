@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import SigilMark from "../../components/SigilMark";
 import SiteNav from "../../components/SiteNav";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
@@ -76,6 +77,7 @@ function playerFighter(realm, sessionUserId = "") {
     reputation: 80 + renownBoost + modifiers.reputation,
     luck: 62 + modifiers.luck,
     knightImage: realm?.selectedKnightImage || "/knights/male/01.png",
+    houseSigil: realm?.houseSigil || null,
   };
 }
 
@@ -510,24 +512,39 @@ export default function TournamentsPage() {
       <SiteNav className="-mx-4 -mt-6 mb-6" />
 
       <section className="mx-auto mt-6 max-w-[1760px]">
-        <div className="relative overflow-hidden border border-[var(--gok-line)] bg-black p-5 shadow-2xl shadow-black">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#2a2218,transparent_35%),linear-gradient(90deg,#070707,#0e0c09_45%,#050505)]" />
-          <div className="relative z-10 grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
-            <div className="hidden h-24 border border-[var(--gok-line)] bg-[url('/banners/TournamentGrounds.png')] bg-cover bg-left opacity-55 lg:block" />
-            <div className="text-center">
-              <p className="gok-eyebrow">Tournament Grounds</p>
-              <h1 className="mt-2 text-4xl uppercase tracking-[0.34em] text-[var(--gok-silver)] md:text-6xl">Tournament Grounds</h1>
-              <div className="mt-4 grid grid-cols-2 gap-2 text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)] sm:grid-cols-4">
-                <Stat label="Trial" value={tournamentType} />
-                <Stat label="Status" value={status === "signup" ? "Signing Up" : status} />
-                <Stat label="Rolls" value={`${signupRoster.length} / ${bracketSize}`} />
-                <Stat label="Account" value={isSignedIn ? "Signed In" : "Sign In"} />
-              </div>
+        <div className="relative overflow-hidden border border-[var(--gok-line)] bg-black shadow-2xl shadow-black">
+          <div className="absolute inset-0 bg-[url('/banners/TournamentGrounds.png')] bg-cover bg-center opacity-70" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.88)_72%,#050505),radial-gradient(circle_at_50%_0%,rgba(138,109,59,.28),transparent_42%)]" />
+          <div className="relative z-10 min-h-[330px] px-5 py-8 md:px-10">
+            <div className="mx-auto max-w-4xl border border-[rgba(138,109,59,0.35)] bg-black/62 px-4 py-3 text-center shadow-2xl shadow-black backdrop-blur-sm">
+              <p className="text-xs font-black uppercase tracking-[0.34em] text-[var(--gok-parchment)]">Will you be the champion?</p>
+              <button onClick={signUpTournament} disabled={signedUp || signupRoster.length >= bracketSize} className="mt-3 border border-red-900 bg-red-950/55 px-12 py-2 text-xs font-black uppercase tracking-[0.24em] text-red-100 transition hover:border-red-400 disabled:opacity-55">
+                {signedUp ? "Entered" : "Sign Up To Enter"}
+              </button>
             </div>
-            <div className="hidden h-24 border border-[var(--gok-line)] bg-[url('/banners/TournamentGrounds.png')] bg-cover bg-right opacity-55 lg:block" />
+
+            <div className="mt-16 text-center md:mt-20">
+              <p className="gok-eyebrow">Tournament Grounds</p>
+              <h1 className="mt-3 text-4xl uppercase tracking-[0.42em] text-[var(--gok-silver)] drop-shadow-[0_12px_24px_rgba(0,0,0,.95)] sm:text-6xl lg:text-7xl">
+                Tournament Grounds
+              </h1>
+            </div>
+
+            <div className="mt-8 grid gap-3 text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)] sm:grid-cols-2 lg:grid-cols-4">
+              <Stat label="Type of Trial" value={tournamentType} />
+              <Stat label="Tournament Begins" value={status === "running" ? "Live Now" : status === "signup" ? "Signing Up" : status} />
+              <Stat label="Signed Houses" value={`${signupRoster.length} / ${bracketSize}`} />
+              <Stat label="The Prize" value="Glory & Reward" />
+            </div>
           </div>
-          <div className="relative z-10 mt-5 h-3 overflow-hidden border border-red-950 bg-black">
+          <div className="relative z-10 border-t border-[var(--gok-line)] bg-black/80 px-5 py-4">
+            <div className="mb-2 flex items-center justify-between text-[0.65rem] font-black uppercase tracking-[0.22em] text-red-300">
+              <span>{status === "running" ? "Tournament In Progress" : "Tournament Rolls"}</span>
+              <span>{signupRoster.length} houses written in</span>
+            </div>
+            <div className="h-3 overflow-hidden border border-red-950 bg-black">
             <div className="h-full bg-red-950" style={{ width: `${Math.round((signupRoster.length / bracketSize) * 100)}%` }} />
+            </div>
           </div>
           {message && <p className="relative z-10 mt-4 border border-[var(--gok-line)] bg-black/50 p-3 text-sm text-[var(--gok-parchment)]">{message}</p>}
         </div>
@@ -564,7 +581,7 @@ export default function TournamentsPage() {
                 ))}
               </div>
               <button onClick={signUpTournament} disabled={signedUp || signupRoster.length >= bracketSize} className="gok-btn gok-btn-blood min-h-12 px-5 py-3 disabled:opacity-45">
-                {signedUp ? "Already Signed Up" : "Sign Up For The Lists"}
+                {signedUp ? "Entered" : "Sign Up For The Lists"}
               </button>
               <button onClick={openBracketFromSignups} disabled={signupRoster.length < 2 || currentPairs.length > 0 || status === "complete"} className="gok-btn min-h-12 px-5 py-3 disabled:opacity-45">
                 Call The Lists
@@ -624,11 +641,7 @@ export default function TournamentsPage() {
                       <div key={`${fighter.id}-${index}`} className={`flex items-center gap-3 border border-[var(--gok-line)] bg-black/60 p-3 ${fighter.empty ? "opacity-45" : ""}`}>
                         {fighter.empty ? (
                           <div className="grid h-14 w-12 place-items-center border border-dashed border-[var(--gok-line)] text-xs">OPEN</div>
-                        ) : (
-                          <span className="gok-knight-frame block h-14 w-12">
-                            <img src={fighter.knightImage || "/knights/male/01.png"} alt="" className="gok-knight-image h-full w-full object-cover grayscale" />
-                          </span>
-                        )}
+                        ) : <FighterIdentity fighter={fighter} compact />}
                         <div>
                           <p className="font-black text-[var(--gok-silver)]">{fighter.name}</p>
                           <p className="text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)]">{fighter.house}</p>
@@ -691,9 +704,7 @@ function Stat({ label, value }) {
 function FighterCard({ fighter, chance, alignRight = false }) {
   return (
     <div className={`flex gap-3 ${alignRight ? "flex-row-reverse text-right" : ""}`}>
-      <span className="gok-knight-frame block h-20 w-16 shrink-0">
-        <img src={fighter.knightImage || "/knights/male/01.png"} alt="" className="gok-knight-image h-full w-full object-cover grayscale" />
-      </span>
+      <FighterIdentity fighter={fighter} />
       <div className="min-w-0 flex-1">
       <p className="font-serif text-2xl font-black text-[var(--gok-silver)]">{fighter.name}</p>
       <p className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-red-300">{fighter.house}</p>
@@ -706,6 +717,21 @@ function FighterCard({ fighter, chance, alignRight = false }) {
       </p>
       </div>
     </div>
+  );
+}
+
+function FighterIdentity({ fighter, compact = false }) {
+  return (
+    <span className={`relative block shrink-0 ${compact ? "h-14 w-12" : "h-20 w-16"}`}>
+      <span className="gok-knight-frame block h-full w-full">
+        <img src={fighter.knightImage || "/knights/male/01.png"} alt="" className="gok-knight-image h-full w-full object-cover grayscale" />
+      </span>
+      {fighter.houseSigil?.layers?.length && (
+        <span className={`absolute -bottom-2 -right-2 block ${compact ? "h-8 w-7" : "h-10 w-8"}`}>
+          <SigilMark sigil={fighter.houseSigil} label={`${fighter.house} sigil`} />
+        </span>
+      )}
+    </span>
   );
 }
 

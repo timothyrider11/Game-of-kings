@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import SharedSigilMark from "../../components/SigilMark";
 import SiteNav from "../../components/SiteNav";
 import { rollUnclaimedArtifact } from "../../lib/artifacts";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
@@ -3402,39 +3403,8 @@ function WaxSigil({ sigil }) {
 }
 
 function SigilMark({ sigil = {}, label = "House sigil" }) {
-  const layers = sigil.layers?.length ? sigil.layers : fallbackSigilForCastle({ name: label }, { owner: "claimed" }).layers;
-  const clipPath = getMiniShieldClip(sigil.shield);
-
-  return (
-    <div className="relative h-full w-full" aria-label={label}>
-      <div
-        className="absolute inset-0 border-2"
-        style={{
-          background: getSigilFieldBackground(sigil),
-          borderColor: sigil.border || "#8a6d3b",
-          clipPath,
-          boxShadow: "inset 0 0 18px rgba(0,0,0,.72)",
-        }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.18),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.32))]" />
-        {layers.map((layer) => (
-          <div
-            key={layer.id}
-            className="absolute aspect-square"
-            style={{
-              left: `${layer.x ?? 50}%`,
-              top: `${layer.y ?? 50}%`,
-              width: `${layer.size ?? 58}%`,
-              opacity: (layer.opacity ?? 100) / 100,
-              transform: `translate(-50%, -50%) rotate(${layer.rotate ?? 0}deg) scaleX(${(layer.stretch ?? 100) / 100})`,
-            }}
-          >
-            <MiniChargeIcon type={layer.charge} color={layer.color || "#b7b3a8"} fallback={sigil.initial || label.slice(0, 1)} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const visibleSigil = sigil.layers?.length ? sigil : fallbackSigilForCastle({ name: label }, { owner: "claimed" });
+  return <SharedSigilMark sigil={visibleSigil} label={label} />;
 }
 
 function MiniChargeIcon({ type, color, fallback = "G" }) {

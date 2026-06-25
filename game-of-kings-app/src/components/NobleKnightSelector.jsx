@@ -93,14 +93,14 @@ export default function NobleKnightSelector({ initialGender = "male", initialInd
             &lsaquo;
           </button>
 
-          <div className="gok-knight-frame relative min-h-[24rem]">
-            {previous && <img src={previous.imageUrl} alt="" className="gok-knight-image-faded absolute left-2 top-10 h-[78%] w-[32%] object-contain opacity-28 blur-[1px]" />}
-            {next && <img src={next.imageUrl} alt="" className="gok-knight-image-faded absolute right-2 top-10 h-[78%] w-[32%] object-contain opacity-28 blur-[1px]" />}
+          <div className="gok-knight-frame gok-knight-selector-stage relative min-h-[26rem]">
+            {previous && <img src={previous.imageUrl} alt="" className="gok-knight-image-faded absolute left-1 top-8 h-[84%] w-[34%] object-contain opacity-30 blur-[1px]" />}
+            {next && <img src={next.imageUrl} alt="" className="gok-knight-image-faded absolute right-1 top-8 h-[84%] w-[34%] object-contain opacity-30 blur-[1px]" />}
             {selected && (
               <img
                 src={selected.imageUrl}
                 alt={title}
-                className="gok-knight-image absolute inset-x-0 bottom-0 mx-auto h-[96%] w-[64%] object-contain drop-shadow-[0_20px_34px_rgba(0,0,0,0.9)]"
+                className="gok-knight-image absolute inset-x-0 bottom-0 mx-auto h-[104%] w-[72%] object-contain drop-shadow-[0_20px_34px_rgba(0,0,0,0.48)]"
               />
             )}
           </div>

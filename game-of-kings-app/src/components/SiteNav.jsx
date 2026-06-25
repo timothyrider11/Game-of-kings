@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import SigilMark from "./SigilMark";
 import { STORAGE_KEY } from "../lib/realm-identity";
 
 const navItems = [
@@ -62,7 +63,11 @@ export default function SiteNav({ className = "" }) {
             href="/account"
             className="flex shrink-0 snap-start items-center gap-2 border border-[var(--gok-line)] bg-black/60 px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[var(--gok-dim)] transition hover:border-[var(--gok-line-strong)] hover:text-[var(--gok-silver)]"
           >
-            {realm.selectedKnightImage ? (
+            {realm.houseSigil?.layers?.length ? (
+              <span className="block h-9 w-8">
+                <SigilMark sigil={realm.houseSigil} label={`${realm.houseName || "House"} sigil`} />
+              </span>
+            ) : realm.selectedKnightImage ? (
               <span className="gok-knight-frame block h-9 w-8">
                 <img src={realm.selectedKnightImage} alt="" className="gok-knight-image h-full w-full object-cover grayscale" />
               </span>

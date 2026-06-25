@@ -372,7 +372,7 @@ export default function HouseFounderPage() {
                       type="button"
                       onMouseDown={(event) => startDrag(event, layer)}
                       onWheel={(event) => resizeLayer(event, layer)}
-                      className={`absolute block cursor-grab active:cursor-grabbing ${selectedLayer?.id === layer.id ? "rounded-full outline outline-1 outline-[var(--gok-silver)]" : ""}`}
+                      className="absolute block cursor-grab active:cursor-grabbing"
                       style={{
                         left: `${layer.x}%`,
                         top: `${layer.y}%`,
