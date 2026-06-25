@@ -8,8 +8,8 @@ export const EXTRA_CASTLE_CLAIM_GRANTS = {};
 export const ROYAL_ACCOUNTS = {
   [ROYAL_EMAIL]: {
     title: "King",
-    rulerName: "Rider",
-    lordName: "King Rider",
+    rulerName: "Timothy",
+    lordName: "King Timothy",
     houseName: "Rider",
     houseMotto: "Loyalty Never Dies",
     houseLabel: "House Rider",
@@ -17,6 +17,10 @@ export const ROYAL_ACCOUNTS = {
     startingGold: 350,
     startingTroops: 1200,
     startingArtifacts: [],
+    selectedKnightGender: "royal",
+    selectedKnightIndex: 1,
+    selectedKnightImage: "/knights/royal/king-timothy.png",
+    selectedKnightTitle: "The Black Crown",
   },
   [QUEEN_EMAIL]: {
     title: "Queen",
@@ -29,6 +33,10 @@ export const ROYAL_ACCOUNTS = {
     startingGold: 10000,
     startingTroops: 4000,
     startingArtifacts: ["Dayne Falling Star", "Catspaw Dagger"],
+    selectedKnightGender: "royal",
+    selectedKnightIndex: 2,
+    selectedKnightImage: "/knights/royal/queen-rider.png",
+    selectedKnightTitle: "The Ivory Crown",
   },
 };
 
@@ -72,6 +80,10 @@ export function applyRoyalAccountDefaults(realm = {}, email = "") {
     houseMotto: realm.houseMotto || royalAccount.houseMotto,
     rulerName: realm.rulerName || royalAccount.rulerName,
     rulerTitle: royalAccount.title,
+    selectedKnightGender: royalAccount.selectedKnightGender,
+    selectedKnightIndex: royalAccount.selectedKnightIndex,
+    selectedKnightImage: royalAccount.selectedKnightImage,
+    selectedKnightTitle: royalAccount.selectedKnightTitle,
     gold: Math.max(realm.gold ?? 350, royalAccount.startingGold),
     artifactInventory: [...new Set([...(realm.artifactInventory || []), ...royalAccount.startingArtifacts])],
   };

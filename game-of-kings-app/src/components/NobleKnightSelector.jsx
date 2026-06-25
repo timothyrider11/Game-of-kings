@@ -13,7 +13,7 @@ function mod(value, length) {
 
 export default function NobleKnightSelector({ initialGender = "male", initialIndex = 1, onSelect, signedIn = false }) {
   const [knights, setKnights] = useState({ male: [], female: [] });
-  const [gender, setGender] = useState(initialGender || "male");
+  const [gender, setGender] = useState(["male", "female"].includes(initialGender) ? initialGender : "male");
   const [index, setIndex] = useState(Math.max(1, Number(initialIndex) || 1));
   const [ceremony, setCeremony] = useState("");
 

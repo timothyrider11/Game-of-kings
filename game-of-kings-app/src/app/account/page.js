@@ -17,7 +17,7 @@ import {
   signUpWithPassword,
   upsertProfile,
 } from "../../lib/realm-cloud";
-import { applyRoyalAccountDefaults, clearLocalRealm, getRoyalAccount, isRoyalEmail, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
+import { applyRoyalAccountDefaults, clearLocalRealm, getRoyalAccount, isRoyalEmail, normalizeRulerTitle, PUBLIC_TITLES, ROYAL_ACCOUNTS, ROYAL_TITLES, STORAGE_KEY } from "../../lib/realm-identity";
 import { supabase } from "../../lib/supabase";
 
 const CASTLE_NAMES = {
@@ -59,6 +59,7 @@ export default function AccountPage() {
   const [busy, setBusy] = useState(false);
   const [realm, setRealm] = useState({});
   const userEmail = user?.email || "";
+  const isRoyalUser = isRoyalEmail(userEmail);
 
   const ownedCastles = useMemo(() => {
     const localOwned = Object.entries(realm.castleState || {})
@@ -87,6 +88,18 @@ export default function AccountPage() {
     ],
     [realm.artifactInventory, realm.trophies]
   );
+
+  const royalRegistry = useMemo(() => Object.entries(ROYAL_ACCOUNTS).map(([accountEmail, account]) => ({
+    email: accountEmail,
+    title: account.title,
+    rulerName: account.rulerName,
+    houseLabel: account.houseLabel,
+    castles: account.castleIds.map(castleNameFromId),
+    gold: account.startingGold,
+    troops: account.startingTroops,
+    artifacts: account.startingArtifacts,
+    image: account.selectedKnightImage,
+  })), []);
 
   const loadAccountRealm = useCallback(async (accountEmail = userEmail) => {
     const { realm: cloudRealm } = await loadCloudRealm();
@@ -295,7 +308,7 @@ export default function AccountPage() {
     <main className="gok-page min-h-screen px-4 py-6 text-stone-100">
       <SiteNav className="-mx-4 -mt-6 mb-6" />
 
-      <section className="mx-auto mt-8 grid max-w-5xl gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
+      <section className="mx-auto mt-8 grid max-w-7xl gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
         <div className="gok-panel p-5">
           <p className="gok-eyebrow">Realm Account</p>
           <h1 className="mt-3 text-4xl uppercase tracking-[0.08em] text-[var(--gok-silver)]">
@@ -409,6 +422,14 @@ export default function AccountPage() {
                 </div>
               </div>
 
+              <div className="grid gap-3 border border-[var(--gok-line)] bg-black/45 p-4 text-sm">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--gok-dim)]">Account Ledger</p>
+                <LedgerRow label="Email" value={user.email} />
+                <LedgerRow label="Role" value={isRoyalUser ? getRoyalAccount(user.email).title : "Player"} />
+                <LedgerRow label="Profile" value={username || "Not named yet"} />
+                <LedgerRow label="Realm Save" value="Supabase player_realms + local device cache" />
+              </div>
+
               <form onSubmit={saveProfile} className="grid gap-3 md:grid-cols-3">
                 <input
                   value={username}
@@ -453,6 +474,34 @@ export default function AccountPage() {
                   Sign Out
                 </button>
               </div>
+
+              {isRoyalUser && (
+                <div className="border border-[var(--gok-line-strong)] bg-black/55 p-4">
+                  <p className="gok-eyebrow">Royal Account Registry</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--gok-dim)]">
+                    These are the protected royal defaults written into the site. Supabase Auth still controls passwords and email verification.
+                  </p>
+                  <div className="mt-4 grid gap-3">
+                    {royalRegistry.map((entry) => (
+                      <div key={entry.email} className="grid gap-3 border border-[rgba(196,193,184,0.14)] bg-black/55 p-3 sm:grid-cols-[64px_minmax(0,1fr)]">
+                        <span className="gok-knight-frame block h-20 w-16">
+                          <img src={entry.image} alt={`${entry.title} ${entry.rulerName}`} className="gok-knight-image h-full w-full object-cover" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-serif text-xl font-black text-[var(--gok-silver)]">{entry.title} {entry.rulerName}</p>
+                          <p className="truncate text-xs uppercase tracking-[0.14em] text-[var(--gok-dim)]">{entry.email}</p>
+                          <div className="mt-2 grid gap-1 text-sm text-[var(--gok-parchment)]">
+                            <LedgerRow label="House" value={entry.houseLabel} compact />
+                            <LedgerRow label="Castles" value={entry.castles.join(", ")} compact />
+                            <LedgerRow label="Starting Assets" value={`${entry.gold.toLocaleString()} gold / ${entry.troops.toLocaleString()} troops`} compact />
+                            <LedgerRow label="Artifacts" value={entry.artifacts.length ? entry.artifacts.join(", ") : "None"} compact />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -488,7 +537,7 @@ export default function AccountPage() {
               <LedgerStat label="Castles" value={ownedCastles.length.toLocaleString()} />
               <LedgerStat label="Inventory" value={inventoryItems.length.toLocaleString()} />
             </div>
-            <div className="relative z-10 mt-5 grid gap-4 lg:grid-cols-2">
+            <div className="relative z-10 mt-5 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="border border-[var(--gok-line)] bg-black/45 p-4">
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--gok-dim)]">Castle Seat</p>
                 <div className="mt-3 grid gap-2">
@@ -516,6 +565,20 @@ export default function AccountPage() {
                 </div>
               </div>
             </div>
+            <div className="relative z-10 mt-4 grid gap-3 border border-[var(--gok-line)] bg-black/45 p-4 md:grid-cols-2">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--gok-dim)]">Account Storage</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--gok-parchment)]">
+                  Profile names live in Supabase profiles. Castle, sigil, gold, renown, knight, trophies, and inventory live in player_realms.
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--gok-dim)]">Current Save Status</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--gok-parchment)]">
+                  Use Update Realm after big changes, then Refresh Realm on another device to pull the latest saved copy.
+                </p>
+              </div>
+            </div>
           </div>
 
           <NobleKnightSelector
@@ -536,6 +599,15 @@ function LedgerStat({ label, value }) {
     <div className="border border-[var(--gok-line)] bg-black/45 p-3">
       <p className="text-[0.62rem] font-black uppercase tracking-[0.18em] text-[var(--gok-dim)]">{label}</p>
       <p className="mt-1 font-serif text-2xl font-black text-[var(--gok-silver)]">{value}</p>
+    </div>
+  );
+}
+
+function LedgerRow({ label, value, compact = false }) {
+  return (
+    <div className={`flex min-w-0 justify-between gap-3 ${compact ? "text-xs" : ""}`}>
+      <span className="shrink-0 font-black uppercase tracking-[0.14em] text-[var(--gok-dim)]">{label}</span>
+      <span className="min-w-0 truncate text-right text-[var(--gok-silver)]">{value}</span>
     </div>
   );
 }
