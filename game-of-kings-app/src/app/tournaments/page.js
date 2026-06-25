@@ -12,6 +12,15 @@ const STORAGE_KEY = "game_of_kings_living_realm";
 
 const weatherOptions = ["sunny", "rain-soaked field", "muddy grounds", "windy archery range", "moonlit melee"];
 const crowdMoods = ["calm", "excited", "restless", "furious", "roaring"];
+const dragonEpisodeSchedule = [
+  { episode: 2, at: "2026-06-28T20:00:00-05:00" },
+  { episode: 3, at: "2026-07-05T20:00:00-05:00" },
+  { episode: 4, at: "2026-07-12T20:00:00-05:00" },
+  { episode: 5, at: "2026-07-19T20:00:00-05:00" },
+  { episode: 6, at: "2026-07-26T20:00:00-05:00" },
+  { episode: 7, at: "2026-08-02T20:00:00-05:00" },
+  { episode: 8, at: "2026-08-09T20:00:00-05:00" },
+];
 const tournamentEvents = [
   "lance breaks",
   "horse stumbles",
@@ -163,6 +172,7 @@ function makePairs(fighters) {
 function normalizeEntrant(fighter, activity) {
   if (!fighter) return null;
   const userId = fighter.userId || activity?.meta?.userId || activity?.meta?.fighter?.user_id || "";
+  const email = fighter.email || activity?.meta?.email || activity?.meta?.fighter?.email || "";
   const fallback = activity?.id || `${fighter.house || "house"}-${fighter.name || "fighter"}`;
   const id = fighter.id && fighter.id !== "player-house-fighter"
     ? fighter.id
@@ -172,11 +182,18 @@ function normalizeEntrant(fighter, activity) {
     ...fighter,
     id,
     userId,
+    email,
   };
 }
 
+function normalizeEntryText(value = "") {
+  return value.toString().trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 function entrantKey(fighter) {
-  return fighter?.userId || fighter?.id || `${fighter?.house || "house"}-${fighter?.name || "fighter"}`;
+  const stableIdentity = fighter?.userId || fighter?.email;
+  if (stableIdentity) return stableIdentity.toString().trim().toLowerCase();
+  return `${normalizeEntryText(fighter?.house || "house")}::${normalizeEntryText(fighter?.name || "fighter")}`;
 }
 
 function sameEntrant(a, b) {
@@ -185,6 +202,19 @@ function sameEntrant(a, b) {
 
 function uniqueEntrants(entries) {
   return entries.filter((fighter, index, all) => all.findIndex((entry) => entrantKey(entry) === entrantKey(fighter)) === index);
+}
+
+function getNextDragonEpisode(now = Date.now()) {
+  return dragonEpisodeSchedule.find((item) => new Date(item.at).getTime() > now) || null;
+}
+
+function formatCountdown(targetTime, now) {
+  const distance = Math.max(0, targetTime - now);
+  const days = Math.floor(distance / 86400000);
+  const hours = Math.floor((distance % 86400000) / 3600000);
+  const minutes = Math.floor((distance % 3600000) / 60000);
+  const seconds = Math.floor((distance % 60000) / 1000);
+  return `${days}d ${hours}h ${minutes}m ${seconds}s`;
 }
 
 function rewardForChampion(tournamentType, champion) {
@@ -206,6 +236,7 @@ export default function TournamentsPage() {
   const [realm, setRealm] = useState({});
   const [bracketSize, setBracketSize] = useState(8);
   const [tournamentType, setTournamentType] = useState("Joust");
+  const [now, setNow] = useState(() => Date.now());
   const [selectedStance, setSelectedStance] = useState("balanced");
   const [weather, setWeather] = useState(weatherOptions[0]);
   const [crowdMood, setCrowdMood] = useState(crowdMoods[0]);
@@ -222,6 +253,9 @@ export default function TournamentsPage() {
   const [sessionUserId, setSessionUserId] = useState("");
 
   const tournamentKey = `open-${tournamentType.toLowerCase()}-${bracketSize}`;
+  const nextDragonEpisode = useMemo(() => getNextDragonEpisode(now), [now]);
+  const nextDragonEpisodeTime = nextDragonEpisode ? new Date(nextDragonEpisode.at).getTime() : null;
+  const dragonCountdown = nextDragonEpisodeTime ? formatCountdown(nextDragonEpisodeTime, now) : "Season complete";
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -235,6 +269,11 @@ export default function TournamentsPage() {
       setRealm(cloudRealm);
       setSelectedStance(cloudRealm.activeTournamentStance || "balanced");
     });
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -340,6 +379,11 @@ export default function TournamentsPage() {
       },
     };
     const fighter = playerFighter(realmWithStance, sessionUserId);
+    if (publicEntrants.some((entry) => sameEntrant(entry, fighter))) {
+      setMessage("Your house is already written into the tournament rolls.");
+      return;
+    }
+
     const nextRealm = {
       ...realmWithStance,
       tournamentSignups: {
@@ -361,7 +405,7 @@ export default function TournamentsPage() {
       title: "A House Entered The Lists",
       actor: fighter.house,
       body: `${fighter.name} of ${fighter.house} signed up for the ${tournamentType} tournament with ${tacticalStances[selectedStance].shortLabel.toLowerCase()} orders.`,
-      meta: { action: "signup", tournamentKey, tournamentType, bracketSize, userId: sessionUserId, fighter },
+      meta: { action: "signup", tournamentKey, tournamentType, bracketSize, userId: sessionUserId, email: realm.email || "", fighter },
     }));
     setHeraldFeed((current) => [`${fighter.house} has entered the ${tournamentType.toLowerCase()} lists with ${tacticalStances[selectedStance].shortLabel.toLowerCase()} orders.`, ...current].slice(0, 14));
     setMessage(error || "You are signed up. The bracket will fill as more houses join.");
@@ -530,11 +574,12 @@ export default function TournamentsPage() {
               </h1>
             </div>
 
-            <div className="mt-8 grid gap-3 text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)] sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-8 grid gap-3 text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)] sm:grid-cols-2 lg:grid-cols-5">
               <Stat label="Type of Trial" value={tournamentType} />
               <Stat label="Tournament Begins" value={status === "running" ? "Live Now" : status === "signup" ? "Signing Up" : status} />
               <Stat label="Signed Houses" value={`${signupRoster.length} / ${bracketSize}`} />
               <Stat label="The Prize" value="Glory & Reward" />
+              <Stat label="Next Dragon Hour" value={nextDragonEpisode ? `Episode ${nextDragonEpisode.episode}: ${dragonCountdown}` : dragonCountdown} />
             </div>
           </div>
           <div className="relative z-10 border-t border-[var(--gok-line)] bg-black/80 px-5 py-4">
@@ -601,8 +646,8 @@ export default function TournamentsPage() {
           <section className="gok-panel p-5">
             <div className="relative z-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="gok-eyebrow">Visible Odds</p>
-                <h2 className="mt-2 text-3xl text-[var(--gok-silver)]">Round {roundNumber}</h2>
+                <p className="gok-eyebrow">{visiblePairs.length ? "Visible Odds" : "Signup Roster"}</p>
+                <h2 className="mt-2 text-3xl text-[var(--gok-silver)]">{visiblePairs.length ? `Round ${roundNumber}` : "Houses Entered"}</h2>
               </div>
               {champion && <p className="border border-[var(--gok-line)] bg-black/60 px-3 py-2 font-black text-[var(--gok-silver)]">Champion: {champion.name}</p>}
             </div>
@@ -638,7 +683,7 @@ export default function TournamentsPage() {
                   <p className="text-center text-[var(--gok-dim)]">The bracket fills only when real houses sign up.</p>
                   <div className="grid gap-2 md:grid-cols-2">
                     {bracketSlots.map((fighter, index) => (
-                      <div key={`${fighter.id}-${index}`} className={`flex items-center gap-3 border border-[var(--gok-line)] bg-black/60 p-3 ${fighter.empty ? "opacity-45" : ""}`}>
+                      <div key={fighter.empty ? `${fighter.id}-${index}` : entrantKey(fighter)} className={`flex items-center gap-3 border border-[var(--gok-line)] bg-black/60 p-3 ${fighter.empty ? "opacity-45" : ""}`}>
                         {fighter.empty ? (
                           <div className="grid h-14 w-12 place-items-center border border-dashed border-[var(--gok-line)] text-xs">OPEN</div>
                         ) : <FighterIdentity fighter={fighter} compact />}
