@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import SigilMark from "./SigilMark";
+import { formatDragonCountdown, getNextDragonEpisode } from "../lib/dragon-countdown";
 import { STORAGE_KEY } from "../lib/realm-identity";
 
 const navItems = [
@@ -19,6 +20,10 @@ const navItems = [
 
 export default function SiteNav({ className = "" }) {
   const [realm, setRealm] = useState({});
+  const [now, setNow] = useState(() => Date.now());
+  const nextDragonEpisode = getNextDragonEpisode(now);
+  const nextDragonEpisodeTime = nextDragonEpisode ? new Date(nextDragonEpisode.at).getTime() : null;
+  const dragonCountdown = nextDragonEpisodeTime ? formatDragonCountdown(nextDragonEpisodeTime, now) : "Season complete";
 
   useEffect(() => {
     function loadRealm() {
@@ -43,12 +48,24 @@ export default function SiteNav({ className = "" }) {
     };
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <nav className={`border-b border-[rgba(196,193,184,0.14)] bg-black/88 px-4 py-4 text-stone-100 backdrop-blur ${className}`}>
       <div className="mx-auto flex max-w-[1680px] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <Link href="/" className="gok-brand text-xl">
-          Game of Kings
-        </Link>
+        <div className="min-w-0">
+          <Link href="/" className="gok-brand block text-xl">
+            Game of Kings
+          </Link>
+          <div className="mt-2 w-fit border-y border-[rgba(196,193,184,0.18)] bg-black/40 px-3 py-1 font-serif text-[0.68rem] font-black uppercase tracking-[0.22em] text-[var(--gok-silver)] shadow-[0_0_18px_rgba(120,16,22,0.18)]">
+            <span className="text-red-300">Dragon Hour</span>
+            <span className="mx-2 text-[var(--gok-dim)]">Episode {nextDragonEpisode?.episode || "-"}</span>
+            <span>{dragonCountdown}</span>
+          </div>
+        </div>
         <div className="flex snap-x gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:justify-end lg:pb-0">
           {navItems.map(([label, href]) => (
             <Link

@@ -81,6 +81,18 @@ export async function loadProfile() {
   return { profile: data || null, error: error?.message || null };
 }
 
+export async function loadPublicProfiles(limit = 160) {
+  if (!supabase) return { profiles: [], error: CLOUD_DISABLED_MESSAGE };
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("user_id,username,ruler_name,ruler_title,avatar_url")
+    .order("created_at", { ascending: true })
+    .limit(limit);
+
+  return { profiles: data || [], error: error?.message || null };
+}
+
 export async function upsertProfile({ userId, username, rulerName, rulerTitle, avatarUrl = "" }) {
   if (!supabase) return { error: CLOUD_DISABLED_MESSAGE };
 

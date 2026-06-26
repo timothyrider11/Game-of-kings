@@ -5,22 +5,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import SigilMark from "../../components/SigilMark";
 import SiteNav from "../../components/SiteNav";
+import { formatDragonCountdown, getNextDragonEpisode } from "../../lib/dragon-countdown";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
-import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
+import { getSessionUser, loadCloudRealm, loadPublicProfiles, saveCloudRealm } from "../../lib/realm-cloud";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
 
 const weatherOptions = ["sunny", "rain-soaked field", "muddy grounds", "windy archery range", "moonlit melee"];
 const crowdMoods = ["calm", "excited", "restless", "furious", "roaring"];
-const dragonEpisodeSchedule = [
-  { episode: 2, at: "2026-06-28T20:00:00-05:00" },
-  { episode: 3, at: "2026-07-05T20:00:00-05:00" },
-  { episode: 4, at: "2026-07-12T20:00:00-05:00" },
-  { episode: 5, at: "2026-07-19T20:00:00-05:00" },
-  { episode: 6, at: "2026-07-26T20:00:00-05:00" },
-  { episode: 7, at: "2026-08-02T20:00:00-05:00" },
-  { episode: 8, at: "2026-08-09T20:00:00-05:00" },
-];
 const tournamentEvents = [
   "lance breaks",
   "horse stumbles",
@@ -64,6 +56,10 @@ const stanceCounters = {
   balanced: "aggressive",
 };
 
+function hashText(text = "") {
+  return text.split("").reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0) >>> 0;
+}
+
 function playerFighter(realm, sessionUserId = "") {
   const house = realm?.houseName?.trim() ? `House ${realm.houseName.trim()}` : "House Founder";
   const ruler = realm?.rulerName?.trim() || realm?.houseName?.trim() || "New Challenger";
@@ -87,6 +83,33 @@ function playerFighter(realm, sessionUserId = "") {
     luck: 62 + modifiers.luck,
     knightImage: realm?.selectedKnightImage || "/knights/male/01.png",
     houseSigil: realm?.houseSigil || null,
+  };
+}
+
+function profileFighter(profile) {
+  const ruler = profile?.ruler_name?.trim() || profile?.username?.trim() || "New Challenger";
+  const title = profile?.ruler_title || "Lord";
+  const houseStem = profile?.username?.trim() || ruler;
+  const seed = hashText(`${profile?.user_id || houseStem}-${ruler}`);
+  const stanceKeys = Object.keys(tacticalStances);
+  const stance = stanceKeys[seed % stanceKeys.length];
+  const modifiers = tacticalStances[stance]?.modifiers || tacticalStances.balanced.modifiers;
+
+  return {
+    id: `profile-fighter-${profile?.user_id || normalizeEntryText(houseStem)}`,
+    userId: profile?.user_id || "",
+    name: `${title} ${ruler}`,
+    house: `House ${houseStem}`,
+    stance,
+    strength: 66 + (seed % 10) + modifiers.strength,
+    skill: 68 + ((seed >> 2) % 10) + modifiers.skill,
+    speed: 66 + ((seed >> 3) % 10) + modifiers.speed,
+    endurance: 68 + ((seed >> 4) % 10) + modifiers.endurance,
+    reputation: 70 + ((seed >> 5) % 12) + modifiers.reputation,
+    luck: 58 + ((seed >> 6) % 15) + modifiers.luck,
+    knightImage: profile?.avatar_url || "/knights/male/01.png",
+    houseSigil: null,
+    autoEnrolled: true,
   };
 }
 
@@ -193,28 +216,19 @@ function normalizeEntryText(value = "") {
 function entrantKey(fighter) {
   const stableIdentity = fighter?.userId || fighter?.email;
   if (stableIdentity) return stableIdentity.toString().trim().toLowerCase();
+  return entrantNameKey(fighter);
+}
+
+function entrantNameKey(fighter) {
   return `${normalizeEntryText(fighter?.house || "house")}::${normalizeEntryText(fighter?.name || "fighter")}`;
 }
 
 function sameEntrant(a, b) {
-  return Boolean(a && b && entrantKey(a) === entrantKey(b));
+  return Boolean(a && b && (entrantKey(a) === entrantKey(b) || entrantNameKey(a) === entrantNameKey(b)));
 }
 
 function uniqueEntrants(entries) {
-  return entries.filter((fighter, index, all) => all.findIndex((entry) => entrantKey(entry) === entrantKey(fighter)) === index);
-}
-
-function getNextDragonEpisode(now = Date.now()) {
-  return dragonEpisodeSchedule.find((item) => new Date(item.at).getTime() > now) || null;
-}
-
-function formatCountdown(targetTime, now) {
-  const distance = Math.max(0, targetTime - now);
-  const days = Math.floor(distance / 86400000);
-  const hours = Math.floor((distance % 86400000) / 3600000);
-  const minutes = Math.floor((distance % 3600000) / 60000);
-  const seconds = Math.floor((distance % 60000) / 1000);
-  return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  return entries.filter((fighter, index, all) => all.findIndex((entry) => sameEntrant(entry, fighter)) === index);
 }
 
 function rewardForChampion(tournamentType, champion) {
@@ -255,7 +269,7 @@ export default function TournamentsPage() {
   const tournamentKey = `open-${tournamentType.toLowerCase()}-${bracketSize}`;
   const nextDragonEpisode = useMemo(() => getNextDragonEpisode(now), [now]);
   const nextDragonEpisodeTime = nextDragonEpisode ? new Date(nextDragonEpisode.at).getTime() : null;
-  const dragonCountdown = nextDragonEpisodeTime ? formatCountdown(nextDragonEpisodeTime, now) : "Season complete";
+  const dragonCountdown = nextDragonEpisodeTime ? formatDragonCountdown(nextDragonEpisodeTime, now) : "Season complete";
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -280,15 +294,18 @@ export default function TournamentsPage() {
     let alive = true;
 
     async function loadEntrants() {
-      const { activities } = await loadRealmActivity(500);
+      const [{ activities }, { profiles }] = await Promise.all([
+        loadRealmActivity(500),
+        loadPublicProfiles(160),
+      ]);
       if (!alive) return;
-      const entrants = (activities || [])
+      const accountEntrants = (profiles || []).map(profileFighter);
+      const activityEntrants = (activities || [])
         .filter((activity) => activity.type === "tournament" && activity.meta?.action === "signup")
         .filter((activity) => activity.meta?.tournamentKey === tournamentKey)
         .map((activity) => normalizeEntrant(activity.meta?.fighter, activity))
-        .filter(Boolean)
-        .filter((fighter, index, all) => all.findIndex((entry) => entrantKey(entry) === entrantKey(fighter)) === index);
-      setPublicEntrants(entrants);
+        .filter(Boolean);
+      setPublicEntrants(uniqueEntrants([...accountEntrants, ...activityEntrants]));
     }
 
     loadEntrants();
@@ -300,28 +317,32 @@ export default function TournamentsPage() {
   }, [tournamentKey]);
 
   const playerEntry = useMemo(() => playerFighter(realm, sessionUserId), [realm, sessionUserId]);
+  const isSignedIn = Boolean(sessionUserId);
   const localSignup = realm.tournamentSignups?.[tournamentKey];
   const signedUp = Boolean(localSignup || publicEntrants.some((fighter) => sameEntrant(fighter, playerEntry)));
+  const effectiveBracketSize = useMemo(() => {
+    const entrantCount = uniqueEntrants(isSignedIn ? [playerEntry, ...publicEntrants] : publicEntrants).length;
+    return [8, 16, 32].find((size) => size >= Math.max(bracketSize, entrantCount)) || 32;
+  }, [bracketSize, isSignedIn, playerEntry, publicEntrants]);
   const signupRoster = useMemo(() => {
-    const entries = signedUp && !publicEntrants.some((fighter) => sameEntrant(fighter, playerEntry))
+    const entries = isSignedIn
       ? [playerEntry, ...publicEntrants]
       : publicEntrants;
 
-    return uniqueEntrants(entries).slice(0, bracketSize);
-  }, [bracketSize, playerEntry, publicEntrants, signedUp]);
+    return uniqueEntrants(entries).slice(0, effectiveBracketSize);
+  }, [effectiveBracketSize, isSignedIn, playerEntry, publicEntrants]);
 
   const bracketSlots = useMemo(() => {
-    const emptyCount = Math.max(0, bracketSize - signupRoster.length);
+    const emptyCount = Math.max(0, effectiveBracketSize - signupRoster.length);
     return [...signupRoster, ...Array.from({ length: emptyCount }, (_, index) => ({ id: `empty-${index}`, empty: true, name: "Open Seat", house: "Awaiting a house" }))];
-  }, [bracketSize, signupRoster]);
+  }, [effectiveBracketSize, signupRoster]);
 
   const nextMatch = currentPairs[0];
   const champion = status === "complete" ? completedRounds.at(-1)?.matches?.at(-1)?.winner : null;
-  const isSignedIn = Boolean(sessionUserId);
 
   function openBracketFromSignups() {
     if (signupRoster.length < 2) {
-      setMessage("At least two houses must sign up before the heralds can call the lists.");
+      setMessage("At least two saved accounts must be in the realm before the heralds can call the lists.");
       return;
     }
 
@@ -356,17 +377,12 @@ export default function TournamentsPage() {
 
   async function signUpTournament() {
     if (!isSignedIn) {
-      setMessage("Sign in first so the maesters can write your house into the public tournament rolls.");
+      setMessage("Sign in first so the maesters can read your tournament orders.");
       return;
     }
 
     if (!realm.houseName?.trim() && !realm.rulerName?.trim()) {
       setMessage("Found your house first, then enter the tournament rolls.");
-      return;
-    }
-
-    if (signedUp) {
-      setMessage("Your house is already written into the tournament rolls.");
       return;
     }
 
@@ -379,8 +395,19 @@ export default function TournamentsPage() {
       },
     };
     const fighter = playerFighter(realmWithStance, sessionUserId);
+
+    if (signedUp) {
+      saveRealm(realmWithStance);
+      setPublicEntrants((current) => uniqueEntrants([fighter, ...current]));
+      setHeraldFeed((current) => [`${fighter.house} updates the lists with ${tacticalStances[selectedStance].shortLabel.toLowerCase()} orders.`, ...current].slice(0, 14));
+      setMessage("Tournament orders updated. Your account remains automatically entered.");
+      return;
+    }
+
     if (publicEntrants.some((entry) => sameEntrant(entry, fighter))) {
-      setMessage("Your house is already written into the tournament rolls.");
+      saveRealm(realmWithStance);
+      setPublicEntrants((current) => uniqueEntrants([fighter, ...current]));
+      setMessage("Tournament orders updated. Your account remains automatically entered.");
       return;
     }
 
@@ -390,7 +417,7 @@ export default function TournamentsPage() {
         ...(realmWithStance.tournamentSignups || {}),
         [tournamentKey]: {
           tournamentType,
-          bracketSize,
+          bracketSize: effectiveBracketSize,
           stance: selectedStance,
           fighter,
           at: new Date().toISOString(),
@@ -405,7 +432,7 @@ export default function TournamentsPage() {
       title: "A House Entered The Lists",
       actor: fighter.house,
       body: `${fighter.name} of ${fighter.house} signed up for the ${tournamentType} tournament with ${tacticalStances[selectedStance].shortLabel.toLowerCase()} orders.`,
-      meta: { action: "signup", tournamentKey, tournamentType, bracketSize, userId: sessionUserId, email: realm.email || "", fighter },
+      meta: { action: "signup", tournamentKey, tournamentType, bracketSize: effectiveBracketSize, userId: sessionUserId, email: realm.email || "", fighter },
     }));
     setHeraldFeed((current) => [`${fighter.house} has entered the ${tournamentType.toLowerCase()} lists with ${tacticalStances[selectedStance].shortLabel.toLowerCase()} orders.`, ...current].slice(0, 14));
     setMessage(error || "You are signed up. The bracket will fill as more houses join.");
@@ -561,9 +588,9 @@ export default function TournamentsPage() {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.88)_72%,#050505),radial-gradient(circle_at_50%_0%,rgba(138,109,59,.28),transparent_42%)]" />
           <div className="relative z-10 min-h-[330px] px-5 py-8 md:px-10">
             <div className="mx-auto max-w-4xl border border-[rgba(138,109,59,0.35)] bg-black/62 px-4 py-3 text-center shadow-2xl shadow-black backdrop-blur-sm">
-              <p className="text-xs font-black uppercase tracking-[0.34em] text-[var(--gok-parchment)]">Will you be the champion?</p>
-              <button onClick={signUpTournament} disabled={signedUp || signupRoster.length >= bracketSize} className="mt-3 border border-red-900 bg-red-950/55 px-12 py-2 text-xs font-black uppercase tracking-[0.24em] text-red-100 transition hover:border-red-400 disabled:opacity-55">
-                {signedUp ? "Entered" : "Sign Up To Enter"}
+              <p className="text-xs font-black uppercase tracking-[0.34em] text-[var(--gok-parchment)]">Every saved house enters the lists</p>
+              <button onClick={signUpTournament} disabled={!isSignedIn} className="mt-3 border border-red-900 bg-red-950/55 px-12 py-2 text-xs font-black uppercase tracking-[0.24em] text-red-100 transition hover:border-red-400 disabled:opacity-55">
+                {isSignedIn ? "Update Tournament Orders" : "Sign In To Enter"}
               </button>
             </div>
 
@@ -577,7 +604,7 @@ export default function TournamentsPage() {
             <div className="mt-8 grid gap-3 text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)] sm:grid-cols-2 lg:grid-cols-5">
               <Stat label="Type of Trial" value={tournamentType} />
               <Stat label="Tournament Begins" value={status === "running" ? "Live Now" : status === "signup" ? "Signing Up" : status} />
-              <Stat label="Signed Houses" value={`${signupRoster.length} / ${bracketSize}`} />
+              <Stat label="Signed Houses" value={`${signupRoster.length} / ${effectiveBracketSize}`} />
               <Stat label="The Prize" value="Glory & Reward" />
               <Stat label="Next Dragon Hour" value={nextDragonEpisode ? `Episode ${nextDragonEpisode.episode}: ${dragonCountdown}` : dragonCountdown} />
             </div>
@@ -588,7 +615,7 @@ export default function TournamentsPage() {
               <span>{signupRoster.length} houses written in</span>
             </div>
             <div className="h-3 overflow-hidden border border-red-950 bg-black">
-            <div className="h-full bg-red-950" style={{ width: `${Math.round((signupRoster.length / bracketSize) * 100)}%` }} />
+            <div className="h-full bg-red-950" style={{ width: `${Math.round((signupRoster.length / effectiveBracketSize) * 100)}%` }} />
             </div>
           </div>
           {message && <p className="relative z-10 mt-4 border border-[var(--gok-line)] bg-black/50 p-3 text-sm text-[var(--gok-parchment)]">{message}</p>}
@@ -617,16 +644,16 @@ export default function TournamentsPage() {
                     key={stance.key}
                     type="button"
                     onClick={() => setSelectedStance(stance.key)}
-                    disabled={signedUp}
-                    className={`border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${selectedStance === stance.key ? "border-red-400 bg-red-950/35 text-red-100" : "border-[var(--gok-line)] bg-black/55 text-[var(--gok-silver)] hover:border-[var(--gok-line-strong)]"}`}
-                  >
+                  disabled={!isSignedIn}
+                  className={`border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${selectedStance === stance.key ? "border-red-400 bg-red-950/35 text-red-100" : "border-[var(--gok-line)] bg-black/55 text-[var(--gok-silver)] hover:border-[var(--gok-line-strong)]"}`}
+                >
                     <span className="block font-black">{stance.label}</span>
                     <span className="mt-1 block text-xs leading-5 text-[var(--gok-dim)]">{stance.edge}</span>
                   </button>
                 ))}
               </div>
-              <button onClick={signUpTournament} disabled={signedUp || signupRoster.length >= bracketSize} className="gok-btn gok-btn-blood min-h-12 px-5 py-3 disabled:opacity-45">
-                {signedUp ? "Entered" : "Sign Up For The Lists"}
+              <button onClick={signUpTournament} disabled={!isSignedIn} className="gok-btn gok-btn-blood min-h-12 px-5 py-3 disabled:opacity-45">
+                {isSignedIn ? "Update Orders" : "Sign In To Join The Realm"}
               </button>
               <button onClick={openBracketFromSignups} disabled={signupRoster.length < 2 || currentPairs.length > 0 || status === "complete"} className="gok-btn min-h-12 px-5 py-3 disabled:opacity-45">
                 Call The Lists
