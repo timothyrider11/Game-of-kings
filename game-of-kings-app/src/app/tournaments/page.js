@@ -210,7 +210,7 @@ function normalizeEntrant(fighter, activity) {
 }
 
 function normalizeEntryText(value = "") {
-  return value.toString().trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return value.toString().trim().toLowerCase().replace(/^house\s+/i, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 function entrantKey(fighter) {
@@ -262,7 +262,6 @@ export default function TournamentsPage() {
   const [heraldFeed, setHeraldFeed] = useState([]);
   const [predictionPoints, setPredictionPoints] = useState(100);
   const [predictions, setPredictions] = useState({});
-  const [miniGame, setMiniGame] = useState({ joust: 0, archery: 0, melee: 0, smithing: 0 });
   const [message, setMessage] = useState("");
   const [sessionUserId, setSessionUserId] = useState("");
 
@@ -339,29 +338,6 @@ export default function TournamentsPage() {
 
   const nextMatch = currentPairs[0];
   const champion = status === "complete" ? completedRounds.at(-1)?.matches?.at(-1)?.winner : null;
-
-  function openBracketFromSignups() {
-    if (signupRoster.length < 2) {
-      setMessage("At least two saved accounts must be in the realm before the heralds can call the lists.");
-      return;
-    }
-
-    const roster = [...signupRoster].sort(() => Math.random() - 0.5);
-    const nextWeather = weatherOptions[Math.floor(Math.random() * weatherOptions.length)];
-    setCurrentPairs(makePairs(roster));
-    setCompletedRounds([]);
-    setRoundNumber(1);
-    setWeather(nextWeather);
-    setCrowdMood("calm");
-    setStatus("ready");
-    setPredictions({});
-    setHeraldFeed([
-      `The heralds close the rolls with ${roster.length} signed houses.`,
-      `The field is set beneath ${nextWeather}.`,
-      `The crowd roars as ${roster[0].house} enters the lists.`,
-    ]);
-    setMessage("The bracket is called from signed houses. The tournament will run live from here.");
-  }
 
   const saveRealm = useCallback((nextRealm) => {
     setRealm(nextRealm);
@@ -546,6 +522,26 @@ export default function TournamentsPage() {
   }, [status, resolveNextMatch]);
 
   useEffect(() => {
+    if (status !== "signup" || currentPairs.length || completedRounds.length || signupRoster.length < 2) return;
+
+    const roster = [...signupRoster].sort((first, second) => hashText(`${first.id}-${second.house}-${tournamentKey}`) - hashText(`${second.id}-${first.house}-${tournamentKey}`));
+    const nextWeather = weatherOptions[hashText(`${tournamentKey}-${roster.length}`) % weatherOptions.length];
+    setCurrentPairs(makePairs(roster));
+    setCompletedRounds([]);
+    setRoundNumber(1);
+    setWeather(nextWeather);
+    setCrowdMood("calm");
+    setStatus("running");
+    setPredictions({});
+    setHeraldFeed([
+      `The heralds close the rolls with ${roster.length} signed houses.`,
+      `The field is set beneath ${nextWeather}.`,
+      `The crowd roars as ${roster[0].house} enters the lists.`,
+    ]);
+    setMessage("The tournament bracket opened automatically from every saved account in the realm.");
+  }, [completedRounds.length, currentPairs.length, signupRoster, status, tournamentKey]);
+
+  useEffect(() => {
     if (status !== "running") return undefined;
     const timer = setInterval(() => {
       const updates = [
@@ -560,23 +556,24 @@ export default function TournamentsPage() {
     return () => clearInterval(timer);
   }, [status, signupRoster, weather]);
 
-  function playMiniGame(type) {
-    const roll = Math.floor(35 + Math.random() * 66);
-    const label = {
-      joust: "Joust timing",
-      archery: "Archery accuracy",
-      melee: "Melee reaction",
-      smithing: "Blacksmith upgrade",
-    }[type];
-    setMiniGame((current) => ({ ...current, [type]: Math.max(current[type], roll) }));
-    setPredictionPoints((current) => current + Math.floor(roll / 10));
-    setHeraldFeed((current) => [`${label} mini-game scored ${roll}. The training yard awards fake prediction points.`, ...current].slice(0, 14));
-  }
-
   const visiblePairs = useMemo(() => currentPairs.map((pair) => {
     const odds = pair.second ? getWinOdds(pair.first, pair.second) : { fighterAChance: 100, fighterBChance: 0 };
     return { ...pair, odds, matchId: `${roundNumber}-${pair.first.id}-${pair.second?.id || "bye"}` };
   }), [currentPairs, roundNumber]);
+  const completedMatches = completedRounds.flatMap((round) => round.matches.map((match) => ({ ...match, roundNumber: round.roundNumber })));
+  const firstRoundRows = useMemo(() => {
+    const lanes = currentPairs.length || completedRounds.length
+      ? [...currentPairs.flatMap((pair) => [pair.first, pair.second]).filter(Boolean), ...(completedRounds[0]?.matches?.flatMap((match) => [match.first, match.second]).filter(Boolean) || [])]
+      : bracketSlots;
+    const uniqueLanes = uniqueEntrants(lanes);
+    const padded = [...uniqueLanes, ...Array.from({ length: Math.max(0, effectiveBracketSize - uniqueLanes.length) }, (_, index) => ({ id: `open-lane-${index}`, empty: true, name: "Open Seat", house: "Awaiting a house" }))];
+    return padded.slice(0, effectiveBracketSize);
+  }, [bracketSlots, completedRounds, currentPairs, effectiveBracketSize]);
+  const roundWinners = (targetRound) => completedRounds.find((round) => round.roundNumber === targetRound)?.matches?.map((match) => match.winner) || [];
+  const quarterSlots = roundWinners(1);
+  const semiSlots = roundWinners(2);
+  const finalSlots = roundWinners(3);
+  const tournamentProgress = Math.min(100, Math.max(8, Math.round(((completedMatches.length || signupRoster.length) / Math.max(1, effectiveBracketSize - 1)) * 100)));
 
   return (
     <main className="gok-page min-h-screen px-4 py-6 text-stone-100">
@@ -584,17 +581,18 @@ export default function TournamentsPage() {
 
       <section className="mx-auto mt-6 max-w-[1760px]">
         <div className="relative overflow-hidden border border-[var(--gok-line)] bg-black shadow-2xl shadow-black">
-          <div className="absolute inset-0 bg-[url('/banners/TournamentGrounds.png')] bg-cover bg-center opacity-70" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.88)_72%,#050505),radial-gradient(circle_at_50%_0%,rgba(138,109,59,.28),transparent_42%)]" />
-          <div className="relative z-10 min-h-[330px] px-5 py-8 md:px-10">
-            <div className="mx-auto max-w-4xl border border-[rgba(138,109,59,0.35)] bg-black/62 px-4 py-3 text-center shadow-2xl shadow-black backdrop-blur-sm">
-              <p className="text-xs font-black uppercase tracking-[0.34em] text-[var(--gok-parchment)]">Every saved house enters the lists</p>
+          <div className="absolute inset-0 bg-[url('/banners/TournamentGroundsFullPage.png')] bg-cover bg-top opacity-78" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.62)_46%,#050505_88%),radial-gradient(circle_at_50%_0%,rgba(138,109,59,.3),transparent_38%)]" />
+          <div className="relative z-10 min-h-[420px] px-5 py-8 md:px-10">
+            <div className="mx-auto max-w-3xl border border-[rgba(138,109,59,0.35)] bg-black/68 px-4 py-3 text-center shadow-2xl shadow-black backdrop-blur-sm">
+              <p className="text-xs font-black uppercase tracking-[0.34em] text-[var(--gok-parchment)]">Will you be the champion?</p>
+              <p className="mt-2 text-xs uppercase tracking-[0.2em] text-[var(--gok-dim)]">Every saved account is automatically entered.</p>
               <button onClick={signUpTournament} disabled={!isSignedIn} className="mt-3 border border-red-900 bg-red-950/55 px-12 py-2 text-xs font-black uppercase tracking-[0.24em] text-red-100 transition hover:border-red-400 disabled:opacity-55">
-                {isSignedIn ? "Update Tournament Orders" : "Sign In To Enter"}
+                {isSignedIn ? "Update Orders" : "Sign In To Set Orders"}
               </button>
             </div>
 
-            <div className="mt-16 text-center md:mt-20">
+            <div className="mt-20 text-center md:mt-24">
               <p className="gok-eyebrow">Tournament Grounds</p>
               <h1 className="mt-3 text-4xl uppercase tracking-[0.42em] text-[var(--gok-silver)] drop-shadow-[0_12px_24px_rgba(0,0,0,.95)] sm:text-6xl lg:text-7xl">
                 Tournament Grounds
@@ -603,96 +601,55 @@ export default function TournamentsPage() {
 
             <div className="mt-8 grid gap-3 text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)] sm:grid-cols-2 lg:grid-cols-5">
               <Stat label="Type of Trial" value={tournamentType} />
-              <Stat label="Tournament Begins" value={status === "running" ? "Live Now" : status === "signup" ? "Signing Up" : status} />
+              <Stat label="Tournament Begins" value={status === "running" ? "Live Now" : status === "signup" ? "Awaiting Houses" : status} />
               <Stat label="Signed Houses" value={`${signupRoster.length} / ${effectiveBracketSize}`} />
               <Stat label="The Prize" value="Glory & Reward" />
               <Stat label="Next Dragon Hour" value={nextDragonEpisode ? `Episode ${nextDragonEpisode.episode}: ${dragonCountdown}` : dragonCountdown} />
             </div>
           </div>
-          <div className="relative z-10 border-t border-[var(--gok-line)] bg-black/80 px-5 py-4">
+          <div className="relative z-10 border-t border-[var(--gok-line)] bg-black/86 px-5 py-5">
             <div className="mb-2 flex items-center justify-between text-[0.65rem] font-black uppercase tracking-[0.22em] text-red-300">
-              <span>{status === "running" ? "Tournament In Progress" : "Tournament Rolls"}</span>
-              <span>{signupRoster.length} houses written in</span>
+              <span>{status === "running" ? "Tournament In Progress" : status === "complete" ? "Tournament Complete" : "Tournament Rolls"}</span>
+              <span>{completedMatches.length ? `${completedMatches.length} matches recorded` : `${signupRoster.length} houses written in`}</span>
             </div>
-            <div className="h-3 overflow-hidden border border-red-950 bg-black">
-            <div className="h-full bg-red-950" style={{ width: `${Math.round((signupRoster.length / effectiveBracketSize) * 100)}%` }} />
+            <div className="relative h-4 overflow-visible border border-red-950 bg-black">
+              <div className="h-full bg-gradient-to-r from-red-950 via-red-800 to-[rgba(167,126,55,.75)]" style={{ width: `${tournamentProgress}%` }} />
+              <div className="absolute top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-[rgba(167,126,55,.65)] bg-black shadow-xl shadow-red-950" style={{ left: `calc(${tournamentProgress}% - 20px)` }}>
+                <span className="text-lg text-[var(--gok-parchment)]">X</span>
+              </div>
+            </div>
+            <div className="mt-3 flex justify-between text-[0.65rem] uppercase tracking-[0.18em] text-[var(--gok-dim)]">
+              <span>Elapsed: {completedMatches.length ? `${completedMatches.length} bouts` : "rolls open"}</span>
+              <span>Remaining: {status === "complete" ? "champion crowned" : `${Math.max(0, effectiveBracketSize - signupRoster.length)} seats`}</span>
             </div>
           </div>
           {message && <p className="relative z-10 mt-4 border border-[var(--gok-line)] bg-black/50 p-3 text-sm text-[var(--gok-parchment)]">{message}</p>}
         </div>
 
-        <div className="mt-5 grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)_360px]">
-          <aside className="gok-panel p-5">
-            <p className="gok-eyebrow">Master of Lists</p>
-            <div className="relative z-10 mt-4 grid gap-3">
-              <label className="grid gap-2 text-sm font-black text-[var(--gok-silver)]">
-                Bracket Size
-                <select value={bracketSize} onChange={(event) => setBracketSize(Number(event.target.value))} className="border border-[var(--gok-line)] bg-black p-3">
-                  {[8, 16, 32].map((size) => <option key={size} value={size}>{size} fighters</option>)}
-                </select>
-              </label>
-              <label className="grid gap-2 text-sm font-black text-[var(--gok-silver)]">
-                Contest
-                <select value={tournamentType} onChange={(event) => setTournamentType(event.target.value)} className="border border-[var(--gok-line)] bg-black p-3">
-                  {["Joust", "Archery", "Melee", "Smithing"].map((type) => <option key={type} value={type}>{type}</option>)}
-                </select>
-              </label>
-              <div className="grid gap-2">
-                <p className="text-sm font-black text-[var(--gok-silver)]">Choose Your Orders</p>
-                {Object.values(tacticalStances).map((stance) => (
-                  <button
-                    key={stance.key}
-                    type="button"
-                    onClick={() => setSelectedStance(stance.key)}
-                  disabled={!isSignedIn}
-                  className={`border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${selectedStance === stance.key ? "border-red-400 bg-red-950/35 text-red-100" : "border-[var(--gok-line)] bg-black/55 text-[var(--gok-silver)] hover:border-[var(--gok-line-strong)]"}`}
-                >
-                    <span className="block font-black">{stance.label}</span>
-                    <span className="mt-1 block text-xs leading-5 text-[var(--gok-dim)]">{stance.edge}</span>
-                  </button>
-                ))}
-              </div>
-              <button onClick={signUpTournament} disabled={!isSignedIn} className="gok-btn gok-btn-blood min-h-12 px-5 py-3 disabled:opacity-45">
-                {isSignedIn ? "Update Orders" : "Sign In To Join The Realm"}
-              </button>
-              <button onClick={openBracketFromSignups} disabled={signupRoster.length < 2 || currentPairs.length > 0 || status === "complete"} className="gok-btn min-h-12 px-5 py-3 disabled:opacity-45">
-                Call The Lists
-              </button>
-              <button onClick={() => setStatus(status === "running" ? "paused" : "running")} disabled={!currentPairs.length} className="gok-btn min-h-12 px-5 py-3 disabled:opacity-45">
-                {status === "running" ? "Pause Live Tournament" : "Begin Live Tournament"}
-              </button>
-            </div>
-            <div className="relative z-10 mt-5 grid gap-2 text-sm">
-              <Stat label="Weather" value={weather} />
-              <Stat label="Crowd Mood" value={crowdMood} />
-              <Stat label="Prediction Points" value={predictionPoints.toLocaleString()} />
-              <Stat label="Round" value={status === "complete" ? "Complete" : roundNumber} />
-            </div>
-          </aside>
-
+        <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
           <section className="gok-panel p-5">
             <div className="relative z-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="gok-eyebrow">{visiblePairs.length ? "Visible Odds" : "Signup Roster"}</p>
-                <h2 className="mt-2 text-3xl text-[var(--gok-silver)]">{visiblePairs.length ? `Round ${roundNumber}` : "Houses Entered"}</h2>
+                <p className="gok-eyebrow">The Bracket</p>
+                <h2 className="mt-2 text-3xl text-[var(--gok-silver)]">Visible Odds</h2>
               </div>
               {champion && <p className="border border-[var(--gok-line)] bg-black/60 px-3 py-2 font-black text-[var(--gok-silver)]">Champion: {champion.name}</p>}
             </div>
 
-            <div className="relative z-10 mt-5 grid gap-4">
+            <div className="relative z-10 mt-5 grid gap-4 lg:grid-cols-4">
+              <BracketColumn title={`Round of ${effectiveBracketSize}`} slots={firstRoundRows} />
+              <BracketColumn title="Quarterfinals" slots={quarterSlots} emptyCount={Math.max(2, Math.ceil(effectiveBracketSize / 4))} />
+              <BracketColumn title="Semifinals" slots={semiSlots} emptyCount={2} />
+              <BracketColumn title="Finals" slots={finalSlots} emptyCount={1} champion={champion} />
+            </div>
+
+            <div className="relative z-10 mt-6 grid gap-4">
               {visiblePairs.length ? visiblePairs.map((pair) => (
                 <article key={pair.matchId} className="border border-[var(--gok-line)] bg-black/55 p-4">
                   <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
                     <FighterCard fighter={pair.first} chance={pair.odds.fighterAChance} />
                     <p className="text-center text-xs font-black uppercase tracking-[0.2em] text-[var(--gok-dim)]">versus</p>
-                    {pair.second ? (
-                      <FighterCard fighter={pair.second} chance={pair.odds.fighterBChance} alignRight />
-                    ) : (
-                      <div className="border border-dashed border-[var(--gok-line)] bg-black/45 p-4 text-right">
-                        <p className="font-serif text-2xl font-black text-[var(--gok-silver)]">Open Lane</p>
-                        <p className="mt-2 text-sm text-[var(--gok-dim)]">This house advances unless another entrant fills the lists before the horn.</p>
-                      </div>
-                    )}
+                    {pair.second ? <FighterCard fighter={pair.second} chance={pair.odds.fighterBChance} alignRight /> : <OpenLane />}
                   </div>
                   {pair.second && (
                     <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -705,30 +662,13 @@ export default function TournamentsPage() {
                     </div>
                   )}
                 </article>
-              )) : (
-                <div className="grid gap-3 border border-[var(--gok-line)] bg-black/55 p-4">
-                  <p className="text-center text-[var(--gok-dim)]">The bracket fills only when real houses sign up.</p>
-                  <div className="grid gap-2 md:grid-cols-2">
-                    {bracketSlots.map((fighter, index) => (
-                      <div key={fighter.empty ? `${fighter.id}-${index}` : entrantKey(fighter)} className={`flex items-center gap-3 border border-[var(--gok-line)] bg-black/60 p-3 ${fighter.empty ? "opacity-45" : ""}`}>
-                        {fighter.empty ? (
-                          <div className="grid h-14 w-12 place-items-center border border-dashed border-[var(--gok-line)] text-xs">OPEN</div>
-                        ) : <FighterIdentity fighter={fighter} compact />}
-                        <div>
-                          <p className="font-black text-[var(--gok-silver)]">{fighter.name}</p>
-                          <p className="text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)]">{fighter.house}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              )) : <p className="border border-[var(--gok-line)] bg-black/55 p-5 text-center text-[var(--gok-dim)]">The bracket fills as saved accounts enter the realm.</p>}
             </div>
 
             <div className="relative z-10 mt-6">
               <p className="gok-eyebrow">Completed Matches</p>
               <div className="mt-3 max-h-[460px] overflow-y-auto border border-[var(--gok-line)] bg-black/40 p-3">
-                {completedRounds.flatMap((round) => round.matches.map((match) => ({ ...match, roundNumber: round.roundNumber }))).map((match) => (
+                {completedMatches.map((match) => (
                   <div key={match.id} className="border-b border-[rgba(196,193,184,0.1)] py-3 last:border-b-0">
                     <p className="font-black text-[var(--gok-silver)]">Round {match.roundNumber}: {match.winner.name} defeated {match.loser.name}</p>
                     <p className="mt-1 text-sm text-[rgba(210,205,194,0.72)]">Winning odds: {formatPercent(match.winnerChance)}. {match.closeness}. {match.narration}</p>
@@ -740,7 +680,7 @@ export default function TournamentsPage() {
 
           <aside className="space-y-5">
             <section className="gok-panel p-5">
-              <p className="gok-eyebrow">{"Herald's Board"}</p>
+              <p className="gok-eyebrow">Ravens From The Grounds</p>
               <div className="relative z-10 mt-4 max-h-80 overflow-y-auto border border-[var(--gok-line)] bg-black/50">
                 {heraldFeed.map((line, index) => (
                   <p key={`${line}-${index}`} className="border-b border-[rgba(196,193,184,0.1)] p-3 text-sm leading-6 text-[rgba(210,205,194,0.78)] last:border-b-0">{line}</p>
@@ -749,16 +689,44 @@ export default function TournamentsPage() {
             </section>
 
             <section className="gok-panel p-5">
-              <p className="gok-eyebrow">Mini-Games</p>
+              <p className="gok-eyebrow">Your Tournament Orders</p>
               <div className="relative z-10 mt-4 grid gap-3">
-                <MiniGameButton title="Joust timing game" score={miniGame.joust} onClick={() => playMiniGame("joust")} />
-                <MiniGameButton title="Archery accuracy game" score={miniGame.archery} onClick={() => playMiniGame("archery")} />
-                <MiniGameButton title="Melee duel reaction" score={miniGame.melee} onClick={() => playMiniGame("melee")} />
-                <MiniGameButton title="Blacksmith upgrade" score={miniGame.smithing} onClick={() => playMiniGame("smithing")} />
+                {Object.values(tacticalStances).map((stance) => (
+                  <button
+                    key={stance.key}
+                    type="button"
+                    onClick={() => setSelectedStance(stance.key)}
+                    disabled={!isSignedIn}
+                    className={`border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${selectedStance === stance.key ? "border-red-400 bg-red-950/35 text-red-100" : "border-[var(--gok-line)] bg-black/55 text-[var(--gok-silver)] hover:border-[var(--gok-line-strong)]"}`}
+                  >
+                    <span className="block font-black">{stance.label}</span>
+                    <span className="mt-1 block text-xs leading-5 text-[var(--gok-dim)]">{stance.edge}</span>
+                  </button>
+                ))}
+                <button onClick={signUpTournament} disabled={!isSignedIn} className="gok-btn gok-btn-blood min-h-12 px-5 py-3 disabled:opacity-45">
+                  {isSignedIn ? "Update Orders" : "Sign In To Save Orders"}
+                </button>
+              </div>
+              <div className="relative z-10 mt-5 grid gap-2 text-sm">
+                <Stat label="Weather" value={weather} />
+                <Stat label="Crowd Mood" value={crowdMood} />
+                <Stat label="Prediction Points" value={predictionPoints.toLocaleString()} />
+                <Stat label="Round" value={status === "complete" ? "Complete" : roundNumber} />
               </div>
             </section>
           </aside>
         </div>
+
+        <section className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_repeat(4,1fr)]">
+          <div className="border border-[var(--gok-line)] bg-black/70 p-5">
+            <p className="gok-eyebrow text-red-300">Late for the Tournament?</p>
+            <h3 className="mt-2 font-serif text-2xl font-black uppercase tracking-[0.08em] text-[var(--gok-silver)]">Sign up for next one</h3>
+          </div>
+          <FeatureCard title="Live & Unpredictable" body="No two tournaments unfold the same." />
+          <FeatureCard title="Real Time Battles" body="Every duel, victory, and upset moves the realm." />
+          <FeatureCard title="One Champion" body="Only one house rises above the lists." />
+          <FeatureCard title="Glory & Reward" body="Gold, honor, reputation, and trophies await." />
+        </section>
       </section>
     </main>
   );
@@ -807,11 +775,53 @@ function FighterIdentity({ fighter, compact = false }) {
   );
 }
 
-function MiniGameButton({ title, score, onClick }) {
+function BracketColumn({ title, slots = [], emptyCount = 0, champion }) {
+  const rows = champion ? [champion] : slots.length ? slots : Array.from({ length: emptyCount }, (_, index) => ({ id: `blank-${title}-${index}`, empty: true }));
+
   return (
-    <button onClick={onClick} className="border border-[var(--gok-line)] bg-black/55 p-3 text-left transition hover:border-[var(--gok-line-strong)]">
-      <span className="block font-black text-[var(--gok-silver)]">{title}</span>
-      <span className="mt-1 block text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)]">Best score: {score || "not played"}</span>
-    </button>
+    <div className="min-h-[360px] border border-[var(--gok-line)] bg-black/35 p-3">
+      <p className="mb-3 text-center text-[0.68rem] font-black uppercase tracking-[0.2em] text-[var(--gok-parchment)]">{title}</p>
+      <div className="grid gap-2">
+        {rows.map((fighter, index) => (
+          <BracketSlot key={fighter?.empty ? `${fighter.id}-${index}` : `${entrantKey(fighter)}-${index}`} fighter={fighter} champion={Boolean(champion)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BracketSlot({ fighter, champion = false }) {
+  if (!fighter || fighter.empty) {
+    return (
+      <div className="min-h-16 border border-dashed border-[rgba(196,193,184,0.18)] bg-black/45" />
+    );
+  }
+
+  return (
+    <div className={`flex min-h-16 items-center gap-3 border bg-black/70 p-2 ${champion ? "border-red-500 shadow-lg shadow-red-950/40" : "border-[var(--gok-line)]"}`}>
+      <FighterIdentity fighter={fighter} compact />
+      <div className="min-w-0">
+        <p className="truncate font-black text-[var(--gok-silver)]">{fighter.name}</p>
+        <p className="truncate text-[0.62rem] uppercase tracking-[0.14em] text-[var(--gok-dim)]">{fighter.house}</p>
+      </div>
+    </div>
+  );
+}
+
+function OpenLane() {
+  return (
+    <div className="border border-dashed border-[var(--gok-line)] bg-black/45 p-4 text-right">
+      <p className="font-serif text-2xl font-black text-[var(--gok-silver)]">Open Lane</p>
+      <p className="mt-2 text-sm text-[var(--gok-dim)]">This house advances unless another entrant fills the lists before the horn.</p>
+    </div>
+  );
+}
+
+function FeatureCard({ title, body }) {
+  return (
+    <article className="border border-[var(--gok-line)] bg-black/60 p-5">
+      <p className="font-black uppercase tracking-[0.14em] text-[var(--gok-silver)]">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--gok-dim)]">{body}</p>
+    </article>
   );
 }
