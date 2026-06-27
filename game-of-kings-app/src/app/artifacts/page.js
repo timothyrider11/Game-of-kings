@@ -146,7 +146,7 @@ function ArtifactCard({ artifact, possessor, compact }) {
         <div className="absolute inset-0 opacity-30 [background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.05)_0_1px,transparent_1px_8px)]" />
         <div className="absolute inset-x-6 top-4 h-px bg-gradient-to-r from-transparent via-[var(--gok-line-strong)] to-transparent" />
         <div className="absolute inset-x-6 bottom-4 h-px bg-gradient-to-r from-transparent via-[var(--gok-line-strong)] to-transparent" />
-        <ArtifactIllustration kind={visual.kind} compact={compact} accent={visual.accent} metal={visual.metal} />
+        <ArtifactMedia artifact={artifact} visual={visual} compact={compact} />
         <div className="absolute left-3 top-3 rounded-none border border-[var(--gok-line)] bg-black/55 px-2 py-1 text-[0.56rem] font-black uppercase tracking-[0.18em] text-[var(--gok-dim)]">
           {visual.mark}
         </div>
@@ -162,6 +162,36 @@ function ArtifactCard({ artifact, possessor, compact }) {
       </p>
     </article>
   );
+}
+
+function ArtifactMedia({ artifact, visual, compact }) {
+  const [imageIndex, setImageIndex] = useState(0);
+  const slug = slugifyArtifactName(artifact.name);
+  const candidates = [
+    artifact.imageUrl,
+    `/artifacts/${slug}.png`,
+    `/artifacts/${slug}.jpg`,
+    `/artifacts/${slug}.jpeg`,
+    `/artifacts/${slug}.webp`,
+  ].filter(Boolean);
+  const imageUrl = candidates[imageIndex];
+
+  if (!imageUrl) {
+    return <ArtifactIllustration kind={visual.kind} compact={compact} accent={visual.accent} metal={visual.metal} />;
+  }
+
+  return (
+    <img
+      src={imageUrl}
+      alt={artifact.name}
+      className="absolute inset-0 h-full w-full object-contain p-4 drop-shadow-[0_18px_22px_rgba(0,0,0,.75)] transition-transform duration-300 group-hover:scale-105"
+      onError={() => setImageIndex((current) => current + 1)}
+    />
+  );
+}
+
+function slugifyArtifactName(name) {
+  return String(name).toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
 function getArtifactVisual(artifact) {

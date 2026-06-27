@@ -6,8 +6,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import SigilMark from "../../components/SigilMark";
 import SiteNav from "../../components/SiteNav";
 import { formatDragonCountdown, getNextDragonEpisode } from "../../lib/dragon-countdown";
+import { artifactCatalog } from "../../lib/artifacts";
 import { buildActivity, loadRealmActivity, recordRealmActivity } from "../../lib/realm-activity";
 import { getSessionUser, loadCloudRealm, loadPublicProfiles, saveCloudRealm } from "../../lib/realm-cloud";
+import { formatTournamentCountdown, getTournamentCycle } from "../../lib/tournament-schedule";
 
 const STORAGE_KEY = "game_of_kings_living_realm";
 
@@ -148,6 +150,7 @@ function narrationFor(matchType, winner, loser, closeness, upset, event) {
     Joust: [`${winner.name} unhorsed ${loser.name} in the second tilt`, `${winner.name} lowered the lance and struck true against ${loser.name}`],
     Archery: [`${winner.name} split the final marker while ${loser.name} watched in disbelief`, `${winner.name} mastered the wind and outshot ${loser.name}`],
     Melee: [`${winner.name} broke ${loser.name}'s guard with a shield rush`, `${winner.name} forced ${loser.name} back through the sanded yard`],
+    "Horse Racing": [`${winner.name} cut the final turn beneath whipping banners while ${loser.name} lost the line`, `${winner.name} drove through the dust and crossed the posts ahead of ${loser.name}`],
     Smithing: [`${winner.name} reforged a cracked gorget while ${loser.name}'s steel cooled too soon`, `${winner.name} drew a brighter edge from the coals than ${loser.name}`],
   };
   const line = openings[matchType]?.[Math.floor(Math.random() * openings[matchType].length)] || openings.Melee[0];
@@ -231,14 +234,16 @@ function uniqueEntrants(entries) {
   return entries.filter((fighter, index, all) => all.findIndex((entry) => sameEntrant(entry, fighter)) === index);
 }
 
-function rewardForChampion(tournamentType, champion) {
+function rewardForChampion(tournamentType, champion, prizeArtifact) {
   const trophy = tournamentType === "Joust" ? "Gilded Lance Trophy" : tournamentType === "Archery" ? "Silver Arrow Banner" : tournamentType === "Smithing" ? "Masterwork Anvil Seal" : "Champion's War Banner";
+  const artifactText = prizeArtifact ? ` The Sunday relic awarded: ${prizeArtifact.name}.` : "";
   return {
     gold: 350,
     honor: 60,
     reputation: 45,
     trophy,
-    text: `${champion.name} receives ${trophy}, 350 gold, 60 honor, and 45 house reputation.`,
+    artifact: prizeArtifact?.name || null,
+    text: `${champion.name} receives ${trophy}, 350 gold, 60 honor, and 45 house reputation.${artifactText}`,
   };
 }
 
@@ -246,10 +251,16 @@ function formatPercent(value) {
   return `${value}%`;
 }
 
+function formatElapsedDuration(duration) {
+  const elapsed = Math.max(0, duration);
+  const minutes = Math.floor(elapsed / 60000);
+  const seconds = Math.floor((elapsed % 60000) / 1000);
+  return `${minutes}m ${seconds}s`;
+}
+
 export default function TournamentsPage() {
   const [realm, setRealm] = useState({});
   const [bracketSize, setBracketSize] = useState(8);
-  const [tournamentType, setTournamentType] = useState("Joust");
   const [now, setNow] = useState(() => Date.now());
   const [selectedStance, setSelectedStance] = useState("balanced");
   const [weather, setWeather] = useState(weatherOptions[0]);
@@ -265,7 +276,16 @@ export default function TournamentsPage() {
   const [message, setMessage] = useState("");
   const [sessionUserId, setSessionUserId] = useState("");
 
-  const tournamentKey = `open-${tournamentType.toLowerCase()}-${bracketSize}`;
+  const tournamentCycle = useMemo(() => getTournamentCycle(now), [now]);
+  const tournamentType = tournamentCycle.type;
+  const tournamentKey = tournamentCycle.tournamentKey;
+  const tournamentCountdown = tournamentCycle.isLive
+    ? formatTournamentCountdown(tournamentCycle.endTime, now)
+    : formatTournamentCountdown(tournamentCycle.nextStartTime, now);
+  const prizeArtifact = useMemo(
+    () => tournamentCycle.isSunday ? artifactCatalog[tournamentCycle.cycleIndex % artifactCatalog.length] : null,
+    [tournamentCycle.cycleIndex, tournamentCycle.isSunday]
+  );
   const nextDragonEpisode = useMemo(() => getNextDragonEpisode(now), [now]);
   const nextDragonEpisodeTime = nextDragonEpisode ? new Date(nextDragonEpisode.at).getTime() : null;
   const dragonCountdown = nextDragonEpisodeTime ? formatDragonCountdown(nextDragonEpisodeTime, now) : "Season complete";
@@ -288,6 +308,25 @@ export default function TournamentsPage() {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    setCurrentPairs([]);
+    setCompletedRounds([]);
+    setRoundNumber(1);
+    setStatus("signup");
+    setPredictions({});
+    setCrowdMood("calm");
+    setWeather(weatherOptions[hashText(tournamentKey) % weatherOptions.length]);
+    setHeraldFeed([
+      tournamentCycle.isLive
+        ? `The ${tournamentType.toLowerCase()} tournament window is open. The bracket forms from saved realm accounts.`
+        : `The next ${tournamentType.toLowerCase()} tournament begins in ${formatTournamentCountdown(tournamentCycle.nextStartTime, Date.now())}.`,
+      prizeArtifact
+        ? `Sunday's prize is ${prizeArtifact.name}, a singular artifact for the champion.`
+        : "This cycle awards gold, honor, reputation, and a champion's trophy.",
+    ]);
+    setMessage(tournamentCycle.isLive ? "The tournament rolls are open for this live cycle." : "Tournament orders are open for the next 12-hour cycle.");
+  }, [prizeArtifact, tournamentCycle.isLive, tournamentCycle.nextStartTime, tournamentKey, tournamentType]);
 
   useEffect(() => {
     let alive = true;
@@ -359,6 +398,11 @@ export default function TournamentsPage() {
 
     if (!realm.houseName?.trim() && !realm.rulerName?.trim()) {
       setMessage("Found your house first, then enter the tournament rolls.");
+      return;
+    }
+
+    if (tournamentCycle.isLive) {
+      setMessage("The horns have sounded. Your next orders can be set for the following 12-hour tournament.");
       return;
     }
 
@@ -485,15 +529,19 @@ export default function TournamentsPage() {
 
     const winners = roundMatches.map((match) => match.winner);
     if (winners.length === 1) {
-      const reward = rewardForChampion(tournamentType, winners[0]);
+      const reward = rewardForChampion(tournamentType, winners[0], prizeArtifact);
       const playerWon = winners[0].userId
         ? winners[0].userId === sessionUserId
         : winners[0].id === playerEntry.id;
+      const nextArtifacts = playerWon && prizeArtifact
+        ? Array.from(new Set([...(realm.artifactInventory || []), prizeArtifact.name]))
+        : realm.artifactInventory || [];
       const nextRealm = {
         ...realm,
         gold: (realm.gold || 350) + (playerWon ? reward.gold : 0),
         renown: (realm.renown || 0) + (playerWon ? reward.honor : 0),
         trophies: playerWon ? [...(realm.trophies || []), reward.trophy] : realm.trophies || [],
+        artifactInventory: nextArtifacts,
         tournamentRewards: [...(realm.tournamentRewards || []), { ...reward, champion: winners[0], at: new Date().toISOString() }],
       };
       saveRealm(nextRealm);
@@ -505,7 +553,7 @@ export default function TournamentsPage() {
         title: "A Champion Was Crowned",
         actor: winners[0].house,
         body: `${winners[0].name} won the ${tournamentType} tournament. ${reward.text}`,
-        meta: { tournamentType, champion: winners[0].name, reward },
+        meta: { tournamentType, tournamentKey, champion: winners[0].name, reward, artifact: prizeArtifact?.name || "" },
       }));
       return;
     }
@@ -513,19 +561,20 @@ export default function TournamentsPage() {
     setRoundNumber((current) => current + 1);
     setCurrentPairs(makePairs(winners));
     setHeraldFeed((current) => [`Round ${roundNumber + 1} is called. Maesters update the odds before the next horns.`, ...current].slice(0, 14));
-  }, [completedRounds, currentPairs, playerEntry.id, predictionPoints, predictions, realm, roundNumber, saveRealm, sessionUserId, status, tournamentType]);
+  }, [completedRounds, currentPairs, playerEntry.id, predictionPoints, predictions, prizeArtifact, realm, roundNumber, saveRealm, sessionUserId, status, tournamentKey, tournamentType]);
 
   useEffect(() => {
-    if (status !== "running") return undefined;
+    if (status !== "running" || !tournamentCycle.isLive) return undefined;
     const timer = setInterval(resolveNextMatch, 4200);
     return () => clearInterval(timer);
-  }, [status, resolveNextMatch]);
+  }, [status, resolveNextMatch, tournamentCycle.isLive]);
 
   useEffect(() => {
-    if (status !== "signup" || currentPairs.length || completedRounds.length || signupRoster.length < 2) return;
+    if (!tournamentCycle.isLive || status !== "signup" || currentPairs.length || completedRounds.length || signupRoster.length < 2) return;
 
     const roster = [...signupRoster].sort((first, second) => hashText(`${first.id}-${second.house}-${tournamentKey}`) - hashText(`${second.id}-${first.house}-${tournamentKey}`));
     const nextWeather = weatherOptions[hashText(`${tournamentKey}-${roster.length}`) % weatherOptions.length];
+    const hasBye = roster.length % 2 === 1;
     setCurrentPairs(makePairs(roster));
     setCompletedRounds([]);
     setRoundNumber(1);
@@ -535,11 +584,12 @@ export default function TournamentsPage() {
     setPredictions({});
     setHeraldFeed([
       `The heralds close the rolls with ${roster.length} signed houses.`,
+      hasBye ? "An uneven list grants one house a bye into the next lane." : "Every first-round lane has found an opponent.",
       `The field is set beneath ${nextWeather}.`,
       `The crowd roars as ${roster[0].house} enters the lists.`,
     ]);
     setMessage("The tournament bracket opened automatically from every saved account in the realm.");
-  }, [completedRounds.length, currentPairs.length, signupRoster, status, tournamentKey]);
+  }, [completedRounds.length, currentPairs.length, signupRoster, status, tournamentCycle.isLive, tournamentKey]);
 
   useEffect(() => {
     if (status !== "running") return undefined;
@@ -573,7 +623,11 @@ export default function TournamentsPage() {
   const quarterSlots = roundWinners(1);
   const semiSlots = roundWinners(2);
   const finalSlots = roundWinners(3);
-  const tournamentProgress = Math.min(100, Math.max(8, Math.round(((completedMatches.length || signupRoster.length) / Math.max(1, effectiveBracketSize - 1)) * 100)));
+  const tournamentProgress = tournamentCycle.isLive
+    ? Math.min(100, Math.max(4, Math.round(((now - tournamentCycle.startTime) / Math.max(1, tournamentCycle.endTime - tournamentCycle.startTime)) * 100)))
+    : status === "complete"
+      ? 100
+      : 4;
 
   return (
     <main className="gok-page min-h-screen px-4 py-6 text-stone-100">
@@ -587,8 +641,8 @@ export default function TournamentsPage() {
             <div className="mx-auto max-w-3xl border border-[rgba(138,109,59,0.35)] bg-black/68 px-4 py-3 text-center shadow-2xl shadow-black backdrop-blur-sm">
               <p className="text-xs font-black uppercase tracking-[0.34em] text-[var(--gok-parchment)]">Will you be the champion?</p>
               <p className="mt-2 text-xs uppercase tracking-[0.2em] text-[var(--gok-dim)]">Every saved account is automatically entered.</p>
-              <button onClick={signUpTournament} disabled={!isSignedIn} className="mt-3 border border-red-900 bg-red-950/55 px-12 py-2 text-xs font-black uppercase tracking-[0.24em] text-red-100 transition hover:border-red-400 disabled:opacity-55">
-                {isSignedIn ? "Update Orders" : "Sign In To Set Orders"}
+              <button onClick={signUpTournament} disabled={!isSignedIn || tournamentCycle.isLive} className="mt-3 border border-red-900 bg-red-950/55 px-12 py-2 text-xs font-black uppercase tracking-[0.24em] text-red-100 transition hover:border-red-400 disabled:opacity-55">
+                {!isSignedIn ? "Sign In To Set Orders" : tournamentCycle.isLive ? "Orders Locked" : "Update Orders"}
               </button>
             </div>
 
@@ -601,16 +655,16 @@ export default function TournamentsPage() {
 
             <div className="mt-8 grid gap-3 text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)] sm:grid-cols-2 lg:grid-cols-5">
               <Stat label="Type of Trial" value={tournamentType} />
-              <Stat label="Tournament Begins" value={status === "running" ? "Live Now" : status === "signup" ? "Awaiting Houses" : status} />
+              <Stat label={tournamentCycle.isLive ? "Tournament Ends" : "Tournament Begins"} value={tournamentCycle.isLive ? `Live Now: ${tournamentCountdown}` : tournamentCountdown} />
               <Stat label="Signed Houses" value={`${signupRoster.length} / ${effectiveBracketSize}`} />
-              <Stat label="The Prize" value="Glory & Reward" />
+              <Stat label="The Prize" value={prizeArtifact ? prizeArtifact.name : "Glory & Reward"} />
               <Stat label="Next Dragon Hour" value={nextDragonEpisode ? `Episode ${nextDragonEpisode.episode}: ${dragonCountdown}` : dragonCountdown} />
             </div>
           </div>
           <div className="relative z-10 border-t border-[var(--gok-line)] bg-black/86 px-5 py-5">
             <div className="mb-2 flex items-center justify-between text-[0.65rem] font-black uppercase tracking-[0.22em] text-red-300">
               <span>{status === "running" ? "Tournament In Progress" : status === "complete" ? "Tournament Complete" : "Tournament Rolls"}</span>
-              <span>{completedMatches.length ? `${completedMatches.length} matches recorded` : `${signupRoster.length} houses written in`}</span>
+              <span>{tournamentCycle.isLive ? `${tournamentCountdown} remaining` : `${signupRoster.length} houses written in`}</span>
             </div>
             <div className="relative h-4 overflow-visible border border-red-950 bg-black">
               <div className="h-full bg-gradient-to-r from-red-950 via-red-800 to-[rgba(167,126,55,.75)]" style={{ width: `${tournamentProgress}%` }} />
@@ -619,8 +673,8 @@ export default function TournamentsPage() {
               </div>
             </div>
             <div className="mt-3 flex justify-between text-[0.65rem] uppercase tracking-[0.18em] text-[var(--gok-dim)]">
-              <span>Elapsed: {completedMatches.length ? `${completedMatches.length} bouts` : "rolls open"}</span>
-              <span>Remaining: {status === "complete" ? "champion crowned" : `${Math.max(0, effectiveBracketSize - signupRoster.length)} seats`}</span>
+              <span>Elapsed: {tournamentCycle.isLive ? formatElapsedDuration(now - tournamentCycle.startTime) : "rolls open"}</span>
+              <span>Remaining: {status === "complete" ? "champion crowned" : tournamentCycle.isLive ? tournamentCountdown : `${Math.max(0, effectiveBracketSize - signupRoster.length)} seats`}</span>
             </div>
           </div>
           {message && <p className="relative z-10 mt-4 border border-[var(--gok-line)] bg-black/50 p-3 text-sm text-[var(--gok-parchment)]">{message}</p>}
@@ -696,15 +750,15 @@ export default function TournamentsPage() {
                     key={stance.key}
                     type="button"
                     onClick={() => setSelectedStance(stance.key)}
-                    disabled={!isSignedIn}
+                    disabled={!isSignedIn || tournamentCycle.isLive}
                     className={`border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${selectedStance === stance.key ? "border-red-400 bg-red-950/35 text-red-100" : "border-[var(--gok-line)] bg-black/55 text-[var(--gok-silver)] hover:border-[var(--gok-line-strong)]"}`}
                   >
                     <span className="block font-black">{stance.label}</span>
                     <span className="mt-1 block text-xs leading-5 text-[var(--gok-dim)]">{stance.edge}</span>
                   </button>
                 ))}
-                <button onClick={signUpTournament} disabled={!isSignedIn} className="gok-btn gok-btn-blood min-h-12 px-5 py-3 disabled:opacity-45">
-                  {isSignedIn ? "Update Orders" : "Sign In To Save Orders"}
+                <button onClick={signUpTournament} disabled={!isSignedIn || tournamentCycle.isLive} className="gok-btn gok-btn-blood min-h-12 px-5 py-3 disabled:opacity-45">
+                  {!isSignedIn ? "Sign In To Save Orders" : tournamentCycle.isLive ? "Orders Locked Until Next Lists" : "Update Orders"}
                 </button>
               </div>
               <div className="relative z-10 mt-5 grid gap-2 text-sm">
@@ -722,9 +776,9 @@ export default function TournamentsPage() {
             <p className="gok-eyebrow text-red-300">Late for the Tournament?</p>
             <h3 className="mt-2 font-serif text-2xl font-black uppercase tracking-[0.08em] text-[var(--gok-silver)]">Sign up for next one</h3>
           </div>
-          <FeatureCard title="Live & Unpredictable" body="No two tournaments unfold the same." />
-          <FeatureCard title="Real Time Battles" body="Every duel, victory, and upset moves the realm." />
-          <FeatureCard title="One Champion" body="Only one house rises above the lists." />
+          <FeatureCard title="Every 12 Hours" body="The realm opens fresh lists twice a day." />
+          <FeatureCard title="Uneven Lists" body="Odd brackets grant one house a clean bye." />
+          <FeatureCard title="Sunday Relics" body="Sunday champions claim a singular artifact." />
           <FeatureCard title="Glory & Reward" body="Gold, honor, reputation, and trophies await." />
         </section>
       </section>

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import SigilMark from "./SigilMark";
 import { formatDragonCountdown, getNextDragonEpisode } from "../lib/dragon-countdown";
 import { STORAGE_KEY } from "../lib/realm-identity";
+import { formatTournamentCountdown, getTournamentCycle } from "../lib/tournament-schedule";
 
 const navItems = [
   ["Map", "/map"],
@@ -24,6 +25,10 @@ export default function SiteNav({ className = "" }) {
   const nextDragonEpisode = getNextDragonEpisode(now);
   const nextDragonEpisodeTime = nextDragonEpisode ? new Date(nextDragonEpisode.at).getTime() : null;
   const dragonCountdown = nextDragonEpisodeTime ? formatDragonCountdown(nextDragonEpisodeTime, now) : "Season complete";
+  const tournamentCycle = getTournamentCycle(now);
+  const tournamentCountdown = tournamentCycle.isLive
+    ? formatTournamentCountdown(tournamentCycle.endTime, now)
+    : formatTournamentCountdown(tournamentCycle.nextStartTime, now);
 
   useEffect(() => {
     function loadRealm() {
@@ -60,10 +65,17 @@ export default function SiteNav({ className = "" }) {
           <Link href="/" className="gok-brand block text-xl">
             Game of Kings
           </Link>
-          <div className="mt-2 w-fit border-y border-[rgba(196,193,184,0.18)] bg-black/40 px-3 py-1 font-serif text-[0.68rem] font-black uppercase tracking-[0.22em] text-[var(--gok-silver)] shadow-[0_0_18px_rgba(120,16,22,0.18)]">
-            <span className="text-red-300">Dragon Hour</span>
-            <span className="mx-2 text-[var(--gok-dim)]">Episode {nextDragonEpisode?.episode || "-"}</span>
-            <span>{dragonCountdown}</span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <div className="w-fit border-y border-[rgba(196,193,184,0.18)] bg-black/40 px-3 py-1 font-serif text-[0.68rem] font-black uppercase tracking-[0.22em] text-[var(--gok-silver)] shadow-[0_0_18px_rgba(120,16,22,0.18)]">
+              <span className="text-red-300">Dragon Hour</span>
+              <span className="mx-2 text-[var(--gok-dim)]">Episode {nextDragonEpisode?.episode || "-"}</span>
+              <span>{dragonCountdown}</span>
+            </div>
+            <div className="w-fit border-y border-[rgba(196,193,184,0.18)] bg-black/40 px-3 py-1 font-serif text-[0.68rem] font-black uppercase tracking-[0.22em] text-[var(--gok-silver)] shadow-[0_0_18px_rgba(120,16,22,0.18)]">
+              <span className="text-red-300">{tournamentCycle.isLive ? "Tournament Live" : "Next Tournament"}</span>
+              <span className="mx-2 text-[var(--gok-dim)]">{tournamentCycle.type}</span>
+              <span>{tournamentCountdown}</span>
+            </div>
           </div>
         </div>
         <div className="flex snap-x gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:justify-end lg:pb-0">
