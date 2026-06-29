@@ -58,8 +58,146 @@ const stanceCounters = {
   balanced: "aggressive",
 };
 
+const tourneyNames = {
+  Joust: ["The Tourney of Broken Lances", "The Silver Tilt", "The Lists of Ash and Steel", "The King's Road Joust"],
+  Archery: ["The Blackwood Bowmeet", "The Wind-Read Trial", "The Flight of Red Arrows", "The Winter Marks"],
+  Melee: ["The Winter Lists", "The Yard of Splintered Shields", "The Iron Ring Melee", "The Clash Beneath the Banners"],
+  "Horse Racing": ["The Thundering Course", "The Dustroad Run", "The Bannerfield Race", "The Queen's Gallop"],
+};
+
+const proclamationOpeners = [
+  "By wax, seal, and ringing horn, the realm is called to witness",
+  "Let every keep, market, and smoky inn hear word of",
+  "Under watched banners and sharpened whispers, the heralds announce",
+  "Before the eyes of noble houses and gathered smallfolk comes",
+];
+
+const proclamationMiddles = [
+  "where bold names will be weighed before the crowd",
+  "where quiet wagers pass from glove to glove",
+  "where banners rise, grudges stir, and songs wait for a victor",
+  "where glory may be won before the last torch gutters",
+];
+
+const waitingScenes = [
+  "Merchants drag canvas stalls into place while children chase loose ribbons beneath the stands.",
+  "House banners are lifted by squires whose fingers are already numb from the morning air.",
+  "The inns near the grounds have no empty benches, only cups, rumors, and louder rumors.",
+  "A septon blesses the field while a hedge knight checks the same buckle for the seventh time.",
+  "Smallfolk gather along the rail, trading names of favorites as if they were copper coins.",
+  "A quiet noble writes a wager into a folded note and sends it away under a servant's sleeve.",
+  "The master of lists walks the yard, testing mud, rope, and timber with a frown.",
+  "Ravens circle the kitchens, drawn by smoke, shouting, and the promise of dropped crusts.",
+];
+
+const preTournamentRavens = [
+  "The grounds are not yet open, but every banner pole has eyes beneath it.",
+  "A groom swears the horses know a tournament is coming before the riders do.",
+  "The master of lists has ordered fresh chalk for the lanes and fresh silence from the gamblers.",
+  "A cupbearer claims two houses nearly quarreled over a place near the viewing rail.",
+  "The crowd has not gathered, but the realm is already talking.",
+];
+
+const finishedRavens = [
+  "The benches empty slowly. No one wishes to be the first to stop speaking of the champion.",
+  "The heralds copy the final result into the royal chronicle before the ink can dry.",
+  "Squires gather splinters, bent arrows, and scraps of ribbon from the field.",
+  "By dusk, the champion's name is already louder than the bells.",
+];
+
 function hashText(text = "") {
   return text.split("").reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0) >>> 0;
+}
+
+function pickFrom(list, seed, offset = 0) {
+  return list[(hashText(`${seed}-${offset}`) % list.length)];
+}
+
+function getTournamentName(tournamentType, tournamentKey) {
+  return pickFrom(tourneyNames[tournamentType] || tourneyNames.Melee, tournamentKey);
+}
+
+function buildRoyalProclamation({ tournamentName, tournamentType, weather, crowdMood, countdown, tournamentKey }) {
+  const opener = pickFrom(proclamationOpeners, tournamentKey, 1);
+  const middle = pickFrom(proclamationMiddles, tournamentKey, 2);
+  const moodLine = crowdMood === "roaring"
+    ? "The stands already feel hungry for a name to shout."
+    : crowdMood === "restless"
+      ? "Even before the first horn, unease moves through the benches."
+      : "The realm waits with measured breath.";
+  return `${opener} ${tournamentName}, a ${tournamentType.toLowerCase()} trial beneath ${weather}, ${middle}. ${moodLine} The first horn is marked for ${countdown}.`;
+}
+
+function buildRealmAwaits(tournamentKey) {
+  return [0, 1, 2, 3, 4]
+    .map((offset) => pickFrom(waitingScenes, tournamentKey, offset))
+    .filter((line, index, all) => all.indexOf(line) === index)
+    .slice(0, 5);
+}
+
+function buildStateRavens({ status, tournamentCycle, tournamentKey, signupRoster, completedMatches, champion, weather, crowdMood }) {
+  if (status === "complete" && champion) {
+    const finalMatch = completedMatches.at(-1);
+    return [
+      `${champion.name} is named before the stands, and ${champion.house} answers with raised colors.`,
+      finalMatch?.loser?.name ? `${finalMatch.loser.name} leaves with honor, though the final word belongs elsewhere.` : pickFrom(finishedRavens, tournamentKey, 1),
+      pickFrom(finishedRavens, tournamentKey, 2),
+    ];
+  }
+
+  if (status === "running" || tournamentCycle.isLive) {
+    const lastMatch = completedMatches.at(-1);
+    return [
+      lastMatch ? `The latest raven names ${lastMatch.winner.name} after ${lastMatch.closeness.toLowerCase()}.` : `The field is live beneath ${weather}, and the first calls are being made.`,
+      `The crowd is ${crowdMood}, and every new bout changes the sound of the grounds.`,
+      `${signupRoster.length} houses are written into the lists for this trial.`,
+    ];
+  }
+
+  return [
+    pickFrom(preTournamentRavens, tournamentKey, 1),
+    pickFrom(preTournamentRavens, tournamentKey, 2),
+    `${signupRoster.length} houses are already expected at the grounds.`,
+  ];
+}
+
+function buildChronicle({ tournamentKey, tournamentName, tournamentType, weather, crowdMood, champion, completedMatches, prizeArtifact, previousChronicles }) {
+  const finalMatch = completedMatches.at(-1);
+  const runnerUp = finalMatch?.loser || null;
+  const upset = completedMatches.find((match) => match.upset);
+  const closeFinal = finalMatch?.closeness === "A razor-close match";
+  const repeatedChampion = previousChronicles.some((entry) => entry.champion === champion.name);
+  const notableMoment = upset
+    ? `${upset.winner.name} overturned the expected order against ${upset.loser.name}.`
+    : closeFinal
+      ? `${champion.name} survived a final so close the judges leaned over the rail.`
+      : finalMatch?.event
+        ? `${finalMatch.event} became the moment most retold by the crowd.`
+        : `${champion.name} stood unbeaten when the last horn faded.`;
+  const artifactHint = prizeArtifact
+    ? ` Some swore ${prizeArtifact.name} seemed to wait for the champion as if old stories had chosen a side.`
+    : "";
+  const repeatLine = repeatedChampion
+    ? ` This was not the first time the realm had heard ${champion.name} named with awe.`
+    : ` For many in the crowd, this was the first time the champion's name felt like history.`;
+  const summary = `${tournamentName} was fought as a ${tournamentType.toLowerCase()} trial beneath ${weather}, before a ${crowdMood} crowd. ${runnerUp?.name ? `${runnerUp.name} pressed to the final, but ${champion.name} carried the day for ${champion.house}.` : `${champion.name} carried the day for ${champion.house}.`} ${notableMoment}${repeatLine}${artifactHint}`;
+
+  return {
+    id: tournamentKey,
+    tournamentName,
+    date: new Date().toISOString(),
+    tournamentType,
+    weather,
+    crowdMood,
+    champion: champion.name,
+    championHouse: champion.house,
+    runnerUp: runnerUp?.name || "No final opponent recorded",
+    runnerUpHouse: runnerUp?.house || "",
+    notableMoment,
+    summary,
+    matchCount: completedMatches.length,
+    prize: prizeArtifact?.name || "Glory & Reward",
+  };
 }
 
 function playerFighter(realm, sessionUserId = "") {
@@ -286,6 +424,17 @@ export default function TournamentsPage() {
     () => tournamentCycle.isSunday ? artifactCatalog[tournamentCycle.cycleIndex % artifactCatalog.length] : null,
     [tournamentCycle.cycleIndex, tournamentCycle.isSunday]
   );
+  const tournamentName = useMemo(() => getTournamentName(tournamentType, tournamentKey), [tournamentKey, tournamentType]);
+  const royalProclamation = useMemo(() => buildRoyalProclamation({
+    tournamentName,
+    tournamentType,
+    weather,
+    crowdMood,
+    countdown: tournamentCountdown,
+    tournamentKey,
+  }), [crowdMood, tournamentCountdown, tournamentKey, tournamentName, tournamentType, weather]);
+  const realmAwaits = useMemo(() => buildRealmAwaits(tournamentKey), [tournamentKey]);
+  const chronicleArchive = useMemo(() => realm.tournamentChronicles || [], [realm.tournamentChronicles]);
   const nextDragonEpisode = useMemo(() => getNextDragonEpisode(now), [now]);
   const nextDragonEpisodeTime = nextDragonEpisode ? new Date(nextDragonEpisode.at).getTime() : null;
   const dragonCountdown = nextDragonEpisodeTime ? formatDragonCountdown(nextDragonEpisodeTime, now) : "Season complete";
@@ -610,7 +759,51 @@ export default function TournamentsPage() {
     const odds = pair.second ? getWinOdds(pair.first, pair.second) : { fighterAChance: 100, fighterBChance: 0 };
     return { ...pair, odds, matchId: `${roundNumber}-${pair.first.id}-${pair.second?.id || "bye"}` };
   }), [currentPairs, roundNumber]);
-  const completedMatches = completedRounds.flatMap((round) => round.matches.map((match) => ({ ...match, roundNumber: round.roundNumber })));
+  const completedMatches = useMemo(
+    () => completedRounds.flatMap((round) => round.matches.map((match) => ({ ...match, roundNumber: round.roundNumber }))),
+    [completedRounds]
+  );
+  const ravenLines = useMemo(() => [
+    ...buildStateRavens({ status, tournamentCycle, tournamentKey, signupRoster, completedMatches, champion, weather, crowdMood }),
+    ...heraldFeed,
+  ].filter(Boolean).slice(0, 18), [champion, completedMatches, crowdMood, heraldFeed, signupRoster, status, tournamentCycle, tournamentKey, weather]);
+
+  useEffect(() => {
+    if (status !== "complete" || !champion || !completedMatches.length) return;
+    if (chronicleArchive.some((entry) => entry.id === tournamentKey)) return;
+
+    const chronicle = buildChronicle({
+      tournamentKey,
+      tournamentName,
+      tournamentType,
+      weather,
+      crowdMood,
+      champion,
+      completedMatches,
+      prizeArtifact,
+      previousChronicles: chronicleArchive,
+    });
+    const nextRealm = {
+      ...realm,
+      tournamentChronicles: [chronicle, ...chronicleArchive].slice(0, 30),
+    };
+    saveRealm(nextRealm);
+    recordRealmActivity(buildActivity({
+      type: "tournament",
+      title: "A Royal Chronicle Was Written",
+      actor: champion.house,
+      body: chronicle.summary,
+      meta: {
+        action: "chronicle",
+        tournamentKey,
+        tournamentType,
+        champion: champion.name,
+        runnerUp: chronicle.runnerUp,
+        notableMoment: chronicle.notableMoment,
+      },
+    }));
+  }, [champion, chronicleArchive, completedMatches, crowdMood, prizeArtifact, realm, saveRealm, status, tournamentKey, tournamentName, tournamentType, weather]);
+
   const firstRoundRows = useMemo(() => {
     const lanes = currentPairs.length || completedRounds.length
       ? [...currentPairs.flatMap((pair) => [pair.first, pair.second]).filter(Boolean), ...(completedRounds[0]?.matches?.flatMap((match) => [match.first, match.second]).filter(Boolean) || [])]
@@ -648,16 +841,19 @@ export default function TournamentsPage() {
 
             <div className="mt-20 text-center md:mt-24">
               <p className="gok-eyebrow">Tournament Grounds</p>
+              <p className="mt-2 font-serif text-2xl font-black text-[var(--gok-parchment)] md:text-3xl">{tournamentName}</p>
               <h1 className="mt-3 text-4xl uppercase tracking-[0.42em] text-[var(--gok-silver)] drop-shadow-[0_12px_24px_rgba(0,0,0,.95)] sm:text-6xl lg:text-7xl">
                 Tournament Grounds
               </h1>
             </div>
 
-            <div className="mt-8 grid gap-3 text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)] sm:grid-cols-2 lg:grid-cols-5">
+            <div className="mt-8 grid gap-3 text-xs uppercase tracking-[0.16em] text-[var(--gok-dim)] sm:grid-cols-2 lg:grid-cols-7">
               <Stat label="Type of Trial" value={tournamentType} />
               <Stat label={tournamentCycle.isLive ? "Tournament Ends" : "Tournament Begins"} value={tournamentCycle.isLive ? `Live Now: ${tournamentCountdown}` : tournamentCountdown} />
               <Stat label="Signed Houses" value={`${signupRoster.length} / ${effectiveBracketSize}`} />
               <Stat label="The Prize" value={prizeArtifact ? prizeArtifact.name : "Glory & Reward"} />
+              <Stat label="Weather" value={weather} />
+              <Stat label="Crowd Mood" value={crowdMood} />
               <Stat label="Next Dragon Hour" value={nextDragonEpisode ? `Episode ${nextDragonEpisode.episode}: ${dragonCountdown}` : dragonCountdown} />
             </div>
           </div>
@@ -679,6 +875,22 @@ export default function TournamentsPage() {
           </div>
           {message && <p className="relative z-10 mt-4 border border-[var(--gok-line)] bg-black/50 p-3 text-sm text-[var(--gok-parchment)]">{message}</p>}
         </div>
+
+        <section className="mt-5 grid gap-5 lg:grid-cols-[1fr_1.15fr]">
+          <article className="gok-panel p-5">
+            <p className="gok-eyebrow">Royal Proclamation</p>
+            <p className="relative z-10 mt-4 font-serif text-xl leading-8 text-[var(--gok-silver)]">{royalProclamation}</p>
+          </article>
+
+          <article className="gok-panel p-5">
+            <p className="gok-eyebrow">The Realm Awaits</p>
+            <div className="relative z-10 mt-4 grid gap-3">
+              {realmAwaits.map((line) => (
+                <p key={line} className="border-l-2 border-[rgba(167,126,55,0.55)] bg-black/35 px-4 py-2 text-sm leading-6 text-[rgba(210,205,194,0.78)]">{line}</p>
+              ))}
+            </div>
+          </article>
+        </section>
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
           <section className="gok-panel p-5">
@@ -736,7 +948,7 @@ export default function TournamentsPage() {
             <section className="gok-panel p-5">
               <p className="gok-eyebrow">Ravens From The Grounds</p>
               <div className="relative z-10 mt-4 max-h-80 overflow-y-auto border border-[var(--gok-line)] bg-black/50">
-                {heraldFeed.map((line, index) => (
+                {ravenLines.map((line, index) => (
                   <p key={`${line}-${index}`} className="border-b border-[rgba(196,193,184,0.1)] p-3 text-sm leading-6 text-[rgba(210,205,194,0.78)] last:border-b-0">{line}</p>
                 ))}
               </div>
@@ -781,6 +993,23 @@ export default function TournamentsPage() {
           <FeatureCard title="Sunday Relics" body="Sunday champions claim a singular artifact." />
           <FeatureCard title="Glory & Reward" body="Gold, honor, reputation, and trophies await." />
         </section>
+
+        <section className="gok-panel mt-5 p-5">
+          <div className="relative z-10 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="gok-eyebrow">Royal Chronicle Archive</p>
+              <h2 className="mt-2 font-serif text-3xl font-black text-[var(--gok-silver)]">Past Tournaments</h2>
+            </div>
+            <p className="text-sm text-[var(--gok-dim)]">The realm remembers the last {chronicleArchive.length} written chronicles.</p>
+          </div>
+          <div className="relative z-10 mt-5 max-h-[620px] space-y-4 overflow-y-auto pr-2">
+            {chronicleArchive.length ? chronicleArchive.map((entry) => (
+              <ChronicleCard key={entry.id} entry={entry} />
+            )) : (
+              <p className="border border-[var(--gok-line)] bg-black/45 p-5 text-[var(--gok-dim)]">No royal chronicle has been sealed yet. When the next tournament ends, its champion and story will be written here.</p>
+            )}
+          </div>
+        </section>
       </section>
     </main>
   );
@@ -807,7 +1036,7 @@ function FighterCard({ fighter, chance, alignRight = false }) {
         <div className="h-full bg-red-900" style={{ width: `${chance}%` }} />
       </div>
       <p className="mt-2 text-[0.68rem] uppercase tracking-[0.12em] text-[var(--gok-dim)]">
-        {tacticalStances[fighter.stance]?.shortLabel || "Balanced"} / STR {fighter.strength} / SKL {fighter.skill} / SPD {fighter.speed} / END {fighter.endurance} / REP {fighter.reputation} / LUCK {fighter.luck}
+        {tacticalStances[fighter.stance]?.shortLabel || "Balanced"} orders / {fighter.reputation > 84 ? "renowned contender" : "tested contender"} / {fighter.luck > 68 ? "fortune near at hand" : "steady nerve"}
       </p>
       </div>
     </div>
@@ -876,6 +1105,47 @@ function FeatureCard({ title, body }) {
     <article className="border border-[var(--gok-line)] bg-black/60 p-5">
       <p className="font-black uppercase tracking-[0.14em] text-[var(--gok-silver)]">{title}</p>
       <p className="mt-2 text-sm leading-6 text-[var(--gok-dim)]">{body}</p>
+    </article>
+  );
+}
+
+function ChronicleCard({ entry }) {
+  const dateText = new Date(entry.date).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  return (
+    <article className="relative overflow-hidden border border-[#856332]/60 bg-[linear-gradient(135deg,#d0ad76,#9b7446_45%,#6c4a2b)] p-5 text-[#180f08] shadow-xl shadow-black/40">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,245,206,.28),transparent_28%),linear-gradient(90deg,rgba(80,44,18,.18),transparent_18%,transparent_82%,rgba(80,44,18,.2))]" />
+      <div className="relative z-10 grid gap-4 lg:grid-cols-[1fr_220px]">
+        <div>
+          <p className="text-[0.65rem] font-black uppercase tracking-[0.26em] text-[#4d2416]">Sealed Chronicle</p>
+          <h3 className="mt-2 font-serif text-2xl font-black text-[#130b05]">{entry.tournamentName}</h3>
+          <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-[#59351d]">{dateText}</p>
+          <p className="mt-4 font-serif text-lg font-black leading-7">{entry.notableMoment}</p>
+          <p className="mt-3 text-sm leading-7 text-[#24160b]">{entry.summary}</p>
+        </div>
+        <div className="border border-[#4e2d17]/40 bg-[#160d07]/12 p-4">
+          <Stat label="Trial Type" value={entry.tournamentType} />
+          <div className="mt-3" />
+          <Stat label="Weather" value={entry.weather} />
+          <div className="mt-3" />
+          <Stat label="Crowd Mood" value={entry.crowdMood} />
+          <div className="mt-3" />
+          <Stat label="Champion" value={`${entry.champion} ${entry.championHouse ? `of ${entry.championHouse}` : ""}`} />
+          <div className="mt-3" />
+          <Stat label="Runner-Up" value={entry.runnerUp} />
+          <div className="mt-3" />
+          <Stat label="Prize" value={entry.prize} />
+        </div>
+      </div>
+      <div className="absolute bottom-4 right-5 grid h-16 w-16 place-items-center rounded-full border border-red-950 bg-[radial-gradient(circle,#9f2b1d,#4d0c09_68%,#210403)] font-serif text-xl font-black text-red-100 shadow-lg shadow-black/55">
+        G
+      </div>
     </article>
   );
 }
