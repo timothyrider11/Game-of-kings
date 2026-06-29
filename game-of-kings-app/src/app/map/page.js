@@ -3231,6 +3231,35 @@ function CastlePopup({
               <h3 className="relative mt-4 max-w-xl font-serif text-4xl font-black leading-tight md:text-5xl">
                 {claimed ? `${claimedBy} holds this castle.` : "This castle is ready to be claimed."}
               </h3>
+              <div className="relative mt-6 max-w-xl">
+                {canClaim ? (
+                  <button
+                    onClick={onClaim}
+                    className="w-full border-2 border-[#2b1308] bg-[#5e1114] px-5 py-5 font-serif text-2xl font-black uppercase tracking-[0.18em] text-[#f8e8b8] shadow-[inset_0_0_24px_rgba(255,215,150,0.14),0_12px_28px_rgba(44,12,8,0.35)] transition hover:bg-[#7a171a] md:text-3xl"
+                  >
+                    Claim The Castle
+                  </button>
+                ) : !claimed && !isSignedIn ? (
+                  <Link
+                    href="/account"
+                    className="block w-full border-2 border-[#2b1308] bg-[#24150d] px-5 py-5 text-center font-serif text-xl font-black uppercase tracking-[0.16em] text-[#f8e8b8] shadow-[inset_0_0_18px_rgba(255,215,150,0.1)] transition hover:bg-[#3a2214]"
+                  >
+                    Sign In To Claim
+                  </Link>
+                ) : !claimed && !houseName.trim() ? (
+                  <Link
+                    href="/house"
+                    className="block w-full border-2 border-[#2b1308] bg-[#24150d] px-5 py-5 text-center font-serif text-xl font-black uppercase tracking-[0.16em] text-[#f8e8b8] shadow-[inset_0_0_18px_rgba(255,215,150,0.1)] transition hover:bg-[#3a2214]"
+                  >
+                    Forge Your House First
+                  </Link>
+                ) : null}
+                {!canClaim && claimDialogue && (
+                  <p className="mt-3 border border-[#6c3b21]/55 bg-[#2b160a]/20 p-3 text-sm font-bold leading-6 text-[#2b170b]">
+                    {claimDialogue}
+                  </p>
+                )}
+              </div>
               <div className="relative mt-6 h-px bg-[#5f321f]" />
               <WaxSigil sigil={castleSigil} />
             </div>
@@ -3242,27 +3271,6 @@ function CastlePopup({
                 {owner} This location is part of the living realm: claims, wars, upgrades, castle archives, and house activity are timestamped as the world keeps moving.
               </p>
             </div>
-            {!canClaim && claimDialogue && (
-              <p className="mt-3 border border-stone-800 bg-black/45 p-3 text-sm leading-6 text-stone-400">
-                {claimDialogue}
-              </p>
-            )}
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {canClaim && (
-                <button
-                  onClick={() => {
-                    onClaim();
-                    onClose();
-                  }}
-                  disabled={!houseName.trim()}
-                  className="min-h-11 rounded-md bg-emerald-700 px-5 py-3 text-sm font-black transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
-                >
-                  Claim Castle
-                </button>
-              )}
-            </div>
-
             {images.length > 3 && (
               <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
                 {images.map((image, index) => (
@@ -3316,9 +3324,9 @@ function CastlePanel({ castle, state, houseName, rulerTitle, rulerName, canClaim
           <button
             onClick={onClaim}
             disabled={!houseName.trim()}
-            className="min-h-11 rounded-md bg-emerald-700 px-5 py-3 font-black transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+            className="min-h-14 rounded-md border border-emerald-300/60 bg-emerald-700 px-6 py-4 font-serif text-lg font-black uppercase tracking-[0.14em] text-emerald-50 shadow-lg shadow-emerald-950/35 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
           >
-            Claim Castle
+            Claim This Castle
           </button>
         )}
       </div>
