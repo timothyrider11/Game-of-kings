@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import RealmTodoList from "../../components/RealmTodoList";
 import SiteNav from "../../components/SiteNav";
 import { artifactCatalog } from "../../lib/artifacts";
 import { getSessionUser, loadCloudRealm, saveCloudRealm } from "../../lib/realm-cloud";
@@ -321,7 +322,7 @@ export default function HouseFounderPage() {
       <section className="mx-auto max-w-[1800px] px-4 py-4">
         <div className="gok-panel mb-4 p-5">
           <p className="gok-eyebrow">House Founder</p>
-          <div className="relative z-10 mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.8fr_1fr_1.4fr_auto] lg:items-end">
+          <div className="relative z-10 mt-4 grid gap-3 lg:grid-cols-[1.15fr_0.75fr_1fr_1.25fr_220px] lg:items-end">
             <LabeledInput label="House Name" value={houseName} onChange={setHouseName} placeholder="Rider" />
             <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--gok-dim)]">
               Title
@@ -331,11 +332,16 @@ export default function HouseFounderPage() {
             </label>
             <LabeledInput label="First Name" value={rulerName} onChange={setRulerName} placeholder="Timothy" />
             <LabeledInput label="House Words" value={houseMotto} onChange={setHouseMotto} placeholder="Loyalty Never Dies" />
-            <button onClick={saveHouse} disabled={!houseName.trim() || !rulerName.trim()} className="gok-btn gok-btn-blood min-h-12 px-5 py-3 disabled:opacity-45">
+            <button
+              onClick={saveHouse}
+              disabled={!houseName.trim() || !rulerName.trim()}
+              className="gok-btn gok-btn-blood min-h-16 border-2 border-red-300/45 px-7 py-5 text-base shadow-[0_0_28px_rgba(117,18,24,0.36)] disabled:opacity-45"
+            >
               Update House
             </button>
           </div>
           {savedMessage && <p className="relative z-10 mt-3 text-sm font-bold text-[var(--gok-parchment)]">{savedMessage}</p>}
+          <RealmTodoList className="mt-5" wide />
         </div>
 
         <div className="gok-panel overflow-hidden p-4">

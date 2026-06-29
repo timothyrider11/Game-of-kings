@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import NobleKnightSelector from "../../components/NobleKnightSelector";
+import RealmTodoList from "../../components/RealmTodoList";
 import SigilMark from "../../components/SigilMark";
 import SiteNav from "../../components/SiteNav";
 import { buildActivity, recordRealmActivity } from "../../lib/realm-activity";
@@ -317,6 +318,7 @@ export default function AccountPage() {
           <p className="gok-copy mt-4 text-sm leading-6">
             Sign in so your castle, house, gold, renown, sigil, and event progress follow your account across devices.
           </p>
+          <RealmTodoList className="mt-5" />
 
           {message && (
             <p className="mt-5 border border-[var(--gok-line)] bg-black/50 p-3 text-sm text-[var(--gok-parchment)]">
