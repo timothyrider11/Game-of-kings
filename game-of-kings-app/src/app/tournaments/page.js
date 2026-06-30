@@ -191,8 +191,10 @@ function buildChronicle({ tournamentKey, tournamentName, tournamentType, weather
     crowdMood,
     champion: champion.name,
     championHouse: champion.house,
+    championSigil: champion.houseSigil || null,
     runnerUp: runnerUp?.name || "No final opponent recorded",
     runnerUpHouse: runnerUp?.house || "",
+    runnerUpSigil: runnerUp?.houseSigil || null,
     notableMoment,
     summary,
     matchCount: completedMatches.length,
@@ -790,7 +792,7 @@ export default function TournamentsPage() {
     saveRealm(nextRealm);
     recordRealmActivity(buildActivity({
       type: "tournament",
-      title: "A Royal Chronicle Was Written",
+      title: "A Page Was Added To The Book",
       actor: champion.house,
       body: chronicle.summary,
       meta: {
@@ -994,19 +996,29 @@ export default function TournamentsPage() {
           <FeatureCard title="Glory & Reward" body="Gold, honor, reputation, and trophies await." />
         </section>
 
-        <section className="gok-panel mt-5 p-5">
+        <section className="gok-panel mt-5 overflow-hidden border-[#6f5631]/70 bg-[linear-gradient(135deg,rgba(28,15,8,0.96),rgba(9,7,5,0.98)_42%,rgba(42,24,11,0.94))] p-5 shadow-[inset_0_0_70px_rgba(0,0,0,0.72)]">
           <div className="relative z-10 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="gok-eyebrow">Royal Chronicle Archive</p>
-              <h2 className="mt-2 font-serif text-3xl font-black text-[var(--gok-silver)]">Past Tournaments</h2>
+              <p className="gok-eyebrow text-[#d7b46a]">Permanent Tournament History</p>
+              <h2 className="mt-2 font-serif text-4xl font-black text-[#e0bd73]">The Book of Champions</h2>
             </div>
-            <p className="text-sm text-[var(--gok-dim)]">The realm remembers the last {chronicleArchive.length} written chronicles.</p>
+            <p className="max-w-xl text-sm leading-6 text-[var(--gok-dim)]">
+              Every Champion Earns a Page. Every Page Becomes History.
+            </p>
+          </div>
+          <div className="relative z-10 mt-4 grid gap-3 border border-[#6f5631]/50 bg-black/35 p-4 text-sm leading-6 text-[var(--gok-parchment)] md:grid-cols-[1fr_0.8fr]">
+            <p>
+              Finished tournaments are sealed here as permanent realm history. New tournaments may grow grander, but old pages remain as the chronicler first wrote them.
+            </p>
+            <p className="text-[var(--gok-dim)]">
+              Future idea: player profiles can show a <span className="font-black text-[#d7b46a]">Mentioned In</span> list of Book pages where that house appears.
+            </p>
           </div>
           <div className="relative z-10 mt-5 max-h-[620px] space-y-4 overflow-y-auto pr-2">
             {chronicleArchive.length ? chronicleArchive.map((entry) => (
               <ChronicleCard key={entry.id} entry={entry} />
             )) : (
-              <p className="border border-[var(--gok-line)] bg-black/45 p-5 text-[var(--gok-dim)]">No royal chronicle has been sealed yet. When the next tournament ends, its champion and story will be written here.</p>
+              <p className="border border-[#6f5631]/60 bg-black/45 p-5 text-[var(--gok-dim)]">No page has been sealed yet. When the next tournament ends, its champion and story will be written into the Book of Champions.</p>
             )}
           </div>
         </section>
@@ -1119,33 +1131,65 @@ function ChronicleCard({ entry }) {
   });
 
   return (
-    <article className="relative overflow-hidden border border-[#856332]/60 bg-[linear-gradient(135deg,#d0ad76,#9b7446_45%,#6c4a2b)] p-5 text-[#180f08] shadow-xl shadow-black/40">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,245,206,.28),transparent_28%),linear-gradient(90deg,rgba(80,44,18,.18),transparent_18%,transparent_82%,rgba(80,44,18,.2))]" />
-      <div className="relative z-10 grid gap-4 lg:grid-cols-[1fr_220px]">
+    <article className="relative overflow-hidden border border-[#8e6a35]/70 bg-[linear-gradient(115deg,#2a160b_0%,#3c2413_4%,#d1b17a_5%,#c19a61_50%,#a77743_95%,#321b0d_96%,#130a05_100%)] p-5 text-[#180f08] shadow-2xl shadow-black/50">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(255,245,206,.32),transparent_22%),radial-gradient(circle_at_78%_84%,rgba(73,32,12,.28),transparent_30%),linear-gradient(90deg,rgba(72,37,15,.25),transparent_11%,transparent_89%,rgba(72,37,15,.28))]" />
+      <div className="pointer-events-none absolute left-1/2 top-0 h-full w-px bg-[#5c351b]/35" />
+      <div className="relative z-10 grid gap-5 lg:grid-cols-[1fr_270px]">
         <div>
-          <p className="text-[0.65rem] font-black uppercase tracking-[0.26em] text-[#4d2416]">Sealed Chronicle</p>
-          <h3 className="mt-2 font-serif text-2xl font-black text-[#130b05]">{entry.tournamentName}</h3>
+          <p className="text-[0.65rem] font-black uppercase tracking-[0.26em] text-[#4d2416]">Page Sealed In The Book</p>
+          <h3 className="mt-2 font-serif text-3xl font-black text-[#130b05]">{entry.tournamentName}</h3>
           <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-[#59351d]">{dateText}</p>
-          <p className="mt-4 font-serif text-lg font-black leading-7">{entry.notableMoment}</p>
-          <p className="mt-3 text-sm leading-7 text-[#24160b]">{entry.summary}</p>
+          <p className="mt-5 border-y border-[#5c351b]/35 py-3 font-serif text-xl font-black leading-8">{entry.notableMoment}</p>
+          <p className="mt-4 max-w-4xl text-sm leading-7 text-[#24160b]">{entry.summary}</p>
+          <p className="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[#5d3217]">
+            Mentioned In: champion, runner-up, and houses recorded on this page.
+          </p>
         </div>
-        <div className="border border-[#4e2d17]/40 bg-[#160d07]/12 p-4">
-          <Stat label="Trial Type" value={entry.tournamentType} />
-          <div className="mt-3" />
-          <Stat label="Weather" value={entry.weather} />
-          <div className="mt-3" />
-          <Stat label="Crowd Mood" value={entry.crowdMood} />
-          <div className="mt-3" />
-          <Stat label="Champion" value={`${entry.champion} ${entry.championHouse ? `of ${entry.championHouse}` : ""}`} />
-          <div className="mt-3" />
-          <Stat label="Runner-Up" value={entry.runnerUp} />
-          <div className="mt-3" />
-          <Stat label="Prize" value={entry.prize} />
+        <div className="border border-[#4e2d17]/45 bg-[#160d07]/12 p-4 shadow-[inset_0_0_28px_rgba(58,26,9,0.28)]">
+          <BookSigil sigil={entry.championSigil} label={`${entry.champion} crest`} />
+          <BookFact label="Trial Type" value={entry.tournamentType} />
+          <BookFact label="Weather" value={entry.weather} />
+          <BookFact label="Crowd Mood" value={entry.crowdMood} />
+          <BookFact label="Champion" value={`${entry.champion} ${entry.championHouse ? `of ${entry.championHouse}` : ""}`} />
+          <BookFact label="Runner-Up" value={entry.runnerUp} sigil={entry.runnerUpSigil} />
+          <BookFact label="Prize" value={entry.prize} />
         </div>
       </div>
       <div className="absolute bottom-4 right-5 grid h-16 w-16 place-items-center rounded-full border border-red-950 bg-[radial-gradient(circle,#9f2b1d,#4d0c09_68%,#210403)] font-serif text-xl font-black text-red-100 shadow-lg shadow-black/55">
-        G
+        C
       </div>
     </article>
+  );
+}
+
+function BookSigil({ sigil, label }) {
+  if (!sigil?.layers?.length) {
+    return (
+      <div className="mb-4 grid h-20 place-items-center border border-[#4e2d17]/45 bg-[#180d06]/12 text-xs font-black uppercase tracking-[0.2em] text-[#5d3217]">
+        Crest Unrecorded
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4 mx-auto h-24 w-20">
+      <SigilMark sigil={sigil} label={label} />
+    </div>
+  );
+}
+
+function BookFact({ label, value, sigil }) {
+  return (
+    <div className="mt-3 border border-[#4e2d17]/35 bg-[#fff0bf]/12 p-3">
+      <p className="text-[0.62rem] font-black uppercase tracking-[0.18em] text-[#5d3217]">{label}</p>
+      <div className="mt-1 flex items-center gap-2">
+        {sigil?.layers?.length && (
+          <span className="block h-9 w-8 shrink-0">
+            <SigilMark sigil={sigil} label={`${value} crest`} />
+          </span>
+        )}
+        <p className="font-serif text-base font-black leading-6 text-[#170c05]">{value}</p>
+      </div>
+    </div>
   );
 }
