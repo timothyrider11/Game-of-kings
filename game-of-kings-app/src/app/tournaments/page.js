@@ -830,7 +830,7 @@ export default function TournamentsPage() {
 
       <section className="mx-auto mt-6 max-w-[1760px]">
         <div className="relative overflow-hidden border border-[var(--gok-line)] bg-black shadow-2xl shadow-black">
-          <div className="absolute inset-0 bg-[url('/banners/TournamentGroundsFullPage.png')] bg-cover bg-top opacity-78" />
+          <div className="absolute inset-0 bg-[url('/banners/TournamentGrounds.png')] bg-cover bg-center opacity-78" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.62)_46%,#050505_88%),radial-gradient(circle_at_50%_0%,rgba(138,109,59,.3),transparent_38%)]" />
           <div className="relative z-10 min-h-[420px] px-5 py-8 md:px-10">
             <div className="mx-auto max-w-3xl border border-[rgba(138,109,59,0.35)] bg-black/68 px-4 py-3 text-center shadow-2xl shadow-black backdrop-blur-sm">

@@ -12,8 +12,16 @@ import { applyRoyalAccountDefaults, getRoyalAccount, normalizeRulerTitle, PUBLIC
 import { generatedSigilCategories } from "../../lib/sigil-manifest";
 
 const sigilCategories = {
-  Sigils: [],
+  "Ancient-Royal": [],
+  "Animals-Fantasy": [],
+  "Arms-Shields": [],
+  Floral: [],
+  "Food-Utensils": [],
+  Objects: [],
+  Random: [],
 };
+
+const DEFAULT_SIGIL_CATEGORY = "Ancient-Royal";
 
 const tinctures = [
   ["Iron Black", "#070807"], ["Night Charcoal", "#151716"], ["Aged Steel", "#68716f"], ["Muted Silver", "#b7b3a8"],
@@ -126,7 +134,7 @@ export default function HouseFounderPage() {
   const [rulerName, setRulerName] = useState("");
   const [sigil, setSigil] = useState(defaultSigil);
   const [categories, setCategories] = useState(sigilCategories);
-  const [selectedCategory, setSelectedCategory] = useState("Sigils");
+  const [selectedCategory, setSelectedCategory] = useState(DEFAULT_SIGIL_CATEGORY);
   const [selectedLayerId, setSelectedLayerId] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -141,8 +149,9 @@ export default function HouseFounderPage() {
   const houseArtifacts = useMemo(() => artifactCatalog.filter((artifact) => artifactInventory.includes(artifact.name)), [artifactInventory]);
 
   useEffect(() => {
-    setCategories({ ...sigilCategories, ...generatedSigilCategories });
-    const firstIcon = generatedSigilCategories.Sigils?.[0] || Object.values(generatedSigilCategories).flat()[0];
+    const nextCategories = { ...sigilCategories, ...generatedSigilCategories };
+    setCategories(nextCategories);
+    const firstIcon = nextCategories[DEFAULT_SIGIL_CATEGORY]?.[0] || Object.values(nextCategories).flat()[0];
     setSigil((current) => {
       if (current.layers?.length || !firstIcon) return current;
       const layer = createLayer(firstIcon, 0, current.border);
@@ -345,12 +354,14 @@ export default function HouseFounderPage() {
         </div>
 
         <div className="gok-panel overflow-hidden p-4">
-          <div className="relative z-10 mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="gok-eyebrow">Sigil Generator</p>
-              <h1 className="mt-2 text-3xl uppercase tracking-[0.08em] text-[var(--gok-silver)]">Heraldry Workbench</h1>
+          <div className="relative z-10 mb-5">
+            <img src="/banners/House.png" alt="" className="mb-5 h-28 w-full border border-[var(--gok-line)] bg-black object-cover opacity-90 shadow-[0_20px_50px_rgba(0,0,0,0.5)] sm:h-36 lg:h-44" />
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="gok-eyebrow">Sigil Generator</p>
+                <h1 className="mt-2 text-3xl uppercase tracking-[0.08em] text-[var(--gok-silver)]">Heraldry Workbench</h1>
+              </div>
             </div>
-            <img src="/banners/House.png" alt="" className="h-24 max-w-full border border-[var(--gok-line)] object-cover opacity-80 lg:w-[760px]" />
           </div>
 
           <div className="relative z-10 grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)_420px] 2xl:grid-cols-[440px_minmax(0,1fr)_460px]">
