@@ -12,16 +12,10 @@ import { applyRoyalAccountDefaults, getRoyalAccount, normalizeRulerTitle, PUBLIC
 import { generatedSigilCategories } from "../../lib/sigil-manifest";
 
 const sigilCategories = {
-  "Ancient-Royal": [],
-  "Animals-Fantasy": [],
-  "Arms-Shields": [],
-  Floral: [],
-  "Food-Utensils": [],
-  Objects: [],
-  Random: [],
+  Sigils: [],
 };
 
-const DEFAULT_SIGIL_CATEGORY = "Ancient-Royal";
+const DEFAULT_SIGIL_CATEGORY = "Sigils";
 
 const tinctures = [
   ["Iron Black", "#070807"], ["Night Charcoal", "#151716"], ["Aged Steel", "#68716f"], ["Muted Silver", "#b7b3a8"],
@@ -459,7 +453,16 @@ export default function HouseFounderPage() {
                         className="grid aspect-[3/4] min-h-24 place-items-center overflow-hidden border border-[var(--gok-line)] bg-black/50 p-1 transition hover:border-[var(--gok-line-strong)]"
                         title={icon.name}
                       >
-                        <img src={icon.previewUrl || icon.imageUrl} alt="" className="h-full w-full object-contain p-2 opacity-95" />
+                        <span
+                          aria-hidden="true"
+                          className="block h-full w-full opacity-95"
+                          style={{
+                            backgroundColor: "#d8d2c4",
+                            WebkitMask: `url(${icon.previewUrl || icon.imageUrl}) center / contain no-repeat`,
+                            mask: `url(${icon.previewUrl || icon.imageUrl}) center / contain no-repeat`,
+                            filter: "drop-shadow(0 8px 10px rgba(0,0,0,.82))",
+                          }}
+                        />
                       </button>
                     ))}
                   </div>
