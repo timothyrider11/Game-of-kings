@@ -12,10 +12,10 @@ import { applyRoyalAccountDefaults, getRoyalAccount, normalizeRulerTitle, PUBLIC
 import { generatedSigilCategories } from "../../lib/sigil-manifest";
 
 const sigilCategories = {
-  Sigils: [],
+  "Heraldry Symbols": [],
 };
 
-const DEFAULT_SIGIL_CATEGORY = "Sigils";
+const DEFAULT_SIGIL_CATEGORY = "Heraldry Symbols";
 
 const tinctures = [
   ["Iron Black", "#070807"], ["Night Charcoal", "#151716"], ["Aged Steel", "#68716f"], ["Muted Silver", "#b7b3a8"],
@@ -145,6 +145,9 @@ export default function HouseFounderPage() {
   useEffect(() => {
     const nextCategories = { ...sigilCategories, ...generatedSigilCategories };
     setCategories(nextCategories);
+    if (!nextCategories[selectedCategory]) {
+      setSelectedCategory(DEFAULT_SIGIL_CATEGORY);
+    }
     const firstIcon = nextCategories[DEFAULT_SIGIL_CATEGORY]?.[0] || Object.values(nextCategories).flat()[0];
     setSigil((current) => {
       if (current.layers?.length || !firstIcon) return current;
@@ -152,7 +155,7 @@ export default function HouseFounderPage() {
       setSelectedLayerId(layer.id);
       return { ...current, layers: [layer] };
     });
-  }, []);
+  }, [selectedCategory]);
 
   useEffect(() => {
     getSessionUser().then(({ user }) => {
